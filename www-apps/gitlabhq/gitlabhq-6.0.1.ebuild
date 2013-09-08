@@ -64,19 +64,18 @@ ruby_add_bdepend "
 
 RUBY_PATCHES=(
 	"${P}-fix-checks-gentoo.patch"
-	"${P}-fix-gitlab-shell-backend.patch"
 )
-
-#use perf-patch && RUBY_PATCHES+=( "${P}-performance.patch" )
-#use public-projects && RUBY_PATCHES+=( "${P}-public-projects.patch" )
-#use postgres && RUBY_PATCHES+=( "${P}-fix-wiki-pg.patch" )
-#use analytics && RUBY_PATCHES+=( "${P}-google-analytics.patch" )
 
 GIT_USER="git"
 GIT_GROUP="git"
-GIT_HOME=$(su -l $GIT_USER -s /bin/sh -c "echo \$HOME")
+GIT_HOME=$(getent passwd $GIT_USER  | cut -d: -f6)
 DEST_DIR="/opt/${PN}-${SLOT}"
 CONF_DIR="/etc/${PN}-${SLOT}"
+
+GIT_REPOS="${GIT_HOME}/repositories"
+GIT_SATELLITES="${GIT_HOME}/gitlab-satellites"
+GITLAB_SHELL="/var/lib/gitlab-shell"
+GITLAB_SHELL_HOOKS="${GITLAB_SHELL}/hooks"
 
 pkg_setup() {
     enewgroup ${GIT_GROUP}
@@ -88,20 +87,15 @@ all_ruby_unpack() {
 }
 
 each_ruby_prepare() {
-
+	
 	# fix path to repo and gitlab-shell hooks
-	local git_repos="${GIT_HOME}/repositories"
-	local gitlab_satellites="${GIT_HOME}/gitlab-satellites"
-	local gitlab_shell="/var/lib/gitlab-shell"
-	local gitlab_shell_hooks="${gitlab_shell}/hooks"
-
-	test -d "${gitlab_shell_hooks}" || die "Gitlab Shell hooks directory not found: \"${gitlab_shell_hooks}. Have you properly installed dev-vcs/gitlab-shell"?
+	test -d "${GITLAB_SHELL_HOOKS}" || die "Gitlab Shell hooks directory not found: \"${GITLAB_SHELL_HOOKS}. Have you properly installed dev-vcs/gitlab-shell"?
 
 	sed -i \
-		-e "s|\(\s*repos_path:\s\)/.*|\1 ${git_repos}/|" \
-		-e "s|\(\s*hooks_path:\s\)/.*|\1 ${gitlab_shell_hooks}/|" \
-		-e "s|\(\s*path:\s\)/.*/gitlab-satellites/|\1 ${gitlab_satellites}/|" \
-		-e "s|\(\s*gitlab_shell:\s*\)|\1\n\tpath: \"${gitlab_shell}\"|"
+		-e "s|\(\s*repos_path:\s\)/.*|\1 ${GIT_REPOS}/|" \
+		-e "s|\(\s*hooks_path:\s\)/.*|\1 ${GITLAB_SHELL_HOOKS}/|" \
+		-e "s|\(\s*path:\s\)/.*/gitlab-satellites/|\1 ${GIT_SATELLITES}/|" \
+		-e "s|\(\s*GITLAB_SHELL:\s*\)|\1\n\tpath: \"${GITLAB_SHELL}\"|" \
 		config/gitlab.yml.example || die "failed to filter gitlab.yml.example"
 	
 	# modify database settings
@@ -172,6 +166,9 @@ each_ruby_install() {
 
 	dosym "${temp}" "${dest}/tmp"
 	dosym "${logs}" "${dest}/log"
+
+	## Link gitlab-shell into git home
+	dosym "${GITLAB_SHELL}" "${GIT_HOME}/gitlab-shell"
 	
 	## Install configs ##
 
@@ -276,10 +273,10 @@ pkg_postinst() {
 	elog "   and edit this file in order to configure your database settings"
 	elog "   for \"production\" environment."
 	elog
-	elog "3. Then you should create database for your GitLab instance."
+	elog "3. If this is a new installation, you should create database for your GitLab instance."
 	elog
 	if use postgres; then
-        elog   "If you have local PostgreSQL running, just copy&run:"
+        elog "  If you have local PostgreSQL running, just copy&run:"
         elog "      su postgres"
         elog "      psql -c \"CREATE ROLE gitlab PASSWORD 'gitlab' \\"
         elog "          NOSUPERUSER NOCREATEDB NOCREATEROLE INHERIT LOGIN;\""
@@ -292,7 +289,7 @@ pkg_postinst() {
 		elog "      CREATE CAST (integer AS text) WITH INOUT AS IMPLICIT;"
 		elog
 	fi
-	elog "4. Finally execute the following command to initlize environment:"
+	elog "4. Finally execute the following command to initlize or update the environment:"
 	elog "       emerge --config \"=${CATEGORY}/${PF}\""
 	elog "   Note: Do not forget to start Redis server."
 	elog
@@ -322,13 +319,56 @@ pkg_config() {
 	local RUBY=${RUBY:-ruby19}
 	local BUNDLE="${RUBY} /usr/bin/bundle"
 
-	einfo "Initializing database ..."
-	su -l ${GIT_USER} -s /bin/sh -c "
-		export LANG=en_US.UTF-8; export LC_ALL=en_US.UTF-8
-		cd ${DEST_DIR}
-		${BUNDLE} exec rake gitlab:setup RAILS_ENV=${RAILS_ENV}" \
-		|| die "failed to run rake gitlab:setup"
-	
+	# Ask user whether this is the first installation
+	einfon "Do you want to upgrade an existing installation? [Y|n] "
+	do_upgrade=""
+	while true
+	do
+		read -r do_upgrade
+		if [[ $do_upgrade == "n" || $do_upgrade == "N" ]] ; then do_upgrade="" && break
+		elif [[ $do_upgrade == "y" || $do_upgrade == "Y" || $do_upgrade == "" ]] ; then do_upgrade=1 && break
+		else eerrorn "Please type either \"Y\" or \"N\" ... " ; fi
+	done
+
+	if [[ $do_upgrade ]] ; then
+
+        einfo "Migration database ..."
+        su -l ${GIT_USER} -s /bin/sh -c "
+            export LANG=en_US.UTF-8; export LC_ALL=en_US.UTF-8
+            cd ${DEST_DIR} 
+            ${BUNDLE} exec rake db:migrate RAILS_ENV=production
+            ${BUNDLE} exec rake migrate_groups RAILS_ENV=production
+            ${BUNDLE} exec rake migrate_global_projects RAILS_ENV=production
+            ${BUNDLE} exec rake migrate_keys RAILS_ENV=production
+            ${BUNDLE} exec rake migrate_inline_notes RAILS_ENV=production
+            ${BUNDLE} exec rake gitlab:satellites:create RAILS_ENV=production" \
+            || die "failed to migrate database."
+
+        einfo "Clear redis cache ..."
+        su -l ${GIT_USER} -s /bin/sh -c "
+            export LANG=en_US.UTF-8; export LC_ALL=en_US.UTF-8
+            cd ${DEST_DIR}
+            ${BUNDLE} exec rake cache:clear RAILS_ENV=production" \
+            || die "failed to run cache:clear"
+
+        einfo "Clear and precompile assets ..."
+        su -l ${GIT_USER} -s /bin/sh -c "
+            export LANG=en_US.UTF-8; export LC_ALL=en_US.UTF-8
+            cd ${DEST_DIR}
+            ${BUNDLE} exec rake assets:clean RAILS_ENV=production
+            ${BUNDLE} exec rake assets:precompile RAILS_ENV=production" \
+            || die "failed to run assets:precompile"
+
+	else
+
+		einfo "Initializing database ..."
+		su -l ${GIT_USER} -s /bin/sh -c "
+			export LANG=en_US.UTF-8; export LC_ALL=en_US.UTF-8
+			cd ${DEST_DIR}
+			${BUNDLE} exec rake gitlab:setup RAILS_ENV=${RAILS_ENV}" \
+				|| die "failed to run rake gitlab:setup"
+	fi
+
 	einfo "You might want to run the following in order to check your application status:"
 	einfo "# cd ${DEST_DIR}"
 	einfo "# ${BUNDLE} exec rake gitlab:check RAILS_ENV=production"

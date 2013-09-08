@@ -51,6 +51,7 @@ all_ruby_install() {
 	rm -Rf .git .gitignore
 
 	insinto ${DEST_DIR}
+	touch gitlab-shell.log
 	doins -r . || die
 
 	dosym ${DEST_DIR}/bin/gitlab-keys /usr/bin/gitlab-keys || die
@@ -62,7 +63,7 @@ all_ruby_install() {
 	fperms 0755 ${DEST_DIR}/bin/gitlab-projects || die
 	fperms 0755 ${DEST_DIR}/bin/gitlab-shell || die
 	fperms 0755 ${DEST_DIR}/bin/check || die
-
+	fowners ${GIT_USER} ${DEST_DIR}/gitlab-shell.log
 }
 
 pkg_postinst() {
