@@ -64,6 +64,7 @@ ruby_add_bdepend "
 
 RUBY_PATCHES=(
 	"${P}-fix-checks-gentoo.patch"
+	"${P}-fix-issue-helper.patch"
 )
 
 GIT_USER="git"
