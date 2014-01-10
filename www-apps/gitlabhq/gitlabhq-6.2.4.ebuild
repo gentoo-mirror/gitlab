@@ -226,9 +226,7 @@ each_ruby_install() {
 	fperms o+Xr "${temp}" # Let nginx access the unicorn socket
 
 	## RC scripts ##
-
-	local rcscript=gitlab-support.init
-	use unicorn && rcscript=gitlab-unicorn.init
+	local rcscript=${P}.init
 
 	cp "${FILESDIR}/${rcscript}" "${T}" || die
 	sed -i \
