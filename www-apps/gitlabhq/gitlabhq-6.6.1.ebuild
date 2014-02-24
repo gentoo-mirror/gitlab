@@ -339,10 +339,6 @@ pkg_config() {
             export LANG=en_US.UTF-8; export LC_ALL=en_US.UTF-8
             cd ${DEST_DIR} 
             ${BUNDLE} exec rake db:migrate RAILS_ENV=production
-            ${BUNDLE} exec rake migrate_groups RAILS_ENV=production
-            ${BUNDLE} exec rake migrate_global_projects RAILS_ENV=production
-            ${BUNDLE} exec rake migrate_keys RAILS_ENV=production
-            ${BUNDLE} exec rake migrate_inline_notes RAILS_ENV=production
             ${BUNDLE} exec rake gitlab:satellites:create RAILS_ENV=production" \
             || die "failed to migrate database."
 
