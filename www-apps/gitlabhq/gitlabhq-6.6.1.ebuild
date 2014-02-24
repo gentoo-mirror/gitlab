@@ -19,13 +19,13 @@ PYTHON_DEPEND="2:2.5"
 EGIT_REPO_URI="https://github.com/gitlabhq/gitlabhq.git"
 EGIT_COMMIT="v${PV}"
 
-inherit eutils git-2 python ruby-ng
+inherit eutils git-2 python ruby-ng versionator user
 
 DESCRIPTION="GitLab is a free project and repository management application"
 HOMEPAGE="https://github.com/gitlabhq/gitlabhq"
 
 LICENSE="MIT"
-SLOT="6.1"
+SLOT=$(get_version_component_range 1-2)
 KEYWORDS="~amd64 ~x86"
 IUSE="memcached mysql +postgres +unicorn"
 
@@ -64,7 +64,6 @@ ruby_add_bdepend "
 
 RUBY_PATCHES=(
 	"${P}-fix-checks-gentoo.patch"
-	"${P}-fix-issue-helper.patch"
 )
 
 GIT_USER="git"
@@ -120,10 +119,6 @@ each_ruby_prepare() {
 	use postgres || rm config/database.yml.postgresql
 	use mysql || rm config/database.yml.mysql
 
-	# remove zzet's stupid migration which expetcs that users are so foolish 
-	# to use PostgreSQL's superuser in database.yml...
-	rm db/migrate/20121009205010_postgres_create_integer_cast.rb
-
 	# remove dependency on therubyracer and libv8 (we're using nodejs instead)
 	local tfile; for tfile in Gemfile{,.lock}; do
 		sed -i \
@@ -144,6 +139,14 @@ each_ruby_prepare() {
 			-e "/\w*config.cache_store / s/=.*/= :dalli_store, { namespace: 'gitlab' }/" \
 			config/environments/production.rb \
 			|| die "failed to modify production.rb"
+	fi
+
+	# Update pathes for unicorn
+	if use unicorn; then
+		sed -i \
+			-e "s#/home/git/gitlab#${DEST_DIR}#" \
+			config/unicorn.rb.example \
+			|| die "failed to modify unicorn.rb.example"
 	fi
 }
 
@@ -227,9 +230,7 @@ each_ruby_install() {
 	fperms o+Xr "${temp}" # Let nginx access the unicorn socket
 
 	## RC scripts ##
-
-	local rcscript=gitlab-support.init
-	use unicorn && rcscript=gitlab-unicorn.init
+	local rcscript=${P}.init
 
 	cp "${FILESDIR}/${rcscript}" "${T}" || die
 	sed -i \

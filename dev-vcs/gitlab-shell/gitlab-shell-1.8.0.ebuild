@@ -8,7 +8,7 @@ EGIT_REPO_URI="https://github.com/gitlabhq/gitlab-shell.git"
 EGIT_COMMIT="v${PV}"
 USE_RUBY="ruby19"
 
-inherit eutils git-2 ruby-ng
+inherit eutils git-2 ruby-ng user
 
 DESCRIPTION="GitLab Shell is a free SSH access and repository management application"
 HOMEPAGE="https://github.com/gitlabhq/gitlab-shell"
@@ -32,10 +32,6 @@ DEST_DIR="/var/lib/${PN}"
 
 pkg_setup() {
 
-	if grep "^${GIT_USER}:" /etc/passwd &>/dev/null ; then
-		die "Git user \"${GIT_USER}\" already exists. Please remove any previously configured Git management software and the user \"${GIT_USER}\"!"
-	fi
-
 	enewgroup ${GIT_GROUP}
 	enewuser ${GIT_USER} -1 -1 "${HOME}" ${GIT_GROUP}
 }
@@ -55,6 +51,7 @@ all_ruby_install() {
 	rm -Rf .git .gitignore
 
 	insinto ${DEST_DIR}
+	touch gitlab-shell.log
 	doins -r . || die
 
 	dosym ${DEST_DIR}/bin/gitlab-keys /usr/bin/gitlab-keys || die
@@ -66,7 +63,8 @@ all_ruby_install() {
 	fperms 0755 ${DEST_DIR}/bin/gitlab-projects || die
 	fperms 0755 ${DEST_DIR}/bin/gitlab-shell || die
 	fperms 0755 ${DEST_DIR}/bin/check || die
-
+	fperms 0755 ${DEST_DIR}/hooks/update || die
+	fowners ${GIT_USER} ${DEST_DIR}/gitlab-shell.log
 }
 
 pkg_postinst() {
