@@ -19,7 +19,7 @@ PYTHON_DEPEND="2:2.5"
 EGIT_REPO_URI="https://github.com/gitlabhq/gitlabhq.git"
 EGIT_COMMIT="v${PV}"
 
-inherit eutils git-2 python ruby-ng versionator
+inherit eutils git-2 python ruby-ng versionator user
 
 DESCRIPTION="GitLab is a free project and repository management application"
 HOMEPAGE="https://github.com/gitlabhq/gitlabhq"
