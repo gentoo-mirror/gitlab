@@ -6,9 +6,9 @@ EAPI="5"
 
 EGIT_REPO_URI="https://github.com/gitlabhq/gitlab-shell.git"
 EGIT_COMMIT="v${PV}"
-USE_RUBY="ruby19"
+USE_RUBY="ruby20"
 
-inherit eutils git-2 ruby-ng
+inherit eutils git-2 ruby-ng user
 
 DESCRIPTION="GitLab Shell is a free SSH access and repository management application"
 HOMEPAGE="https://github.com/gitlabhq/gitlab-shell"

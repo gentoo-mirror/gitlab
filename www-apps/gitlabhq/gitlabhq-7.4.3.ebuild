@@ -13,7 +13,7 @@ EAPI="5"
 #   https://github.com/cvut/gitlabhq for more information.
 #
 
-USE_RUBY="ruby19"
+USE_RUBY="ruby20"
 PYTHON_DEPEND="2:2.5"
 
 EGIT_REPO_URI="https://github.com/gitlabhq/gitlabhq.git"
@@ -34,6 +34,7 @@ IUSE="memcached mysql +postgres +unicorn"
 #	grape, capybara		dev-libs/libxml2, dev-libs/libxslt
 #   json				dev-util/ragel
 #   yajl-ruby			dev-libs/yajl
+#	rugged				net-libs/http-parser
 #   pygments.rb			python 2.5+
 #   execjs				net-libs/nodejs, or any other JS runtime
 #   pg					dev-db/postgresql-base
@@ -45,14 +46,15 @@ GEMS_DEPEND="
 	dev-libs/libxslt
 	dev-util/ragel
 	dev-libs/yajl
+	net-libs/http-parser
 	net-libs/nodejs
 	postgres? ( dev-db/postgresql-base )
 	mysql? ( virtual/mysql )
 	memcached? ( net-misc/memcached )"
 DEPEND="${GEMS_DEPEND}
 	$(ruby_implementation_depend ruby19 '=' -1.9.3*)[readline,ssl,yaml]
-	dev-vcs/git
-	dev-vcs/gitlab-shell
+	>=dev-vcs/git-1.8.1.5
+	>=dev-vcs/gitlab-shell-2.0.1
 	net-misc/curl
 	virtual/ssh"
 RDEPEND="${DEPEND}
@@ -77,6 +79,10 @@ GIT_SATELLITES="${GIT_HOME}/gitlab-satellites"
 GITLAB_SHELL="/var/lib/gitlab-shell"
 GITLAB_SHELL_HOOKS="${GITLAB_SHELL}/hooks"
 
+RAILS_ENV=${RAILS_ENV:-production}
+RUBY=${RUBY:-ruby20}
+BUNDLE="${RUBY} /usr/bin/bundle"
+
 pkg_setup() {
     enewgroup ${GIT_GROUP}
     enewuser ${GIT_USER} -1 -1 ${DEST_DIR} "$GIT_GROUP}"
@@ -92,6 +98,7 @@ each_ruby_prepare() {
 	test -d "${GITLAB_SHELL_HOOKS}" || die "Gitlab Shell hooks directory not found: \"${GITLAB_SHELL_HOOKS}. Have you properly installed dev-vcs/gitlab-shell"?
 
 	sed -i \
+		-e "s|\(\s*path:\s\)/.*/gitlab-shell/|\1 ${GITLAB_SHELL}/|" \
 		-e "s|\(\s*repos_path:\s\)/.*|\1 ${GIT_REPOS}/|" \
 		-e "s|\(\s*hooks_path:\s\)/.*|\1 ${GITLAB_SHELL_HOOKS}/|" \
 		-e "s|\(\s*path:\s\)/.*/gitlab-satellites/|\1 ${GIT_SATELLITES}/|" \
@@ -114,7 +121,7 @@ each_ruby_prepare() {
 	
 	# remove needless files
 	#rm -r .git Satisfy gitlab::check.
-	rm .foreman .gitignore Procfile .travis.yml
+	rm .foreman .gitignore Procfile
 	use unicorn || rm config/unicorn.rb.example
 	use postgres || rm config/database.yml.postgresql
 	use mysql || rm config/database.yml.mysql
@@ -210,12 +217,18 @@ each_ruby_install() {
 	done
 	local bundle_args="--deployment ${without:+--without ${without}}"
 
+	# Use systemlibs for rugged
+	${BUNDLE} config build.rugged --use-system-libraries
+
+	# Use systemlibs for nokogiri as suggested
+	${BUNDLE} config build.nokogiri --use-system-libraries
+
 	# Fix invalid ldflags for charlock_holmes, 
 	# see https://github.com/brianmario/charlock_holmes/issues/32
-	${RUBY} /usr/bin/bundle config build.charlock_holmes --with-ldflags='-L. -Wl,-O1 -Wl,--as-needed -rdynamic -Wl,-export-dynamic -Wl,--no-undefined -lz -licuuc'
+	${BUNDLE} config build.charlock_holmes --with-ldflags='-L. -Wl,-O1 -Wl,--as-needed -rdynamic -Wl,-export-dynamic -Wl,--no-undefined -lz -licuuc'
 
 	einfo "Running bundle install ${bundle_args} ..."
-	${RUBY} /usr/bin/bundle install ${bundle_args} || die "bundler failed"
+	${BUNDLE} install ${bundle_args} || die "bundler failed"
 
 	## Clean ##
 
@@ -226,7 +239,6 @@ each_ruby_install() {
 
 	# fix permissions
 	fowners -R ${GIT_USER}:${GIT_GROUP} "${dest}" "${conf}" "${temp}" "${logs}"
-	fperms +x script/rails
 	fperms o+Xr "${temp}" # Let nginx access the unicorn socket
 
 	## RC scripts ##
@@ -300,29 +312,23 @@ pkg_postinst() {
 pkg_config() {
 	## Check config files existence ##
 
-	einfo "Checking configuration files"
+	einfo "Checking configuration files ..."
 
 	if [ ! -r "${CONF_DIR}/database.yml" ] ; then
-		eerror "Copy ${CONF_DIR}/database.yml.* to"
-		eerror "${CONF_DIR}/database.yml and edit this file in order to configure your" 
-		eerror "database settings for \"production\" environment."
+		eerror "Copy \"${CONF_DIR}/database.yml.*\" to \"${CONF_DIR}/database.yml\""
+		eerror "and edit this file in order to configure your database settings for"
+		eerror "\"production\" environment."
 		die
 	fi
 	if [ ! -r "${CONF_DIR}/gitlab.yml" ]; then
-		eerror "Copy ${CONF_DIR}/gitlab.yml.example to ${CONF_DIR}/gitlab.yml"
+		eerror "Copy \"${CONF_DIR}/gitlab.yml.example\" to \"${CONF_DIR}/gitlab.yml\""
 		eerror "and edit this file in order to configure your GitLab settings"
 		eerror "for \"production\" environment."
 		die
 	fi
 
-	## Initialize app ##
-
-	local RAILS_ENV=${RAILS_ENV:-production}
-	local RUBY=${RUBY:-ruby19}
-	local BUNDLE="${RUBY} /usr/bin/bundle"
-
 	# Ask user whether this is the first installation
-	einfon "Do you want to upgrade an existing installation? [Y|n] "
+	einfo "Do you want to upgrade an existing installation? [Y|n] "
 	do_upgrade=""
 	while true
 	do
@@ -333,6 +339,14 @@ pkg_config() {
 	done
 
 	if [[ $do_upgrade ]] ; then
+
+		einfo "Make sure that you've stopped any running Gitlab instance and"
+		einfo "that you've created a backup from your existing database: "
+		elog "\$ cd ${DEST_DIR} && ${BUNDLE} exec rake gitlab:backup:create RAILS_ENV=production"
+		elog ""
+
+		einfo "Press ENTER to continue, STRG-C to cancel"
+		read
 
         einfo "Migration database ..."
         su -l ${GIT_USER} -s /bin/sh -c "

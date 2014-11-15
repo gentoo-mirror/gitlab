@@ -1,16 +1,16 @@
 #!/sbin/runscript
 
 name="GitLab"
-description="GitLab 6.3 on Unicorns"
+description="GitLab 7.4 on Unicorns"
 
 : ${gitlab_user:=git}
 : ${gitlab_group:=git}
-: ${gitlab_home:="/opt/gitlabhq-6.3"}
+: ${gitlab_home:="/opt/gitlabhq-7.4"}
 
-: ${server_pidfile:="/opt/gitlabhq-6.3/tmp/pids/unicorn.pid"}
-: ${sidekiq_pidfile:="/opt/gitlabhq-6.3/tmp/pids/sidekiq.pid"}
+: ${server_pidfile:="/opt/gitlabhq-7.4/tmp/pids/unicorn.pid"}
+: ${sidekiq_pidfile:="/opt/gitlabhq-7.4/tmp/pids/sidekiq.pid"}
 
-: ${sidekiq_log:="/var/log/gitlabhq-6.3/sidekiq.log"}
+: ${sidekiq_log:="/var/log/gitlabhq-7.4/sidekiq.log"}
 
 : ${rails_env:=production}
 
@@ -31,7 +31,7 @@ depend() {
 }
 
 start() {
-	ebegin "Starting GitLab 6.3 Unicorn servers"
+	ebegin "Starting GitLab 7.4 Unicorn servers"
 
 	checkpath -d -o "${gitlab_user}:${gitlab_group}" -m750 "$(dirname "${server_pidfile}")"
 	checkpath -d -o "${gitlab_user}:${gitlab_group}" -m750 "$(dirname "${sidekiq_pidfile}")"
@@ -43,19 +43,19 @@ start() {
 		--exec ${server_command} -- ${server_command_args}
 	eend $?
 
-	ebegin "Starting GitLab 6.3 Sidekiq"
+	ebegin "Starting GitLab 7.4 Sidekiq"
         cd "${gitlab_home}"
         sudo -u git -H ${sidekiq_command} ${sidekiq_start_command_args}
         eend $?	
 }
 
 stop() {
-	ebegin "Stopping GitLab 6.3 Sidekiq"
+	ebegin "Stopping GitLab 7.4 Sidekiq"
 	cd "${gitlab_home}"
 	sudo -u git -H ${sidekiq_command} ${sidekiq_stop_command_args}
 	eend $?
 
-	ebegin "Stopping GitLab 6.3 Unicorn servers"
+	ebegin "Stopping GitLab 7.4 Unicorn servers"
         start-stop-daemon --stop \
                 --chdir "${gitlab_home}" \
                 --user="${gitlab_user}:${gitlab_group}" \

@@ -13,7 +13,7 @@ EAPI="5"
 #   https://github.com/cvut/gitlabhq for more information.
 #
 
-USE_RUBY="ruby19"
+USE_RUBY="ruby20"
 PYTHON_DEPEND="2:2.5"
 
 EGIT_REPO_URI="https://github.com/gitlabhq/gitlabhq.git"
@@ -51,8 +51,8 @@ GEMS_DEPEND="
 	memcached? ( net-misc/memcached )"
 DEPEND="${GEMS_DEPEND}
 	$(ruby_implementation_depend ruby19 '=' -1.9.3*)[readline,ssl,yaml]
-	dev-vcs/git
-	dev-vcs/gitlab-shell
+	>=dev-vcs/git-1.8.1.5
+	>=dev-vcs/gitlab-shell-1.9.6
 	net-misc/curl
 	virtual/ssh"
 RDEPEND="${DEPEND}
@@ -92,6 +92,7 @@ each_ruby_prepare() {
 	test -d "${GITLAB_SHELL_HOOKS}" || die "Gitlab Shell hooks directory not found: \"${GITLAB_SHELL_HOOKS}. Have you properly installed dev-vcs/gitlab-shell"?
 
 	sed -i \
+		-e "s|\(\s*path:\s\)/.*/gitlab-shell/|\1 ${GITLAB_SHELL}/|" \
 		-e "s|\(\s*repos_path:\s\)/.*|\1 ${GIT_REPOS}/|" \
 		-e "s|\(\s*hooks_path:\s\)/.*|\1 ${GITLAB_SHELL_HOOKS}/|" \
 		-e "s|\(\s*path:\s\)/.*/gitlab-satellites/|\1 ${GIT_SATELLITES}/|" \
@@ -119,10 +120,6 @@ each_ruby_prepare() {
 	use postgres || rm config/database.yml.postgresql
 	use mysql || rm config/database.yml.mysql
 
-	# remove zzet's stupid migration which expetcs that users are so foolish 
-	# to use PostgreSQL's superuser in database.yml...
-	rm db/migrate/20121009205010_postgres_create_integer_cast.rb
-
 	# remove dependency on therubyracer and libv8 (we're using nodejs instead)
 	local tfile; for tfile in Gemfile{,.lock}; do
 		sed -i \
@@ -148,7 +145,7 @@ each_ruby_prepare() {
 	# Update pathes for unicorn
 	if use unicorn; then
 		sed -i \
-			-e "#/home/git/gitlab#${DEST_DIR}#" \
+			-e "s#/home/git/gitlab#${DEST_DIR}#" \
 			config/unicorn.rb.example \
 			|| die "failed to modify unicorn.rb.example"
 	fi
@@ -230,7 +227,6 @@ each_ruby_install() {
 
 	# fix permissions
 	fowners -R ${GIT_USER}:${GIT_GROUP} "${dest}" "${conf}" "${temp}" "${logs}"
-	fperms +x script/rails
 	fperms o+Xr "${temp}" # Let nginx access the unicorn socket
 
 	## RC scripts ##
@@ -322,7 +318,7 @@ pkg_config() {
 	## Initialize app ##
 
 	local RAILS_ENV=${RAILS_ENV:-production}
-	local RUBY=${RUBY:-ruby19}
+	local RUBY=${RUBY:-ruby20}
 	local BUNDLE="${RUBY} /usr/bin/bundle"
 
 	# Ask user whether this is the first installation
@@ -343,10 +339,6 @@ pkg_config() {
             export LANG=en_US.UTF-8; export LC_ALL=en_US.UTF-8
             cd ${DEST_DIR} 
             ${BUNDLE} exec rake db:migrate RAILS_ENV=production
-            ${BUNDLE} exec rake migrate_groups RAILS_ENV=production
-            ${BUNDLE} exec rake migrate_global_projects RAILS_ENV=production
-            ${BUNDLE} exec rake migrate_keys RAILS_ENV=production
-            ${BUNDLE} exec rake migrate_inline_notes RAILS_ENV=production
             ${BUNDLE} exec rake gitlab:satellites:create RAILS_ENV=production" \
             || die "failed to migrate database."
 

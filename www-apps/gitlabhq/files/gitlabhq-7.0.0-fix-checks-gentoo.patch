@@ -9,13 +9,3 @@
        check_projects_have_namespace
        check_satellites_exist
        check_redis_version
-@@ -607,7 +605,8 @@
-     ########################
- 
-     def gitlab_shell_user_home
--      File.expand_path("~#{Gitlab.config.gitlab_shell.ssh_user}")
-+      #File.expand_path("~#{Gitlab.config.gitlab_shell.ssh_user}")
-+      File.dirname(File.dirname(File.expand_path("#{Gitlab.config.gitlab_shell.hooks_path}")))
-     end
- 
-     def gitlab_shell_version

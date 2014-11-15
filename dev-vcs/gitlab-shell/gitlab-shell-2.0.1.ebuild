@@ -6,9 +6,9 @@ EAPI="5"
 
 EGIT_REPO_URI="https://github.com/gitlabhq/gitlab-shell.git"
 EGIT_COMMIT="v${PV}"
-USE_RUBY="ruby19"
+USE_RUBY="ruby20"
 
-inherit eutils git-2 ruby-ng
+inherit eutils git-2 ruby-ng user
 
 DESCRIPTION="GitLab Shell is a free SSH access and repository management application"
 HOMEPAGE="https://github.com/gitlabhq/gitlab-shell"
@@ -16,7 +16,7 @@ LICENSE="MIT"
 SLOT="0"
 KEYWORDS="~amd64 ~x86"
 
-DEPEND="$(ruby_implementation_depend ruby19 '=' -1.9.3*)[yaml]
+DEPEND="$(ruby_implementation_depend ruby20)
 	dev-vcs/git
 	virtual/ssh
 	dev-db/redis"
@@ -63,7 +63,12 @@ all_ruby_install() {
 	fperms 0755 ${DEST_DIR}/bin/gitlab-projects || die
 	fperms 0755 ${DEST_DIR}/bin/gitlab-shell || die
 	fperms 0755 ${DEST_DIR}/bin/check || die
-	fperms 0755 ${DEST_DIR}/hooks/update || die
+	fperms 0755 ${DEST_DIR}/bin/create-hooks || die
+	fperms 0755 ${DEST_DIR}/bin/install || die
+
+	fperms 0755 ${DEST_DIR}/hooks/post-receive || die
+	fperms 0755 ${DEST_DIR}/hooks/pre-receive || die
+
 	fowners ${GIT_USER} ${DEST_DIR}/gitlab-shell.log
 }
 
