@@ -34,7 +34,6 @@ IUSE="memcached mysql +postgres +unicorn"
 #	grape, capybara		dev-libs/libxml2, dev-libs/libxslt
 #   json				dev-util/ragel
 #   yajl-ruby			dev-libs/yajl
-#	rugged				net-libs/http-parser
 #   pygments.rb			python 2.5+
 #   execjs				net-libs/nodejs, or any other JS runtime
 #   pg					dev-db/postgresql-base
@@ -46,7 +45,6 @@ GEMS_DEPEND="
 	dev-libs/libxslt
 	dev-util/ragel
 	dev-libs/yajl
-	net-libs/http-parser
 	net-libs/nodejs
 	postgres? ( dev-db/postgresql-base )
 	mysql? ( virtual/mysql )
@@ -218,7 +216,7 @@ each_ruby_install() {
 	local bundle_args="--deployment ${without:+--without ${without}}"
 
 	# Use systemlibs for rugged
-	${BUNDLE} config build.rugged --use-system-libraries
+	${BUNDLE} config build.rugged
 
 	# Use systemlibs for nokogiri as suggested
 	${BUNDLE} config build.nokogiri --use-system-libraries
