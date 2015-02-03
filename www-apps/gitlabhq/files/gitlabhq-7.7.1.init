@@ -17,7 +17,7 @@ description="GitLab 7.7 on Unicorns"
 server_command="/usr/bin/bundle"
 server_command_args="exec unicorn_rails -c ${gitlab_home}/config/unicorn.rb -E ${rails_env} -D"
 sidekiq_command="/usr/bin/bundle"
-sidekiq_start_command_args="exec sidekiq -q post_receive,mailer,system_hook,project_web_hook,gitlab_shell,common,default -e ${rails_env} -P ${sidekiq_pidfile} -d -L ${sidekiq_log} >> ${sidekiq_log}"
+sidekiq_start_command_args="exec sidekiq -q post_receive -q mailer -q system_hook -q project_web_hook -q gitlab_shell -q common -q default -e ${rails_env} -P ${sidekiq_pidfile} -d -L ${sidekiq_log} >> ${sidekiq_log}"
 sidekiq_stop_command_args="exec sidekiqctl stop ${sidekiq_pidfile} >> ${sidekiq_log}"
 
 if [ ${rails_env} = development ]; then
