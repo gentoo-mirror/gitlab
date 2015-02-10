@@ -43,7 +43,7 @@ all_ruby_unpack() {
 		-e "s|\(user:\).*|\1 ${GIT_USER}|" \
 		-e "s|\(repos_path:\).*|\1 \"${REPO_DIR}\"|" \
 		-e "s|\(auth_file:\).*|\1 \"${AUTH_FILE}\"|" \
-		config.yml.example || die "failed to filter config.example.yml"
+		config.yml.example || die "failed to filter config.yml.example"
 }
 
 all_ruby_install() {
@@ -96,6 +96,6 @@ pkg_postinst() {
 		chown ${GIT_USER}:${GIT_GROUP} "${REPO_DIR}" -R || die
 	fi
 
-	elog "Copy ${DEST_DIR}/config.example.yml to ${DEST_DIR}/config.yml"
+	elog "Copy ${DEST_DIR}/config.yml.example to ${DEST_DIR}/config.yml"
 	elog "and edit this file in order to configure your GitLab-Shell settings."
 }
