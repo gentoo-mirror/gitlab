@@ -51,7 +51,8 @@ GEMS_DEPEND="
 	mysql? ( virtual/mysql )
 	memcached? ( net-misc/memcached )
 	net-libs/http-parser
-	>=dev-libs/libgit2-0.21.3"
+	>=dev-libs/libgit2-0.21.3
+	<dev-libs/libgit2-0.22.0"
 DEPEND="${GEMS_DEPEND}
 	$(ruby_implementation_depend ruby19 '=' -1.9.3*)[readline,ssl,yaml]
 	>=dev-vcs/git-1.8.1.5
