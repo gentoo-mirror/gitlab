@@ -47,7 +47,7 @@ GEMS_DEPEND="
 	dev-util/ragel
 	dev-libs/yajl
 	net-libs/nodejs
-	postgres? ( dev-db/postgresql-base )
+	postgres? ( dev-db/postgresql )
 	mysql? ( virtual/mysql )
 	memcached? ( net-misc/memcached )
 	net-libs/http-parser
