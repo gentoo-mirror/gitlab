@@ -61,7 +61,8 @@ DEPEND="${GEMS_DEPEND}
 	virtual/ssh"
 RDEPEND="${DEPEND}
 	dev-db/redis
-	virtual/mta"
+	virtual/mta
+	virtual/krb5"
 ruby_add_bdepend "
 	virtual/rubygems
 	>=dev-ruby/bundler-1.0"
