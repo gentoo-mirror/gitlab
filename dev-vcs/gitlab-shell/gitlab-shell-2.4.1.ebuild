@@ -24,7 +24,7 @@ RDEPEND="${DEPEND}"
 
 GIT_USER="git"
 GIT_GROUP="git"
-HOME=$(getent passwd $GIT_USER  | cut -d: -f6)
+HOME=$(if [ -n "$(getent passwd git | cut -d: -f6)" ]; then (getent passwd git | cut -d: -f6); else (echo /var/lib/git); fi)
 REPO_DIR="${HOME}/repositories"
 AUTH_FILE="${HOME}/.ssh/authorized_keys"
 KEY_DIR=$(dirname "${AUTH_FILE}")
