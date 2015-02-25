@@ -56,7 +56,7 @@ GEMS_DEPEND="
 DEPEND="${GEMS_DEPEND}
 	$(ruby_implementation_depend ruby19 '=' -1.9.3*)[readline,ssl,yaml]
 	>=dev-vcs/git-1.8.1.5
-	>=dev-vcs/gitlab-shell-2.4.1
+	>=dev-vcs/gitlab-shell-2.5.4
 	net-misc/curl
 	virtual/ssh"
 RDEPEND="${DEPEND}
