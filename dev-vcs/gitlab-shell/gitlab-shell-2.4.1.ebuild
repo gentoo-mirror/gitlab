@@ -14,7 +14,7 @@ DESCRIPTION="GitLab Shell is a free SSH access and repository management applica
 HOMEPAGE="https://github.com/gitlabhq/gitlab-shell"
 LICENSE="MIT"
 SLOT="0"
-KEYWORDS="~amd64 ~x86"
+KEYWORDS="~amd64 ~x86 ~arm"
 
 DEPEND="$(ruby_implementation_depend ruby20)
 	dev-vcs/git
@@ -24,7 +24,7 @@ RDEPEND="${DEPEND}"
 
 GIT_USER="git"
 GIT_GROUP="git"
-HOME="/var/lib/git"
+HOME=$(if [ -n "$(getent passwd git | cut -d: -f6)" ]; then (getent passwd git | cut -d: -f6); else (echo /var/lib/git); fi)
 REPO_DIR="${HOME}/repositories"
 AUTH_FILE="${HOME}/.ssh/authorized_keys"
 KEY_DIR=$(dirname "${AUTH_FILE}")

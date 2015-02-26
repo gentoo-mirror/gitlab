@@ -6,7 +6,7 @@ EAPI="5"
 
 EGIT_REPO_URI="https://github.com/gitlabhq/gitlab-shell.git"
 EGIT_COMMIT="v${PV}"
-USE_RUBY="ruby19"
+USE_RUBY="ruby20"
 
 inherit eutils git-2 ruby-ng user
 
@@ -14,9 +14,9 @@ DESCRIPTION="GitLab Shell is a free SSH access and repository management applica
 HOMEPAGE="https://github.com/gitlabhq/gitlab-shell"
 LICENSE="MIT"
 SLOT="0"
-KEYWORDS="~amd64 ~x86"
+KEYWORDS="~amd64 ~x86 ~arm"
 
-DEPEND="$(ruby_implementation_depend ruby19 '=' -1.9.3*)[yaml]
+DEPEND="$(ruby_implementation_depend ruby20)
 	dev-vcs/git
 	virtual/ssh
 	dev-db/redis"
@@ -24,7 +24,7 @@ RDEPEND="${DEPEND}"
 
 GIT_USER="git"
 GIT_GROUP="git"
-HOME="/var/lib/git"
+HOME=$(if [ -n "$(getent passwd git | cut -d: -f6)" ]; then (getent passwd git | cut -d: -f6); else (echo /var/lib/git); fi)
 REPO_DIR="${HOME}/repositories"
 AUTH_FILE="${HOME}/.ssh/authorized_keys"
 KEY_DIR=$(dirname "${AUTH_FILE}")
@@ -63,8 +63,14 @@ all_ruby_install() {
 	fperms 0755 ${DEST_DIR}/bin/gitlab-projects || die
 	fperms 0755 ${DEST_DIR}/bin/gitlab-shell || die
 	fperms 0755 ${DEST_DIR}/bin/check || die
-	fperms 0755 ${DEST_DIR}/hooks/update || die
+	fperms 0755 ${DEST_DIR}/bin/create-hooks || die
+	fperms 0755 ${DEST_DIR}/bin/install || die
+
+	fperms 0755 ${DEST_DIR}/hooks/post-receive || die
+	fperms 0755 ${DEST_DIR}/hooks/pre-receive || die
+	
 	fowners ${GIT_USER} ${DEST_DIR}/gitlab-shell.log
+	fowners ${GIT_USER} ${DEST_DIR} || die
 }
 
 pkg_postinst() {

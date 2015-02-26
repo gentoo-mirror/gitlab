@@ -56,7 +56,7 @@ GEMS_DEPEND="
 DEPEND="${GEMS_DEPEND}
 	$(ruby_implementation_depend ruby19 '=' -1.9.3*)[readline,ssl,yaml]
 	>=dev-vcs/git-1.8.1.5
-	>=dev-vcs/gitlab-shell-2.4.1
+	>=dev-vcs/gitlab-shell-2.5.4
 	net-misc/curl
 	virtual/ssh"
 RDEPEND="${DEPEND}
@@ -287,34 +287,37 @@ pkg_postinst() {
 			git config --global user.name 'GitLab'" \
 			|| die "failed to setup git name and email"
 	fi
-	
+
+	elog "If this is a new installation, proceed with the following steps:"
 	elog
-	elog "1. Copy ${CONF_DIR}/gitlab.yml.example to ${CONF_DIR}/gitlab.yml"
-	elog "   and edit this file in order to configure your GitLab settings."
+	elog "  1. Copy ${CONF_DIR}/gitlab.yml.example to ${CONF_DIR}/gitlab.yml"
+	elog "     and edit this file in order to configure your GitLab settings."
 	elog
-	elog "2. Copy ${CONF_DIR}/database.yml.* to ${CONF_DIR}/database.yml"
-	elog "   and edit this file in order to configure your database settings"
-	elog "   for \"production\" environment."
+	elog "  2. Copy ${CONF_DIR}/database.yml.* to ${CONF_DIR}/database.yml"
+	elog "     and edit this file in order to configure your database settings"
+	elog "     for \"production\" environment."
 	elog
-	elog "3. If this is a new installation, you should create database for your GitLab instance."
-	elog
+	elog "  3. If this is a new installation, create a database for your GitLab instance."
 	if use postgres; then
-        elog "  If you have local PostgreSQL running, just copy&run:"
-        elog "      su postgres"
-        elog "      psql -c \"CREATE ROLE gitlab PASSWORD 'gitlab' \\"
-        elog "          NOSUPERUSER NOCREATEDB NOCREATEROLE INHERIT LOGIN;\""
-        elog "      createdb -E UTF-8 -O gitlab gitlab_production"
-		elog "  Note: You should change your password to something more random..."
+        elog "    If you have local PostgreSQL running, just copy&run:"
+        elog "        su postgres"
+        elog "        psql -c \"CREATE ROLE gitlab PASSWORD 'gitlab' \\"
+        elog "            NOSUPERUSER NOCREATEDB NOCREATEROLE INHERIT LOGIN;\""
+        elog "        createdb -E UTF-8 -O gitlab gitlab_production"
+		elog "    Note: You should change your password to something more random..."
 		elog
- 		elog "  GitLab uses polymorphic associations which are not SQL-standard friendly."
-		elog "  To get it work you must use this ugly workaround:"
-		elog "      psql -U postgres -d gitlab"
-		elog "      CREATE CAST (integer AS text) WITH INOUT AS IMPLICIT;"
+ 		elog "    GitLab uses polymorphic associations which are not SQL-standard friendly."
+		elog "    To get it work you must use this ugly workaround:"
+		elog "        psql -U postgres -d gitlab"
+		elog "        CREATE CAST (integer AS text) WITH INOUT AS IMPLICIT;"
 		elog
 	fi
-	elog "4. Finally execute the following command to initlize or update the environment:"
-	elog "       emerge --config \"=${CATEGORY}/${PF}\""
-	elog "   Note: Do not forget to start Redis server."
+	elog "  4. Execute the following command to finalize your setup:"
+	elog "         emerge --config \"=${CATEGORY}/${PF}\""
+	elog "     Note: Do not forget to start Redis server."
+	elog 
+	elog "To update an existing instance, run the following command and choose upgrading when prompted:"
+	elog "    emerge --config \"=${CATEGORY}/${PF}\""
 	elog
 }
 
@@ -349,15 +352,55 @@ pkg_config() {
 
 	if [[ $do_upgrade ]] ; then
 
-		einfo "Make sure that you've stopped any running Gitlab instance and"
-		einfo "that you've created a backup from your existing database: "
-		elog "\$ cd ${DEST_DIR} && sudo -u ${GIT_USER} ${BUNDLE} exec rake gitlab:backup:create RAILS_ENV=production"
+		LATEST_DEST=$(test -n "${LATEST_DEST}" && echo ${LATEST_DEST} || \
+			find /opt -maxdepth 1 -iname 'gitlabhq-*' -and -type d -and -not -iname "gitlabhq-${SLOT}" | \
+			sort -r | head -n1)
+
+		if [[ -z "${LATEST_DEST}" || ! -d "${LATEST_DEST}" ]] ; then
+			einfo "Please enter the path to your latest Gitlab instance:"
+			while true
+			do 
+				read -r LATEST_DEST
+				test -d ${LATEST_DEST} && break ||\
+					eerror "Please specify a valid path to your Gitlab instance!"
+			done
+		else
+			einfo "Found your latest Gitlab instance at \"${LATEST_DEST}\"."
+		fi
+
+		einfo "Please make sure that you've stopped your running Gitlab instance and that you've created a backup: "
+		elog "\$ cd \"${LATEST_DEST}\" && sudo -u ${GIT_USER} ${BUNDLE} exec rake gitlab:backup:create RAILS_ENV=production"
 		elog ""
 
 		einfo "Press ENTER to continue, STRG-C to cancel"
 		read
 
-        einfo "Migration database ..."
+		einfo "Migrating uploads ..."
+		einfo "This will move your uploads from \"$LATEST_DEST\" to \"${DEST_DIR}\", continue? [Y|n] "
+		migrate_uploads=""
+		while true
+		do
+			read -r migrate_uploads
+			if [[ $migrate_uploads == "n" || $migrate_uploads == "N" ]] ; then migrate_uploads="" && break
+			elif [[ $migrate_uploads == "y" || $migrate_uploads == "Y" || $migrate_uploads == "" ]] ; then migrate_uploads=1 && break
+			else eerror "Please type either \"Y\" or \"N\" ... " ; fi
+		done
+		if [[ $migrate_uploads ]] ; then
+			su -l ${GIT_USER} -s /bin/sh -c "
+				mv ${LATEST_DEST}/public/uploads/* ${DEST_DIR}/public/uploads/" \
+				|| die "failed to migrate uplaods."
+		fi
+
+		einfo "Migrating config ..."
+		for conf in database.yml gitlab.yml resque.yml unicorn.rb ; do
+			cp "${LATEST_DEST}/config/${conf}" "${DEST_DIR}/config/"
+
+			example="${DEST_DIR}/config/${conf}.example"
+			test -d "${example}" && mv "${example}" "${DEST_DIR}/config/.cfg0000_${conf}"
+		done
+		CONFIG_PROTECT="${DEST_DIR}" dispatch-conf || die "failed to migrate config."
+
+        einfo "Migrating database ..."
         su -l ${GIT_USER} -s /bin/sh -c "
             export LANG=en_US.UTF-8; export LC_ALL=en_US.UTF-8
             cd ${DEST_DIR} 
