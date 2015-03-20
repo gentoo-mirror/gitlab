@@ -48,7 +48,7 @@ GEMS_DEPEND="
 DEPEND="${GEMS_DEPEND}
 	$(ruby_implementation_depend ruby19 '=' -1.9.3*)[readline,ssl,yaml]
 	sys-devel/gcc
-	sys-devel/glibc
+	sys-libs/glibc
 	sys-devel/make
 	dev-vcs/git
 	>=dev-vcs/git-1.8.1.5
