@@ -19,7 +19,7 @@ EGIT_COMMIT="v${PV}"
 
 inherit eutils git-2 python ruby-ng versionator user
 
-DESCRIPTION="Continuous integration server for GitLab
+DESCRIPTION="Continuous integration server for GitLab"
 HOMEPAGE="https://gitlab.com/gitlab-org/gitlab-ci"
 
 LICENSE="MIT"
@@ -28,7 +28,6 @@ KEYWORDS="~amd64 ~x86 ~arm"
 IUSE="memcached mysql +postgres +unicorn"
 
 ## Gems dependencies:
-#   charlock_holmes		dev-libs/icu
 #	grape, capybara		dev-libs/libxml2, dev-libs/libxslt
 #   json				dev-util/ragel
 #   yajl-ruby			dev-libs/yajl
@@ -36,10 +35,8 @@ IUSE="memcached mysql +postgres +unicorn"
 #   execjs				net-libs/nodejs, or any other JS runtime
 #   pg					dev-db/postgresql-base
 #   mysql				virtual/mysql
-#	rugged				net-libs/http-parser dev-libs/libgit2
 #
 GEMS_DEPEND="
-	dev-libs/icu
 	dev-libs/libxml2
 	dev-libs/libxslt
 	dev-util/ragel
@@ -47,10 +44,7 @@ GEMS_DEPEND="
 	net-libs/nodejs
 	postgres? ( dev-db/postgresql )
 	mysql? ( virtual/mysql )
-	memcached? ( net-misc/memcached )
-	net-libs/http-parser
-	>=dev-libs/libgit2-0.21.3
-	<dev-libs/libgit2-0.22.0"
+	memcached? ( net-misc/memcached )"
 DEPEND="${GEMS_DEPEND}
 	$(ruby_implementation_depend ruby19 '=' -1.9.3*)[readline,ssl,yaml]
 	sys-devel/gcc
@@ -58,13 +52,11 @@ DEPEND="${GEMS_DEPEND}
 	dev-util/make
 	dev-vcs/git
 	>=dev-vcs/git-1.8.1.5
-	>=dev-vcs/gitlab-shell-2.5.4
 	net-misc/curl
 	virtual/ssh"
 RDEPEND="${DEPEND}
 	dev-db/redis
-	virtual/mta
-	virtual/krb5"
+	virtual/mta"
 ruby_add_bdepend "
 	virtual/rubygems
 	>=dev-ruby/bundler-1.0"
@@ -78,11 +70,6 @@ GITLABCI_GROUP="gitlab_ci"
 GITLABCI_HOME=$(if [ -n "$(getent passwd gitlab_ci | cut -d: -f6)" ]; then (getent passwd gitlab_ci | cut -d: -f6); else (echo /var/lib/gitlab_ci); fi))
 DEST_DIR="/opt/${PN}-${SLOT}"
 CONF_DIR="/etc/${PN}-${SLOT}"
-
-GIT_REPOS="${GITLABCI_HOME}/repositories"
-GIT_SATELLITES="${GITLABCI_HOME}/gitlab-satellites"
-GITLAB_SHELL="/var/lib/gitlab-shell"
-GITLAB_SHELL_HOOKS="${GITLAB_SHELL}/hooks"
 
 RAILS_ENV=${RAILS_ENV:-production}
 RUBY=${RUBY:-ruby20}
@@ -98,31 +85,12 @@ all_ruby_unpack() {
 }
 
 each_ruby_prepare() {
-## TODO
-#	# fix path to repo and gitlab-shell hooks
-#	test -d "${GITLAB_SHELL_HOOKS}" || die "Gitlab Shell hooks directory not found: \"${GITLAB_SHELL_HOOKS}. Have you properly installed dev-vcs/gitlab-shell"?
 
-#	sed -i \
-#		-e "s|\(\s*path:\s\)/.*/gitlab-shell/|\1 ${GITLAB_SHELL}/|" \
-#		-e "s|\(\s*repos_path:\s\)/.*|\1 ${GIT_REPOS}/|" \
-#		-e "s|\(\s*hooks_path:\s\)/.*|\1 ${GITLAB_SHELL_HOOKS}/|" \
-#		-e "s|\(\s*path:\s\)/.*/gitlab-satellites/|\1 ${GIT_SATELLITES}/|" \
-#		-e "s|\(\s*GITLAB_SHELL:\s*\)|\1\n\tpath: \"${GITLAB_SHELL}\"|" \
-#		config/gitlab.yml.example || die "failed to filter gitlab.yml.example"
-	
 	# modify database settings
 	sed -i \
-		-e 's|\(username:\) postgres.*|\1 gitlab|' \
-		-e 's|\(password:\).*|\1 gitlab|' \
-		-e 's|\(socket:\).*|/run/postgresql/.s.PGSQL.5432|' \
+		-e 's|\(socket:\).*|/tmp/postgresql/.s.PGSQL.5432|' \
 		config/database.yml.postgresql \
 		|| die "failed to filter database.yml.postgresql"
-	
-	# replace "secret" token with random one
-	local randpw=$(echo ${RANDOM}|sha512sum|cut -c 1-128)
-	sed -i -e "/secret_token =/ s/=.*/= '${randpw}'/" \
-		config/initializers/secret_token.rb \
-		|| die "failed to filter secret_token.rb"
 	
 	# remove needless files
 	#rm -r .git Satisfy gitlab::check.
@@ -148,7 +116,7 @@ each_ruby_prepare() {
 	# change cache_store
 	if use memcached; then
 		sed -i \
-			-e "/\w*config.cache_store / s/=.*/= :dalli_store, { namespace: 'gitlab' }/" \
+			-e "/\w*config.cache_store / s/=.*/= :dalli_store, { namespace: 'gitlab_ci' }/" \
 			config/environments/production.rb \
 			|| die "failed to modify production.rb"
 	fi
@@ -156,16 +124,10 @@ each_ruby_prepare() {
 	# Update pathes for unicorn
 	if use unicorn; then
 		sed -i \
-			-e "s#/home/git/gitlab#${DEST_DIR}#" \
+			-e "s#/home/gitlab_ci/gitlab-ci#${DEST_DIR}#" \
 			config/unicorn.rb.example \
 			|| die "failed to modify unicorn.rb.example"
 	fi
-
-	# Use >timfle-krb5-auth-0.8, see https://github.com/timfel/krb5-auth/pull/7
-	sed -i \
-		-e "s#timfel\-krb5\-auth (0.8)#timfel\-krb5\-auth (0.8.3)#g" \
-		Gemfile.lock \
-		|| die "failed to update Gemfile.lock"
 }
 
 each_ruby_install() {
@@ -189,9 +151,6 @@ each_ruby_install() {
 	dosym "${temp}" "${dest}/tmp"
 	dosym "${logs}" "${dest}/log"
 
-	## Link gitlab-shell into git home
-	dosym "${GITLAB_SHELL}" "${GITLABCI_HOME}/gitlab-shell"
-	
 	## Install configs ##
 
 	insinto "${conf}"
@@ -215,28 +174,22 @@ each_ruby_install() {
 
 	dodir /etc/logrotate.d
 	sed -e "s|@LOG_DIR@|${logs}|" \
-		"${FILESDIR}"/gitlab.logrotate > "${D}"/etc/logrotate.d/${PN}-${SLOT} \
-		|| die "failed to filter gitlab.logrotate"
+		"${FILESDIR}"/gitlab_ci.logrotate > "${D}"/etc/logrotate.d/${PN}-${SLOT} \
+		|| die "failed to filter gitlab_ci.logrotate"
 
 	## Install gems via bundler ##
 
 	cd "${D}/${dest}"
 
+	# TODO: why thin? it's not listed in Gemfile...
 	local without="development test thin"
 	local flag; for flag in memcached mysql postgres unicorn; do
 		without+="$(use $flag || echo ' '$flag)"
 	done
 	local bundle_args="--deployment ${without:+--without ${without}}"
 
-	# Use systemlibs for rugged
-	${BUNDLE} config build.rugged --use-system-libraries
-
 	# Use systemlibs for nokogiri as suggested
 	${BUNDLE} config build.nokogiri --use-system-libraries
-
-	# Fix invalid ldflags for charlock_holmes, 
-	# see https://github.com/brianmario/charlock_holmes/issues/32
-	${BUNDLE} config build.charlock_holmes --with-ldflags='-L. -Wl,-O1 -Wl,--as-needed -rdynamic -Wl,-export-dynamic -Wl,--no-undefined -lz -licuuc'
 
 	einfo "Running bundle install ${bundle_args} ..."
 	${BUNDLE} install ${bundle_args} || die "bundler failed"
@@ -275,6 +228,7 @@ each_ruby_install() {
 }
 
 pkg_postinst() {
+	# TODO: Do we need to set git user... not in main documentation
 	if [ ! -e "${GITLABCI_HOME}/.ssh/id_rsa" ]; then
 		einfo "Generating SSH key for git user"
 		su -l ${GITLABCI_USER} -s /bin/sh -c "
@@ -292,15 +246,19 @@ pkg_postinst() {
 
 	elog "If this is a new installation, proceed with the following steps:"
 	elog
-	elog "  1. Copy ${CONF_DIR}/gitlab.yml.example to ${CONF_DIR}/gitlab.yml"
-	elog "     and edit this file in order to configure your GitLab settings."
+	elog "  1. Copy ${CONF_DIR}/application.yml.example to ${CONF_DIR}/application.yml"
+	elog "     and edit this file in order to configure your GitLab CI settings."
 	elog
 	elog "  2. Copy ${CONF_DIR}/database.yml.* to ${CONF_DIR}/database.yml"
 	elog "     and edit this file in order to configure your database settings"
 	elog "     for \"production\" environment."
 	elog
-	elog "  3. If this is a new installation, create a database for your GitLab instance."
-	## TODO double check ROLE vs USER and CAST command
+	elog "  3. (Optional) If you want use SMTP:"
+	elog "     Copy ${CONF_DIR}/initializers/smtp_settings.rb.sample to ${CONF_DIR}/initializers/smtp_settings.rb"
+	elog "     and edit this file in order to configure your SMTP settings."
+	elog
+	elog "  4. If this is a new installation, create a database for your GitLab CI instance."
+	## TODO double check ROLE vs USER and if CAST command is needed
 	if use postgres; then
         elog "    If you have local PostgreSQL running, just copy&run:"
         elog "        su postgres"
@@ -309,13 +267,13 @@ pkg_postinst() {
         elog "        createdb -E UTF-8 -O gitlab_ci gitlab_ci_production"
 		elog "    Note: You should change your password to something more random..."
 		elog
- 		elog "    GitLab uses polymorphic associations which are not SQL-standard friendly."
+ 		elog "    GitLab CI uses polymorphic associations which are not SQL-standard friendly."
 		elog "    To get it work you must use this ugly workaround:"
 		elog "        psql -U postgres -d gitlab_ci"
 		elog "        CREATE CAST (integer AS text) WITH INOUT AS IMPLICIT;"
 		elog
 	fi
-	elog "  4. Execute the following command to finalize your setup:"
+	elog "  5. Execute the following command to finalize your setup:"
 	elog "         emerge --config \"=${CATEGORY}/${PF}\""
 	elog "     Note: Do not forget to start Redis server."
 	elog 
@@ -335,9 +293,9 @@ pkg_config() {
 		eerror "\"production\" environment."
 		die
 	fi
-	if [ ! -r "${CONF_DIR}/gitlab.yml" ]; then
-		eerror "Copy \"${CONF_DIR}/gitlab.yml.example\" to \"${CONF_DIR}/gitlab.yml\""
-		eerror "and edit this file in order to configure your GitLab settings"
+	if [ ! -r "${CONF_DIR}/application.yml" ]; then
+		eerror "Copy \"${CONF_DIR}/application.yml.example\" to \"${CONF_DIR}/application.yml\""
+		eerror "and edit this file in order to configure your GitLab CI settings"
 		eerror "for \"production\" environment."
 		die
 	fi
@@ -356,46 +314,32 @@ pkg_config() {
 	if [[ $do_upgrade ]] ; then
 
 		LATEST_DEST=$(test -n "${LATEST_DEST}" && echo ${LATEST_DEST} || \
-			find /opt -maxdepth 1 -iname 'gitlabhq-*' -and -type d -and -not -iname "gitlabhq-${SLOT}" | \
+			find /opt -maxdepth 1 -iname 'gitlab-ci-*' -and -type d -and -not -iname "gitlab-ci-${SLOT}" | \
 			sort -r | head -n1)
 
 		if [[ -z "${LATEST_DEST}" || ! -d "${LATEST_DEST}" ]] ; then
-			einfo "Please enter the path to your latest Gitlab instance:"
+			einfo "Please enter the path to your latest Gitlab CI instance:"
 			while true
 			do 
 				read -r LATEST_DEST
 				test -d ${LATEST_DEST} && break ||\
-					eerror "Please specify a valid path to your Gitlab instance!"
+					eerror "Please specify a valid path to your Gitlab CI instance!"
 			done
 		else
-			einfo "Found your latest Gitlab instance at \"${LATEST_DEST}\"."
+			einfo "Found your latest Gitlab CI instance at \"${LATEST_DEST}\"."
 		fi
 
-		einfo "Please make sure that you've stopped your running Gitlab instance and that you've created a backup: "
-		elog "\$ cd \"${LATEST_DEST}\" && sudo -u ${GITLABCI_USER} ${BUNDLE} exec rake gitlab:backup:create RAILS_ENV=production"
-		elog ""
+		einfo "Please make sure that you've stopped your running Gitlab CI instance and that you've created a backup: "
+		einfo "* Note that GitLab CI currently does not have a backup script, we suggest you backup the appropriate"
+		einfo "database as a precautionary measure."
+		#elog "\$ cd \"${LATEST_DEST}\" && sudo -u ${GITLABCI_USER} ${BUNDLE} exec rake gitlabci:backup:create RAILS_ENV=production"
+		#elog ""
 
 		einfo "Press ENTER to continue, STRG-C to cancel"
 		read
 
-		einfo "Migrating uploads ..."
-		einfo "This will move your uploads from \"$LATEST_DEST\" to \"${DEST_DIR}\", continue? [Y|n] "
-		migrate_uploads=""
-		while true
-		do
-			read -r migrate_uploads
-			if [[ $migrate_uploads == "n" || $migrate_uploads == "N" ]] ; then migrate_uploads="" && break
-			elif [[ $migrate_uploads == "y" || $migrate_uploads == "Y" || $migrate_uploads == "" ]] ; then migrate_uploads=1 && break
-			else eerror "Please type either \"Y\" or \"N\" ... " ; fi
-		done
-		if [[ $migrate_uploads ]] ; then
-			su -l ${GITLABCI_USER} -s /bin/sh -c "
-				mv ${LATEST_DEST}/public/uploads/* ${DEST_DIR}/public/uploads/" \
-				|| die "failed to migrate uplaods."
-		fi
-
 		einfo "Migrating config ..."
-		for conf in database.yml gitlab.yml resque.yml unicorn.rb ; do
+		for conf in database.yml application.yml resque.yml unicorn.rb ; do
 			cp "${LATEST_DEST}/config/${conf}" "${DEST_DIR}/config/"
 
 			example="${DEST_DIR}/config/${conf}.example"
@@ -403,12 +347,12 @@ pkg_config() {
 		done
 		CONFIG_PROTECT="${DEST_DIR}" dispatch-conf || die "failed to migrate config."
 
+		## TODO
         einfo "Migrating database ..."
         su -l ${GITLABCI_USER} -s /bin/sh -c "
             export LANG=en_US.UTF-8; export LC_ALL=en_US.UTF-8
             cd ${DEST_DIR} 
-            ${BUNDLE} exec rake db:migrate RAILS_ENV=production
-            ${BUNDLE} exec rake gitlab:satellites:create RAILS_ENV=production" \
+            ${BUNDLE} exec rake db:migrate RAILS_ENV=production" \
             || die "failed to migrate database."
 
         einfo "Clear redis cache ..."
@@ -432,12 +376,20 @@ pkg_config() {
 		su -l ${GITLABCI_USER} -s /bin/sh -c "
 			export LANG=en_US.UTF-8; export LC_ALL=en_US.UTF-8
 			cd ${DEST_DIR}
-			${BUNDLE} exec rake gitlab:setup RAILS_ENV=${RAILS_ENV}" \
-				|| die "failed to run rake gitlab:setup"
+			${BUNDLE} exec rake setup RAILS_ENV=${RAILS_ENV}" \
+				|| die "failed to run rake setup"
+
+		einfo "Initializing scheduler ..."
+		su -l ${GITLABCI_USER} -s /bin/sh -c "
+			export LANG=en_US.UTF-8; export LC_ALL=en_US.UTF-8
+			cd ${DEST_DIR}
+			${BUNDLE} exec whenever -w RAILS_ENV=${RAILS_ENV}" \
+				|| die "failed to run whenever -w"
 	fi
 
-	einfo "You might want to run the following in order to check your application status:"
-	einfo "# cd ${DEST_DIR} && sudo -u ${GITLABCI_USER} ${BUNDLE} exec rake gitlab:check RAILS_ENV=production"
+	#TODO There is currently no check script available
+	#einfo "You might want to run the following in order to check your application status:"
+	#einfo "# cd ${DEST_DIR} && sudo -u ${GITLABCI_USER} ${BUNDLE} exec rake gitlab:check RAILS_ENV=production"
 	einfo ""
-	einfo "GitLab is prepared, now you should configure your web server."
+	einfo "GitLab CI is prepared, now you should configure your web server."
 }
