@@ -67,7 +67,7 @@ ruby_add_bdepend "
 
 GITLABCI_USER="gitlab_ci"
 GITLABCI_GROUP="gitlab_ci"
-GITLABCI_HOME=$(if [ -n "$(getent passwd gitlab_ci | cut -d: -f6)" ]; then (getent passwd gitlab_ci | cut -d: -f6); else (echo /var/lib/gitlab_ci); fi))
+GITLABCI_HOME=$(if [ -n "$(getent passwd gitlab_ci | cut -d: -f6)" ]; then (getent passwd gitlab_ci | cut -d: -f6); else (echo /var/lib/gitlab_ci); fi)
 DEST_DIR="/opt/${PN}-${SLOT}"
 CONF_DIR="/etc/${PN}-${SLOT}"
 
