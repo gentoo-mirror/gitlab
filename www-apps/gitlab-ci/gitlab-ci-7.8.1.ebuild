@@ -77,7 +77,7 @@ BUNDLE="${RUBY} /usr/bin/bundle"
 
 pkg_setup() {
     enewgroup ${GITLABCI_GROUP}
-    enewuser ${GITLABCI_USER} -1 -1 ${DEST_DIR} "$GITLABCI_GROUP}"
+    enewuser ${GITLABCI_USER} -1 -1 ${DEST_DIR} "$GITLABCI_GROUP"
 }
 
 all_ruby_unpack() {
