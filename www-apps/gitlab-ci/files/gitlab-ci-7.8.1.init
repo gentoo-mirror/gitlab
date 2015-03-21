@@ -3,8 +3,8 @@
 name="GitLab CI"
 description="GitLab CI 7.8 on Unicorns"
 
-: ${gitlabci_user:=gitlabci_ci}
-: ${gitlabci_group:=gitlabci_ci}
+: ${gitlabci_user:=gitlab_ci}
+: ${gitlabci_group:=gitlab_ci}
 : ${gitlabci_home:="/opt/gitlab-ci-7.8"}
 
 : ${server_pidfile:="/opt/gitlab-ci-7.8/tmp/pids/unicorn.pid"}
