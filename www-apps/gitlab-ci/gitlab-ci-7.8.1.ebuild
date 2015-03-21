@@ -270,7 +270,7 @@ pkg_postinst() {
         elog "    If you have local PostgreSQL running, just copy&run:"
         elog "        su postgres"
         elog "        psql -c \"CREATE ROLE gitlab_ci PASSWORD 'gitlab_ci' \\"
-        elog "            NOSUPERUSER NOCREATEDB NOCREATEROLE INHERIT LOGIN;\""
+        elog "            NOSUPERUSER CREATEDB NOCREATEROLE INHERIT LOGIN;\""
         elog "        createdb -E UTF-8 -O gitlab_ci gitlab_ci_production"
 		elog "    Note: You should change your password to something more random..."
 		elog
