@@ -260,11 +260,14 @@ pkg_postinst() {
 	elog "     and edit this file in order to configure your database settings"
 	elog "     for \"production\" environment."
 	elog
-	elog "  3. (Optional) If you want use SMTP:"
+	elog "  3. Copy ${CONF_DIR}/unicorn.rb.example to ${CONF_DIR}/unicorn.rb"
+	elog "     and edit this file in order to configure your GitLab CI settings."
+	elog
+	elog "  4. (Optional) If you want use SMTP:"
 	elog "     Copy ${CONF_DIR}/initializers/smtp_settings.rb.sample to ${CONF_DIR}/initializers/smtp_settings.rb"
 	elog "     and edit this file in order to configure your SMTP settings."
 	elog
-	elog "  4. If this is a new installation, create a database for your GitLab CI instance."
+	elog "  5. If this is a new installation, create a database for your GitLab CI instance."
 	## TODO double check ROLE vs USER and if CAST command is needed
 	if use postgres; then
         elog "    If you have local PostgreSQL running, just copy&run:"
@@ -280,7 +283,7 @@ pkg_postinst() {
 		elog "        CREATE CAST (integer AS text) WITH INOUT AS IMPLICIT;"
 		elog
 	fi
-	elog "  5. Execute the following command to finalize your setup:"
+	elog "  6. Execute the following command to finalize your setup:"
 	elog "         emerge --config \"=${CATEGORY}/${PF}\""
 	elog "     Note: Do not forget to start Redis server."
 	elog 
