@@ -45,14 +45,14 @@ start() {
 
 	ebegin "Starting GitLab CI 7.8 Sidekiq"
         cd "${gitlabci_home}"
-        sudo -u git -H ${sidekiq_command} ${sidekiq_start_command_args}
+        sudo -u gitlab_ci -H ${sidekiq_command} ${sidekiq_start_command_args}
         eend $?	
 }
 
 stop() {
 	ebegin "Stopping GitLab CI 7.8 Sidekiq"
 	cd "${gitlabci_home}"
-	sudo -u git -H ${sidekiq_command} ${sidekiq_stop_command_args}
+	sudo -u gitlab_ci -H ${sidekiq_command} ${sidekiq_stop_command_args}
 	eend $?
 
 	ebegin "Stopping GitLab CI 7.8 Unicorn servers"
