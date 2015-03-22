@@ -129,9 +129,9 @@ each_ruby_prepare() {
 			|| die "failed to modify unicorn.rb.example"
 	fi
 	
-    # Use ice_nine 0.10.0 as 0.11.0 won't install on arm
+    # Use ice_nine 0.11.1 as 0.11.0 won't install on arm
     sed -i \
-            -e "s#ice_nine (0.11.0)#ice_nine (0.10.0)#g" \
+            -e "s#ice_nine (0.11.0)#ice_nine (0.11.1)#g" \
             Gemfile.lock \
             || die "failed to update Gemfile.lock"
 
