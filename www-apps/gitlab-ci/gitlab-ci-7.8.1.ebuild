@@ -67,7 +67,7 @@ ruby_add_bdepend "
 
 GITLABCI_USER="gitlab_ci"
 GITLABCI_GROUP="gitlab_ci"
-GITLABCI_HOME=$(if [ -n "$(getent passwd gitlab_ci | cut -d: -f6)" ]; then (getent passwd gitlab_ci | cut -d: -f6); else (echo /var/lib/gitlab_ci); fi)
+GITLABCI_HOME=$(if [ -n "$(getent passwd gitlab_ci | cut -d: -f6)" ]; then (getent passwd gitlab_ci | cut -d: -f6); else (echo /var/lib/gitlab-ci); fi)
 DEST_DIR="/opt/${PN}-${SLOT}"
 CONF_DIR="/etc/${PN}-${SLOT}"
 
@@ -181,8 +181,8 @@ each_ruby_install() {
 
 	dodir /etc/logrotate.d
 	sed -e "s|@LOG_DIR@|${logs}|" \
-		"${FILESDIR}"/gitlab_ci.logrotate > "${D}"/etc/logrotate.d/${PN}-${SLOT} \
-		|| die "failed to filter gitlab_ci.logrotate"
+		"${FILESDIR}"/gitlab-ci.logrotate > "${D}"/etc/logrotate.d/${PN}-${SLOT} \
+		|| die "failed to filter gitlab-ci.logrotate"
 
 	## Install gems via bundler ##
 
