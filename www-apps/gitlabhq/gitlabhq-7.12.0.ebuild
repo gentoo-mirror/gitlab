@@ -67,7 +67,7 @@ ruby_add_bdepend "
 	>=dev-ruby/bundler-1.0"
 
 RUBY_PATCHES=(
-	"gitlabhq-7.11.4-fix-checks-gentoo.patch"
+	"gitlabhq-7.12.0-fix-checks-gentoo.patch"
 )
 
 GIT_USER="git"
