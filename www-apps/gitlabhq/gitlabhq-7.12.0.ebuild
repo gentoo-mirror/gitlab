@@ -1,4 +1,4 @@
-# Copyright 1999-2013 Gentoo Foundation
+# Copyright 1999-2015 Gentoo Foundation
 # Distributed under the terms of the GNU General Public License v2
 # $Header: $
 
@@ -51,12 +51,11 @@ GEMS_DEPEND="
 	mysql? ( virtual/mysql )
 	memcached? ( net-misc/memcached )
 	net-libs/http-parser
-	>=dev-libs/libgit2-0.21.3
-	<dev-libs/libgit2-0.22.0"
+	>=dev-libs/libgit2-0.22.0"
 DEPEND="${GEMS_DEPEND}
 	$(ruby_implementation_depend ruby19 '=' -1.9.3*)[readline,ssl,yaml]
 	>=dev-vcs/git-1.8.1.5
-	>=dev-vcs/gitlab-shell-2.5.4
+	>=dev-vcs/gitlab-shell-2.6.3
 	net-misc/curl
 	virtual/ssh"
 RDEPEND="${DEPEND}
@@ -68,7 +67,7 @@ ruby_add_bdepend "
 	>=dev-ruby/bundler-1.0"
 
 RUBY_PATCHES=(
-	"${P}-fix-checks-gentoo.patch"
+	"gitlabhq-7.11.4-fix-checks-gentoo.patch"
 )
 
 GIT_USER="git"
@@ -87,8 +86,8 @@ RUBY=${RUBY:-ruby20}
 BUNDLE="${RUBY} /usr/bin/bundle"
 
 pkg_setup() {
-    enewgroup ${GIT_GROUP}
-    enewuser ${GIT_USER} -1 -1 ${DEST_DIR} "$GIT_GROUP}"
+	enewgroup ${GIT_GROUP}
+	enewuser ${GIT_USER} -1 -1 ${DEST_DIR} "$GIT_GROUP}"
 }
 
 all_ruby_unpack() {
@@ -96,7 +95,7 @@ all_ruby_unpack() {
 }
 
 each_ruby_prepare() {
-	
+
 	# fix path to repo and gitlab-shell hooks
 	test -d "${GITLAB_SHELL_HOOKS}" || die "Gitlab Shell hooks directory not found: \"${GITLAB_SHELL_HOOKS}. Have you properly installed dev-vcs/gitlab-shell"?
 
@@ -107,7 +106,7 @@ each_ruby_prepare() {
 		-e "s|\(\s*path:\s\)/.*/gitlab-satellites/|\1 ${GIT_SATELLITES}/|" \
 		-e "s|\(\s*GITLAB_SHELL:\s*\)|\1\n\tpath: \"${GITLAB_SHELL}\"|" \
 		config/gitlab.yml.example || die "failed to filter gitlab.yml.example"
-	
+
 	# modify database settings
 	sed -i \
 		-e 's|\(username:\) postgres.*|\1 gitlab|' \
@@ -115,13 +114,13 @@ each_ruby_prepare() {
 		-e 's|\(socket:\).*|/run/postgresql/.s.PGSQL.5432|' \
 		config/database.yml.postgresql \
 		|| die "failed to filter database.yml.postgresql"
-	
+
 	# replace "secret" token with random one
 	local randpw=$(echo ${RANDOM}|sha512sum|cut -c 1-128)
 	sed -i -e "/secret_token =/ s/=.*/= '${randpw}'/" \
 		config/initializers/secret_token.rb \
 		|| die "failed to filter secret_token.rb"
-	
+
 	# remove needless files
 	#rm -r .git Satisfy gitlab::check.
 	rm .foreman .gitignore Procfile
@@ -142,7 +141,7 @@ each_ruby_prepare() {
 		-e '/^gem "thin"/ s/$/, group: :thin/' \
 		-e '/^gem "unicorn"/ s/$/, group: :unicorn/' \
 		Gemfile || die "failed to modify Gemfile"
-	
+
 	# change cache_store
 	if use memcached; then
 		sed -i \
@@ -181,7 +180,7 @@ each_ruby_install() {
 
 	diropts -m755
 	keepdir "${conf}"
-	dodir "${dest}" 
+	dodir "${dest}"
 	dodir "${uploads}"
 
 	dosym "${temp}" "${dest}/tmp"
@@ -189,7 +188,7 @@ each_ruby_install() {
 
 	## Link gitlab-shell into git home
 	dosym "${GITLAB_SHELL}" "${GIT_HOME}/gitlab-shell"
-	
+
 	## Install configs ##
 
 	insinto "${conf}"
@@ -299,14 +298,14 @@ pkg_postinst() {
 	elog
 	elog "  3. If this is a new installation, create a database for your GitLab instance."
 	if use postgres; then
-        elog "    If you have local PostgreSQL running, just copy&run:"
-        elog "        su postgres"
-        elog "        psql -c \"CREATE ROLE gitlab PASSWORD 'gitlab' \\"
-        elog "            NOSUPERUSER NOCREATEDB NOCREATEROLE INHERIT LOGIN;\""
-        elog "        createdb -E UTF-8 -O gitlab gitlab_production"
+		elog "    If you have local PostgreSQL running, just copy&run:"
+		elog "        su postgres"
+		elog "        psql -c \"CREATE ROLE gitlab PASSWORD 'gitlab' \\"
+		elog "            NOSUPERUSER NOCREATEDB NOCREATEROLE INHERIT LOGIN;\""
+		elog "        createdb -E UTF-8 -O gitlab gitlab_production"
 		elog "    Note: You should change your password to something more random..."
 		elog
- 		elog "    GitLab uses polymorphic associations which are not SQL-standard friendly."
+		elog "    GitLab uses polymorphic associations which are not SQL-standard friendly."
 		elog "    To get it work you must use this ugly workaround:"
 		elog "        psql -U postgres -d gitlab"
 		elog "        CREATE CAST (integer AS text) WITH INOUT AS IMPLICIT;"
@@ -315,7 +314,7 @@ pkg_postinst() {
 	elog "  4. Execute the following command to finalize your setup:"
 	elog "         emerge --config \"=${CATEGORY}/${PF}\""
 	elog "     Note: Do not forget to start Redis server."
-	elog 
+	elog
 	elog "To update an existing instance, run the following command and choose upgrading when prompted:"
 	elog "    emerge --config \"=${CATEGORY}/${PF}\""
 	elog
@@ -359,7 +358,7 @@ pkg_config() {
 		if [[ -z "${LATEST_DEST}" || ! -d "${LATEST_DEST}" ]] ; then
 			einfo "Please enter the path to your latest Gitlab instance:"
 			while true
-			do 
+			do
 				read -r LATEST_DEST
 				test -d ${LATEST_DEST} && break ||\
 					eerror "Please specify a valid path to your Gitlab instance!"
@@ -400,28 +399,28 @@ pkg_config() {
 		done
 		CONFIG_PROTECT="${DEST_DIR}" dispatch-conf || die "failed to migrate config."
 
-        einfo "Migrating database ..."
-        su -l ${GIT_USER} -s /bin/sh -c "
-            export LANG=en_US.UTF-8; export LC_ALL=en_US.UTF-8
-            cd ${DEST_DIR} 
-            ${BUNDLE} exec rake db:migrate RAILS_ENV=production
-            ${BUNDLE} exec rake gitlab:satellites:create RAILS_ENV=production" \
-            || die "failed to migrate database."
+		einfo "Migrating database ..."
+		su -l ${GIT_USER} -s /bin/sh -c "
+			export LANG=en_US.UTF-8; export LC_ALL=en_US.UTF-8
+			cd ${DEST_DIR}
+			${BUNDLE} exec rake db:migrate RAILS_ENV=production
+			${BUNDLE} exec rake gitlab:satellites:create RAILS_ENV=production" \
+			|| die "failed to migrate database."
 
-        einfo "Clear redis cache ..."
-        su -l ${GIT_USER} -s /bin/sh -c "
-            export LANG=en_US.UTF-8; export LC_ALL=en_US.UTF-8
-            cd ${DEST_DIR}
-            ${BUNDLE} exec rake cache:clear RAILS_ENV=production" \
-            || die "failed to run cache:clear"
+		einfo "Clear redis cache ..."
+		su -l ${GIT_USER} -s /bin/sh -c "
+			export LANG=en_US.UTF-8; export LC_ALL=en_US.UTF-8
+			cd ${DEST_DIR}
+			${BUNDLE} exec rake cache:clear RAILS_ENV=production" \
+			|| die "failed to run cache:clear"
 
-        einfo "Clear and precompile assets ..."
-        su -l ${GIT_USER} -s /bin/sh -c "
-            export LANG=en_US.UTF-8; export LC_ALL=en_US.UTF-8
-            cd ${DEST_DIR}
-            ${BUNDLE} exec rake assets:clean RAILS_ENV=production
-            ${BUNDLE} exec rake assets:precompile RAILS_ENV=production" \
-            || die "failed to run assets:precompile"
+		einfo "Clear and precompile assets ..."
+		su -l ${GIT_USER} -s /bin/sh -c "
+			export LANG=en_US.UTF-8; export LC_ALL=en_US.UTF-8
+			cd ${DEST_DIR}
+			${BUNDLE} exec rake assets:clean RAILS_ENV=production
+			${BUNDLE} exec rake assets:precompile RAILS_ENV=production" \
+			|| die "failed to run assets:precompile"
 
 	else
 
