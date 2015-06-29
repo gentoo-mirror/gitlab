@@ -189,6 +189,9 @@ each_ruby_install() {
 	## Link gitlab-shell into git home
 	dosym "${GITLAB_SHELL}" "${GIT_HOME}/gitlab-shell"
 
+	## Link gitlab-shell-secret into gitlab-shell
+	dosym "${dest}/.gitlab_shell_secret" "${GITLAB_SHELL}/.gitlab_shell_secret"
+
 	## Install configs ##
 
 	insinto "${conf}"
@@ -321,22 +324,6 @@ pkg_postinst() {
 }
 
 pkg_config() {
-	## Check config files existence ##
-
-	einfo "Checking configuration files ..."
-
-	if [ ! -r "${CONF_DIR}/database.yml" ] ; then
-		eerror "Copy \"${CONF_DIR}/database.yml.*\" to \"${CONF_DIR}/database.yml\""
-		eerror "and edit this file in order to configure your database settings for"
-		eerror "\"production\" environment."
-		die
-	fi
-	if [ ! -r "${CONF_DIR}/gitlab.yml" ]; then
-		eerror "Copy \"${CONF_DIR}/gitlab.yml.example\" to \"${CONF_DIR}/gitlab.yml\""
-		eerror "and edit this file in order to configure your GitLab settings"
-		eerror "for \"production\" environment."
-		die
-	fi
 
 	# Ask user whether this is the first installation
 	einfo "Do you want to upgrade an existing installation? [Y|n] "
@@ -423,6 +410,22 @@ pkg_config() {
 			|| die "failed to run assets:precompile"
 
 	else
+
+		## Check config files existence ##
+		einfo "Checking configuration files ..."
+
+		if [ ! -r "${CONF_DIR}/database.yml" ] ; then
+			eerror "Copy \"${CONF_DIR}/database.yml.*\" to \"${CONF_DIR}/database.yml\""
+			eerror "and edit this file in order to configure your database settings for"
+			eerror "\"production\" environment."
+			die
+		fi
+		if [ ! -r "${CONF_DIR}/gitlab.yml" ]; then
+			eerror "Copy \"${CONF_DIR}/gitlab.yml.example\" to \"${CONF_DIR}/gitlab.yml\""
+			eerror "and edit this file in order to configure your GitLab settings"
+			eerror "for \"production\" environment."
+			die
+		fi
 
 		einfo "Initializing database ..."
 		su -l ${GIT_USER} -s /bin/sh -c "
