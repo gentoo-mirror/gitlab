@@ -53,7 +53,7 @@ GEMS_DEPEND="
 	net-libs/http-parser
 	>=dev-libs/libgit2-0.22.0"
 DEPEND="${GEMS_DEPEND}
-	>=dev-lang/ruby-2.0[readline,ssl,yaml]
+	>=dev-lang/ruby-2.0[readline,ssl]
 	>=dev-vcs/git-1.8.1.5
 	>=dev-vcs/gitlab-shell-2.6.3
 	net-misc/curl
