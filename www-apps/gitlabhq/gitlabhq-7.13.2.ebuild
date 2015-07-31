@@ -51,7 +51,7 @@ GEMS_DEPEND="
 	mysql? ( virtual/mysql )
 	memcached? ( net-misc/memcached )
 	net-libs/http-parser
-	>=dev-libs/libgit2-0.22.0"
+	=dev-libs/libgit2-0.22.0" # rugged-0.22.2 needs libgit2-0.22
 DEPEND="${GEMS_DEPEND}
 	$(ruby_implementation_depend ruby19 '=' -1.9.3*)[readline,ssl,yaml]
 	>dev-vcs/git-2.1.2
