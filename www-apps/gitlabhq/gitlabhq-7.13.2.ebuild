@@ -290,6 +290,7 @@ pkg_postinst() {
 		einfo "Setting git user in ${GIT_HOME}/.gitconfig, feel free to "
 		einfo "modify this file according to your needs!"
 		su -l ${GIT_USER} -s /bin/sh -c "
+			git config --global core.autocrlf 'input';
 			git config --global user.email 'gitlab@localhost';
 			git config --global user.name 'GitLab'" \
 			|| die "failed to setup git name and email"
