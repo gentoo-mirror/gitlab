@@ -305,7 +305,20 @@ pkg_postinst() {
 	elog "     and edit this file in order to configure your database settings"
 	elog "     for \"production\" environment."
 	elog
-	elog "  3. If this is a new installation, create a database for your GitLab instance."
+	elog "  3. Copy ${CONF_DIR}/initializers/rack_attack.rb.example"
+	elog "     to ${CONF_DIR}/initializers/rack_attack.rb"
+	elog
+	elog "  4. Copy ${CONF_DIR}/resque.yml.example to ${CONF_DIR}/resque.yml"
+	elog "     and edit this file in order to configure your Redis settings"
+	elog "     for \"production\" environment."
+	elog
+
+	if use unicorn; then
+		elog "  4a. Copy ${CONF_DIR}/unicorn.rb.example to ${CONF_DIR}/unicorn.rb"
+		elog
+	fi
+
+	elog "  5. If this is a new installation, create a database for your GitLab instance."
 	if use postgres; then
 		elog "    If you have local PostgreSQL running, just copy&run:"
 		elog "        su postgres"
@@ -320,7 +333,7 @@ pkg_postinst() {
 		elog "        CREATE CAST (integer AS text) WITH INOUT AS IMPLICIT;"
 		elog
 	fi
-	elog "  4. Execute the following command to finalize your setup:"
+	elog "  6. Execute the following command to finalize your setup:"
 	elog "         emerge --config \"=${CATEGORY}/${PF}\""
 	elog "     Note: Do not forget to start Redis server."
 	elog
