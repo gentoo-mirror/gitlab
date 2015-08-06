@@ -274,6 +274,11 @@ each_ruby_install() {
 	newinitd "${T}/${rcscript}" "${PN}-${SLOT}"
 }
 
+pkg_preinst() {
+	diropts -m "0750" -o "${GIT_USER}" -g "${GIT_GROUP}"
+	dodir "${GIT_SATELLITES}"
+}
+
 pkg_postinst() {
 	if [ ! -e "${GIT_HOME}/.ssh/id_rsa" ]; then
 		einfo "Generating SSH key for git user"
