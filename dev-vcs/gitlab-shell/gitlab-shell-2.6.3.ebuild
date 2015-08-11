@@ -73,29 +73,21 @@ all_ruby_install() {
 	fowners ${GIT_USER} ${DEST_DIR} || die
 }
 
+pkg_preinst() {
+	diropts -m "2770" -o "${GIT_USER}" -g "${GIT_GROUP}"
+	dodir "${REPO_DIR}"
+
+	diropts -m "0700" -o "${GIT_USER}" -g "${GIT_GROUP}"
+	dodir "${KEY_DIR}"
+
+	if [[ ! -e "${D}/${AUTH_FILE}" ]] ; then
+		touch "${D}/${AUTH_FILE}" || die
+		fperms 0600 "${AUTH_FILE}"
+		fowners "${GIT_USER}:${GIT_GROUP}" "${AUTH_FILE}"
+	fi
+}
+
 pkg_postinst() {
-
-	dodir "${REPO_DIR}" || die
-
-	if [[ ! -d "${KEY_DIR}" ]] ; then
-		mkdir "${KEY_DIR}" || die
-		chmod 0700 "${KEY_DIR}" || die
-		chown ${GIT_USER}:${GIT_GROUP} "${KEY_DIR}" -R || die
-	fi
-
-	if [[ ! -e "${AUTH_FILE}" ]] ; then
-		touch "${AUTH_FILE}" || die
-		chmod 0600 "${AUTH_FILE}" || die
-		chown ${GIT_USER}:${GIT_GROUP} "${AUTH_FILE}" || die
-	fi
-
-	if [[ ! -d "${REPO_DIR}" ]] ; then
-		mkdir "${REPO_DIR}"
-		chmod ug+rwX,o-rwx "${REPO_DIR}" -R || die
-		chmod ug-s,o-rwx "${REPO_DIR}" -R || die
-		chown ${GIT_USER}:${GIT_GROUP} "${REPO_DIR}" -R || die
-	fi
-
 	elog "Copy ${DEST_DIR}/config.yml.example to ${DEST_DIR}/config.yml"
 	elog "and edit this file in order to configure your GitLab-Shell settings."
 }
