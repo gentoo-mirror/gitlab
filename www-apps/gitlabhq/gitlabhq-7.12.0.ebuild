@@ -274,6 +274,11 @@ each_ruby_install() {
 	newinitd "${T}/${rcscript}" "${PN}-${SLOT}"
 }
 
+pkg_preinst() {
+	diropts -m "0750" -o "${GIT_USER}" -g "${GIT_GROUP}"
+	dodir "${GIT_SATELLITES}"
+}
+
 pkg_postinst() {
 	if [ ! -e "${GIT_HOME}/.ssh/id_rsa" ]; then
 		einfo "Generating SSH key for git user"
@@ -285,6 +290,7 @@ pkg_postinst() {
 		einfo "Setting git user in ${GIT_HOME}/.gitconfig, feel free to "
 		einfo "modify this file according to your needs!"
 		su -l ${GIT_USER} -s /bin/sh -c "
+			git config --global core.autocrlf 'input';
 			git config --global user.email 'gitlab@localhost';
 			git config --global user.name 'GitLab'" \
 			|| die "failed to setup git name and email"
@@ -299,7 +305,20 @@ pkg_postinst() {
 	elog "     and edit this file in order to configure your database settings"
 	elog "     for \"production\" environment."
 	elog
-	elog "  3. If this is a new installation, create a database for your GitLab instance."
+	elog "  3. Copy ${CONF_DIR}/initializers/rack_attack.rb.example"
+	elog "     to ${CONF_DIR}/initializers/rack_attack.rb"
+	elog
+	elog "  4. Copy ${CONF_DIR}/resque.yml.example to ${CONF_DIR}/resque.yml"
+	elog "     and edit this file in order to configure your Redis settings"
+	elog "     for \"production\" environment."
+	elog
+
+	if use unicorn; then
+		elog "  4a. Copy ${CONF_DIR}/unicorn.rb.example to ${CONF_DIR}/unicorn.rb"
+		elog
+	fi
+
+	elog "  5. If this is a new installation, create a database for your GitLab instance."
 	if use postgres; then
 		elog "    If you have local PostgreSQL running, just copy&run:"
 		elog "        su postgres"
@@ -314,7 +333,7 @@ pkg_postinst() {
 		elog "        CREATE CAST (integer AS text) WITH INOUT AS IMPLICIT;"
 		elog
 	fi
-	elog "  4. Execute the following command to finalize your setup:"
+	elog "  6. Execute the following command to finalize your setup:"
 	elog "         emerge --config \"=${CATEGORY}/${PF}\""
 	elog "     Note: Do not forget to start Redis server."
 	elog
