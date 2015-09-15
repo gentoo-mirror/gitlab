@@ -189,9 +189,6 @@ each_ruby_install() {
 	## Link gitlab-shell into git home
 	dosym "${GITLAB_SHELL}" "${GIT_HOME}/gitlab-shell"
 
-	## Link gitlab-shell-secret into gitlab-shell
-	dosym "${dest}/.gitlab_shell_secret" "${GITLAB_SHELL}/.gitlab_shell_secret"
-
 	## Install configs ##
 
 	insinto "${conf}"
@@ -382,9 +379,9 @@ pkg_config() {
 			cp "${LATEST_DEST}/config/${conf}" "${DEST_DIR}/config/"
 
 			example="${DEST_DIR}/config/${conf}.example"
-			test -d "${example}" && mv "${example}" "${DEST_DIR}/config/.cfg0000_${conf}"
+			test -f "${example}" && mv "${example}" "${DEST_DIR}/config/.cfg0000_${conf}"
 		done
-		CONFIG_PROTECT="${DEST_DIR}" dispatch-conf || die "failed to migrate config."
+		CONFIG_PROTECT="${DEST_DIR}" dispatch-conf || die "failed to automatically migrate config, run \"CONFIG_PROTECT=${DEST_DIR} dispatch-conf\" by hand, re-run this routine and skip config migration to proceed."
 
 		einfo "Migrating database ..."
 		su -l ${GIT_USER} -s /bin/sh -c "
@@ -433,6 +430,13 @@ pkg_config() {
 			cd ${DEST_DIR}
 			${BUNDLE} exec rake gitlab:setup RAILS_ENV=${RAILS_ENV}" \
 				|| die "failed to run rake gitlab:setup"
+	fi
+
+	## (Re-)Link gitlab-shell-secret into gitlab-shell
+	if test -L "${GITLAB_SHELL}/.gitlab_shell_secret"
+	then
+		rm "${GITLAB_SHELL}/.gitlab_shell_secret"
+		ln -s "${DEST_DIR}/.gitlab_shell_secret" "${GITLAB_SHELL}/.gitlab_shell_secret"
 	fi
 
 	einfo "You might want to run the following in order to check your application status:"
