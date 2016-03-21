@@ -9,20 +9,17 @@ EAPI="5"
 #   (i.e. into isolated directory inside application). That's not Gentoo way how
 #   it should be done, but GitLab has too many dependencies that it will be too
 #   difficult to maintain them via ebuilds.
-# - USE flags analytics and public-projects applies our custom patches, see
-#   https://github.com/cvut/gitlabhq for more information.
-#
 
-USE_RUBY="ruby20"
+USE_RUBY="ruby21"
 PYTHON_DEPEND="2:2.5"
 
-EGIT_REPO_URI="https://github.com/gitlabhq/gitlabhq.git"
+EGIT_REPO_URI="https://gitlab.com/gitlab-org/gitlab-ce.git"
 EGIT_COMMIT="v${PV}"
 
 inherit eutils git-2 python ruby-ng versionator user
 
 DESCRIPTION="GitLab is a free project and repository management application"
-HOMEPAGE="https://github.com/gitlabhq/gitlabhq"
+HOMEPAGE="https://about.gitlab.com/gitlab-ci/"
 
 LICENSE="MIT"
 SLOT=$(get_version_component_range 1-2)
@@ -50,16 +47,16 @@ GEMS_DEPEND="
 	postgres? ( dev-db/postgresql )
 	mysql? ( virtual/mysql )
 	memcached? ( net-misc/memcached )
-	net-libs/http-parser
-	>=dev-libs/libgit2-0.22.0"
+	net-libs/http-parser"
 DEPEND="${GEMS_DEPEND}
 	>=dev-lang/ruby-2.0[readline,ssl]
-	>=dev-vcs/git-1.8.1.5
-	>=dev-vcs/gitlab-shell-2.6.3
+	>dev-vcs/git-2.2.1
+	>=dev-vcs/gitlab-shell-2.6.10
+	>=www-servers/gitlab-workhorse-0.6.4
 	net-misc/curl
 	virtual/ssh"
 RDEPEND="${DEPEND}
-	dev-db/redis
+	>=dev-db/redis-2.8.0
 	virtual/mta
 	virtual/krb5"
 ruby_add_bdepend "
@@ -67,7 +64,7 @@ ruby_add_bdepend "
 	>=dev-ruby/bundler-1.0"
 
 RUBY_PATCHES=(
-	"gitlabhq-7.12.0-fix-checks-gentoo.patch"
+	"${P}-fix-checks-gentoo.patch"
 )
 
 GIT_USER="git"
@@ -82,7 +79,7 @@ GITLAB_SHELL="/var/lib/gitlab-shell"
 GITLAB_SHELL_HOOKS="${GITLAB_SHELL}/hooks"
 
 RAILS_ENV=${RAILS_ENV:-production}
-RUBY=${RUBY:-ruby20}
+RUBY=${RUBY:-ruby21}
 BUNDLE="${RUBY} /usr/bin/bundle"
 
 pkg_setup() {
@@ -122,25 +119,10 @@ each_ruby_prepare() {
 		|| die "failed to filter secret_token.rb"
 
 	# remove needless files
-	#rm -r .git Satisfy gitlab::check.
 	rm .foreman .gitignore Procfile
 	use unicorn || rm config/unicorn.rb.example
 	use postgres || rm config/database.yml.postgresql
 	use mysql || rm config/database.yml.mysql
-
-	# remove dependency on therubyracer and libv8 (we're using nodejs instead)
-	local tfile; for tfile in Gemfile{,.lock}; do
-		sed -i \
-			-e '/therubyracer/d' \
-			-e '/libv8/d' \
-			"${tfile}" || die "failed to filter ${tfile}"
-	done
-
-	# change thin and unicorn dependencies to be optional
-	sed -i \
-		-e '/^gem "thin"/ s/$/, group: :thin/' \
-		-e '/^gem "unicorn"/ s/$/, group: :unicorn/' \
-		Gemfile || die "failed to modify Gemfile"
 
 	# change cache_store
 	if use memcached; then
@@ -157,12 +139,6 @@ each_ruby_prepare() {
 			config/unicorn.rb.example \
 			|| die "failed to modify unicorn.rb.example"
 	fi
-
-	# Use >timfle-krb5-auth-0.8, see https://github.com/timfel/krb5-auth/pull/7
-	sed -i \
-		-e "s#timfel\-krb5\-auth (0.8)#timfel\-krb5\-auth (0.8.3)#g" \
-		Gemfile.lock \
-		|| die "failed to update Gemfile.lock"
 }
 
 each_ruby_install() {
@@ -188,9 +164,6 @@ each_ruby_install() {
 
 	## Link gitlab-shell into git home
 	dosym "${GITLAB_SHELL}" "${GIT_HOME}/gitlab-shell"
-
-	## Link gitlab-shell-secret into gitlab-shell
-	dosym "${dest}/.gitlab_shell_secret" "${GITLAB_SHELL}/.gitlab_shell_secret"
 
 	## Install configs ##
 
@@ -228,13 +201,10 @@ each_ruby_install() {
 	done
 	local bundle_args="--deployment ${without:+--without ${without}}"
 
-	# Use systemlibs for rugged
-	${BUNDLE} config build.rugged --use-system-libraries
-
 	# Use systemlibs for nokogiri as suggested
 	${BUNDLE} config build.nokogiri --use-system-libraries
 
-	# Fix invalid ldflags for charlock_holmes, 
+	# Fix invalid ldflags for charlock_holmes,
 	# see https://github.com/brianmario/charlock_holmes/issues/32
 	${BUNDLE} config build.charlock_holmes --with-ldflags='-L. -Wl,-O1 -Wl,--as-needed -rdynamic -Wl,-export-dynamic -Wl,--no-undefined -lz -licuuc'
 
@@ -340,6 +310,7 @@ pkg_postinst() {
 	elog "To update an existing instance, run the following command and choose upgrading when prompted:"
 	elog "    emerge --config \"=${CATEGORY}/${PF}\""
 	elog
+	elog "Important: Do not remove the earlier version prior migration!"
 }
 
 pkg_config() {
@@ -373,8 +344,9 @@ pkg_config() {
 			einfo "Found your latest Gitlab instance at \"${LATEST_DEST}\"."
 		fi
 
-		einfo "Please make sure that you've stopped your running Gitlab instance and that you've created a backup: "
+		einfo "Please make sure that you've created a backup and stopped your running Gitlab instance: "
 		elog "\$ cd \"${LATEST_DEST}\" && sudo -u ${GIT_USER} ${BUNDLE} exec rake gitlab:backup:create RAILS_ENV=production"
+		elog "\$ /etc/init.d/${LATEST_DEST#*/opt/} stop"
 		elog ""
 
 		einfo "Press ENTER to continue, STRG-C to cancel"
@@ -396,21 +368,20 @@ pkg_config() {
 				|| die "failed to migrate uplaods."
 		fi
 
-		einfo "Migrating config ..."
 		for conf in database.yml gitlab.yml resque.yml unicorn.rb ; do
+			einfo "Migration config file \"$conf\" ..."
 			cp "${LATEST_DEST}/config/${conf}" "${DEST_DIR}/config/"
 
 			example="${DEST_DIR}/config/${conf}.example"
-			test -d "${example}" && mv "${example}" "${DEST_DIR}/config/.cfg0000_${conf}"
+			test -f "${example}" && mv "${example}" "${DEST_DIR}/config/._cfg0000_${conf}"
 		done
-		CONFIG_PROTECT="${DEST_DIR}" dispatch-conf || die "failed to migrate config."
+		CONFIG_PROTECT="${DEST_DIR}" dispatch-conf || die "failed to automatically migrate config, run \"CONFIG_PROTECT=${DEST_DIR} dispatch-conf\" by hand, re-run this routine and skip config migration to proceed."
 
 		einfo "Migrating database ..."
 		su -l ${GIT_USER} -s /bin/sh -c "
 			export LANG=en_US.UTF-8; export LC_ALL=en_US.UTF-8
 			cd ${DEST_DIR}
-			${BUNDLE} exec rake db:migrate RAILS_ENV=production
-			${BUNDLE} exec rake gitlab:satellites:create RAILS_ENV=production" \
+			${BUNDLE} exec rake db:migrate RAILS_ENV=production" \
 			|| die "failed to migrate database."
 
 		einfo "Clear redis cache ..."
@@ -426,7 +397,7 @@ pkg_config() {
 			cd ${DEST_DIR}
 			${BUNDLE} exec rake assets:clean RAILS_ENV=production
 			${BUNDLE} exec rake assets:precompile RAILS_ENV=production" \
-			|| die "failed to run assets:precompile"
+			|| die "failed to run assets:clean and assets:precompile"
 
 	else
 
@@ -452,6 +423,13 @@ pkg_config() {
 			cd ${DEST_DIR}
 			${BUNDLE} exec rake gitlab:setup RAILS_ENV=${RAILS_ENV}" \
 				|| die "failed to run rake gitlab:setup"
+	fi
+
+	## (Re-)Link gitlab-shell-secret into gitlab-shell
+	if test -L "${GITLAB_SHELL}/.gitlab_shell_secret"
+	then
+		rm "${GITLAB_SHELL}/.gitlab_shell_secret"
+		ln -s "${DEST_DIR}/.gitlab_shell_secret" "${GITLAB_SHELL}/.gitlab_shell_secret"
 	fi
 
 	einfo "You might want to run the following in order to check your application status:"
