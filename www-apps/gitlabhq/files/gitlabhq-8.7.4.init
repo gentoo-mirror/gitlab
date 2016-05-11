@@ -62,6 +62,7 @@ start() {
 		--chdir "${gitlab_home}" \
 		--user="${gitlab_user}:${gitlab_group}" \
 		--pidfile="${workhorse_pidfile}" \
+		--make-pidfile \
 		--background -1 "${workhorse_log}" -2 "${workhorse_log}" \
 		--exec ${workhorse_command} -- ${workhorse_command_args}
 	eend $?
