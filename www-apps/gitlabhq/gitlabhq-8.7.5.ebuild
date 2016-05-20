@@ -355,33 +355,37 @@ pkg_config() {
 		einfo "Press ENTER to continue, STRG-C to cancel"
 		read
 
-		einfo "Migrating uploads ..."
-		einfo "This will move your uploads from \"$LATEST_DEST\" to \"${DEST_DIR}\", continue? [Y|n] "
-		migrate_uploads=""
-		while true
-		do
-			read -r migrate_uploads
-			if [[ $migrate_uploads == "n" || $migrate_uploads == "N" ]] ; then migrate_uploads="" && break
-			elif [[ $migrate_uploads == "y" || $migrate_uploads == "Y" || $migrate_uploads == "" ]] ; then migrate_uploads=1 && break
-			else eerror "Please type either \"Y\" or \"N\" ... " ; fi
-		done
-		if [[ $migrate_uploads ]] ; then
-			su -l ${GIT_USER} -s /bin/sh -c "
-				mv ${LATEST_DEST}/public/uploads/* ${DEST_DIR}/public/uploads/" \
-				|| die "failed to migrate uplaods."
-
-			# Fix permissions
-			find "${DEST_DIR}/public/uploads/" -type d -exec chmod 0700 {} \;
+		if [[ ${LATEST_DEST} == ${DEST_DIR} ]] ;
+		then
+			einfo "Found major update, migrate data from \"$LATEST_DEST\":"
+			einfo "Migrating uploads ..."
+			einfo "This will move your uploads from \"$LATEST_DEST\" to \"${DEST_DIR}\", continue? [Y|n] "
+			migrate_uploads=""
+			while true
+			do
+				read -r migrate_uploads
+				if [[ $migrate_uploads == "n" || $migrate_uploads == "N" ]] ; then migrate_uploads="" && break
+				elif [[ $migrate_uploads == "y" || $migrate_uploads == "Y" || $migrate_uploads == "" ]] ; then migrate_uploads=1 && break
+				else eerror "Please type either \"Y\" or \"N\" ... " ; fi
+			done
+			if [[ $migrate_uploads ]] ; then
+				su -l ${GIT_USER} -s /bin/sh -c "
+					mv ${LATEST_DEST}/public/uploads/* ${DEST_DIR}/public/uploads/" \
+					|| die "failed to migrate uplaods."
+	
+				# Fix permissions
+				find "${DEST_DIR}/public/uploads/" -type d -exec chmod 0700 {} \;
+			fi
+	
+			for conf in database.yml gitlab.yml resque.yml unicorn.rb ; do
+				einfo "Migration config file \"$conf\" ..."
+				cp -p "${LATEST_DEST}/config/${conf}" "${DEST_DIR}/config/"
+	
+				example="${DEST_DIR}/config/${conf}.example"
+				test -f "${example}" && mv "${example}" "${DEST_DIR}/config/._cfg0000_${conf}"
+			done
+			CONFIG_PROTECT="${DEST_DIR}" dispatch-conf || die "failed to automatically migrate config, run \"CONFIG_PROTECT=${DEST_DIR} dispatch-conf\" by hand, re-run this routine and skip config migration to proceed."
 		fi
-
-		for conf in database.yml gitlab.yml resque.yml unicorn.rb ; do
-			einfo "Migration config file \"$conf\" ..."
-			cp -p "${LATEST_DEST}/config/${conf}" "${DEST_DIR}/config/"
-
-			example="${DEST_DIR}/config/${conf}.example"
-			test -f "${example}" && mv "${example}" "${DEST_DIR}/config/._cfg0000_${conf}"
-		done
-		CONFIG_PROTECT="${DEST_DIR}" dispatch-conf || die "failed to automatically migrate config, run \"CONFIG_PROTECT=${DEST_DIR} dispatch-conf\" by hand, re-run this routine and skip config migration to proceed."
 
 		einfo "Migrating database ..."
 		su -l ${GIT_USER} -s /bin/sh -c "
