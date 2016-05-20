@@ -355,7 +355,7 @@ pkg_config() {
 		einfo "Press ENTER to continue, STRG-C to cancel"
 		read
 
-		if [[ ${LATEST_DEST} == ${DEST_DIR} ]] ;
+		if [[ ${LATEST_DEST} != ${DEST_DIR} ]] ;
 		then
 			einfo "Found major update, migrate data from \"$LATEST_DEST\":"
 			einfo "Migrating uploads ..."
