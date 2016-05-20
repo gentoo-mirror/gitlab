@@ -368,6 +368,9 @@ pkg_config() {
 			su -l ${GIT_USER} -s /bin/sh -c "
 				mv ${LATEST_DEST}/public/uploads/* ${DEST_DIR}/public/uploads/" \
 				|| die "failed to migrate uplaods."
+
+			# Fix permissions
+			find "${DEST_DIR}/public/uploads/" -type d -exec chmod 0700 {} \;
 		fi
 
 		for conf in database.yml gitlab.yml resque.yml unicorn.rb ; do
