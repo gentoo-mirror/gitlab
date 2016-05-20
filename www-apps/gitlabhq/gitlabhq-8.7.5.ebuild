@@ -375,7 +375,7 @@ pkg_config() {
 
 		for conf in database.yml gitlab.yml resque.yml unicorn.rb ; do
 			einfo "Migration config file \"$conf\" ..."
-			cp "${LATEST_DEST}/config/${conf}" "${DEST_DIR}/config/"
+			cp -p "${LATEST_DEST}/config/${conf}" "${DEST_DIR}/config/"
 
 			example="${DEST_DIR}/config/${conf}.example"
 			test -f "${example}" && mv "${example}" "${DEST_DIR}/config/._cfg0000_${conf}"
