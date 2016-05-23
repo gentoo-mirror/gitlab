@@ -85,7 +85,7 @@ BUNDLE="${RUBY} /usr/bin/bundle"
 
 pkg_setup() {
 	enewgroup ${GIT_GROUP}
-	enewuser ${GIT_USER} -1 -1 ${DEST_DIR} "$GIT_GROUP}"
+	enewuser ${GIT_USER} -1 -1 ${DEST_DIR} "${GIT_GROUP}"
 }
 
 all_ruby_unpack() {
