@@ -28,14 +28,14 @@ IUSE="memcached mysql +postgres +unicorn"
 
 ## Gems dependencies:
 #   charlock_holmes		dev-libs/icu
-#	  grape, capybara		dev-libs/libxml2, dev-libs/libxslt
-#   json							dev-util/ragel
-#   yajl-ruby					dev-libs/yajl
-#   pygments.rb				python 2.5+
-#   execjs						net-libs/nodejs, or any other JS runtime
-#   pg								dev-db/postgresql-base
-#   mysql							virtual/mysql
-#	  rugged						net-libs/http-parser dev-libs/libgit2
+#	grape, capybara		dev-libs/libxml2, dev-libs/libxslt
+#   json				dev-util/ragel
+#   yajl-ruby			dev-libs/yajl
+#   pygments.rb			python 2.5+
+#   execjs				net-libs/nodejs, or any other JS runtime
+#   pg					dev-db/postgresql-base
+#   mysql				virtual/mysql
+#	rugged				net-libs/http-parser dev-libs/libgit2
 #
 GEMS_DEPEND="
 	dev-libs/icu
@@ -47,17 +47,16 @@ GEMS_DEPEND="
 	postgres? ( dev-db/postgresql )
 	mysql? ( virtual/mysql )
 	memcached? ( net-misc/memcached )
-	net-libs/http-parser
-	=dev-libs/libgit2-0.22.3" # rugged-0.22.2 needs libgit2-0.22
+	net-libs/http-parser"
 DEPEND="${GEMS_DEPEND}
 	>=dev-lang/ruby-2.0[readline,ssl]
 	>dev-vcs/git-2.2.1
-	>=dev-vcs/gitlab-shell-2.6.5
-	>=www-servers/gitlab-workhorse-0.4.0
+	>=dev-vcs/gitlab-shell-2.7.2
+	>=www-servers/gitlab-workhorse-0.7.2
 	net-misc/curl
 	virtual/ssh"
 RDEPEND="${DEPEND}
-	>=dev-db/redis-2.4.0
+	>=dev-db/redis-2.8.0
 	virtual/mta
 	virtual/krb5"
 ruby_add_bdepend "
@@ -66,6 +65,7 @@ ruby_add_bdepend "
 
 RUBY_PATCHES=(
 	"${P}-fix-checks-gentoo.patch"
+	"${P}-fix-sendmail-param.patch"
 )
 
 GIT_USER="git"
@@ -168,9 +168,11 @@ each_ruby_install() {
 
 	## Install configs ##
 
-	insinto "${conf}"
-	doins -r config/*
-	dosym "${conf}" "${dest}/config"
+	# Note that we cannot install the config to /etc and symlink
+	# it to ${dest} since require_relative in config/application.rb
+	# seems to get confused by symlinks. So let's install the config
+	# to ${dest} and create a smylink to /etc/gitlabhq-<VERSION>
+	dosym "${dest}/config" "${conf}"
 
 	insinto "${dest}/.ssh"
 	newins "${FILESDIR}/config.ssh" config
@@ -180,7 +182,7 @@ each_ruby_install() {
 	## Install all others ##
 
 	# remove needless dirs
-	rm -Rf config tmp log
+	rm -Rf tmp log
 
 	insinto "${dest}"
 	doins -r ./
@@ -201,9 +203,6 @@ each_ruby_install() {
 		without+="$(use $flag || echo ' '$flag)"
 	done
 	local bundle_args="--deployment ${without:+--without ${without}}"
-
-	# Use systemlibs for rugged
-	${BUNDLE} config build.rugged --use-system-libraries
 
 	# Use systemlibs for nokogiri as suggested
 	${BUNDLE} config build.nokogiri --use-system-libraries
@@ -327,7 +326,7 @@ pkg_config() {
 		read -r do_upgrade
 		if [[ $do_upgrade == "n" || $do_upgrade == "N" ]] ; then do_upgrade="" && break
 		elif [[ $do_upgrade == "y" || $do_upgrade == "Y" || $do_upgrade == "" ]] ; then do_upgrade=1 && break
-		else eerrorn "Please type either \"Y\" or \"N\" ... " ; fi
+		else eerror "Please type either \"Y\" or \"N\" ... " ; fi
 	done
 
 	if [[ $do_upgrade ]] ; then
@@ -348,7 +347,7 @@ pkg_config() {
 			einfo "Found your latest Gitlab instance at \"${LATEST_DEST}\"."
 		fi
 
-		einfo "Please make sure that you've stopped your running Gitlab instance and that you've created a backup: "
+		einfo "Please make sure that you've created a backup and stopped your running Gitlab instance: "
 		elog "\$ cd \"${LATEST_DEST}\" && sudo -u ${GIT_USER} ${BUNDLE} exec rake gitlab:backup:create RAILS_ENV=production"
 		elog "\$ /etc/init.d/${LATEST_DEST#*/opt/} stop"
 		elog ""
@@ -356,30 +355,37 @@ pkg_config() {
 		einfo "Press ENTER to continue, STRG-C to cancel"
 		read
 
-		einfo "Migrating uploads ..."
-		einfo "This will move your uploads from \"$LATEST_DEST\" to \"${DEST_DIR}\", continue? [Y|n] "
-		migrate_uploads=""
-		while true
-		do
-			read -r migrate_uploads
-			if [[ $migrate_uploads == "n" || $migrate_uploads == "N" ]] ; then migrate_uploads="" && break
-			elif [[ $migrate_uploads == "y" || $migrate_uploads == "Y" || $migrate_uploads == "" ]] ; then migrate_uploads=1 && break
-			else eerror "Please type either \"Y\" or \"N\" ... " ; fi
-		done
-		if [[ $migrate_uploads ]] ; then
-			su -l ${GIT_USER} -s /bin/sh -c "
-				mv ${LATEST_DEST}/public/uploads/* ${DEST_DIR}/public/uploads/" \
-				|| die "failed to migrate uplaods."
+		if [[ ${LATEST_DEST} != ${DEST_DIR} ]] ;
+		then
+			einfo "Found major update, migrate data from \"$LATEST_DEST\":"
+			einfo "Migrating uploads ..."
+			einfo "This will move your uploads from \"$LATEST_DEST\" to \"${DEST_DIR}\", continue? [Y|n] "
+			migrate_uploads=""
+			while true
+			do
+				read -r migrate_uploads
+				if [[ $migrate_uploads == "n" || $migrate_uploads == "N" ]] ; then migrate_uploads="" && break
+				elif [[ $migrate_uploads == "y" || $migrate_uploads == "Y" || $migrate_uploads == "" ]] ; then migrate_uploads=1 && break
+				else eerror "Please type either \"Y\" or \"N\" ... " ; fi
+			done
+			if [[ $migrate_uploads ]] ; then
+				su -l ${GIT_USER} -s /bin/sh -c "
+					mv ${LATEST_DEST}/public/uploads/* ${DEST_DIR}/public/uploads/" \
+					|| die "failed to migrate uplaods."
+	
+				# Fix permissions
+				find "${DEST_DIR}/public/uploads/" -type d -exec chmod 0700 {} \;
+			fi
+	
+			for conf in database.yml gitlab.yml resque.yml unicorn.rb ; do
+				einfo "Migration config file \"$conf\" ..."
+				cp -p "${LATEST_DEST}/config/${conf}" "${DEST_DIR}/config/"
+	
+				example="${DEST_DIR}/config/${conf}.example"
+				test -f "${example}" && mv "${example}" "${DEST_DIR}/config/._cfg0000_${conf}"
+			done
+			CONFIG_PROTECT="${DEST_DIR}" dispatch-conf || die "failed to automatically migrate config, run \"CONFIG_PROTECT=${DEST_DIR} dispatch-conf\" by hand, re-run this routine and skip config migration to proceed."
 		fi
-
-		einfo "Migrating config ..."
-		for conf in database.yml gitlab.yml resque.yml unicorn.rb ; do
-			cp "${LATEST_DEST}/config/${conf}" "${DEST_DIR}/config/"
-
-			example="${DEST_DIR}/config/${conf}.example"
-			test -f "${example}" && mv "${example}" "${DEST_DIR}/config/.cfg0000_${conf}"
-		done
-		CONFIG_PROTECT="${DEST_DIR}" dispatch-conf || die "failed to automatically migrate config, run \"CONFIG_PROTECT=${DEST_DIR} dispatch-conf\" by hand, re-run this routine and skip config migration to proceed."
 
 		einfo "Migrating database ..."
 		su -l ${GIT_USER} -s /bin/sh -c "
