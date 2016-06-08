@@ -1,12 +1,12 @@
 #!/sbin/runscript
 
 name="GitLab"
-description="GitLab 8.5 on Unicorns"
+description="GitLab 8.8 on Unicorns"
 
 : ${gitlab_user:=git}
 : ${gitlab_group:=git}
-: ${gitlab_home:="/opt/gitlabhq-8.5"}
-: ${gitlab_log:="/var/log/gitlabhq-8.5"}
+: ${gitlab_home:="/opt/gitlabhq-8.8"}
+: ${gitlab_log:="/var/log/gitlabhq-8.8"}
 
 : ${unicorn_pidfile:="${gitlab_home}/tmp/pids/unicorn.pid"}
 : ${unicorn_log:="${gitlab_log}/unicorn.log"}
@@ -17,7 +17,8 @@ description="GitLab 8.5 on Unicorns"
 
 : ${workhorse_pidfile:="${gitlab_home}/tmp/pids/workhorse.pid"}
 : ${workhorse_log:="${gitlab_log}/workhorse.log"}
-: ${workhorse_socket:="${gitlab_home}/tmp/sockets/workhorse.socket"}
+: ${workhorse_socket:="${gitlab_home}/tmp/sockets/gitlab-workhorse.socket"}
+: ${workhorse_command_args:="-listenUmask 0 -listenNetwork unix -listenAddr ${workhorse_socket} -authBackend http://127.0.0.1:8080 -authSocket ${unicorn_socket} -documentRoot ${gitlab_home}/public"}
 
 : ${rails_env:=production}
 
@@ -27,7 +28,6 @@ sidekiq_command="/usr/bin/bundle"
 sidekiq_start_command_args="exec sidekiq -c 10 -q post_receive -q mailers -q archive_repo -q system_hook -q project_web_hook -q gitlab_shell -q incoming_email -q runner -q common -q default -e ${rails_env} -d -P ${sidekiq_pidfile} -L ${sidekiq_log} $@ >> ${sidekiq_log} 2>&1"
 sidekiq_stop_command_args="exec sidekiqctl stop ${sidekiq_pidfile} >> ${sidekiq_log}"
 workhorse_command="/usr/bin/gitlab-workhorse"
-workhorse_command_args="-listenUmask 0 -listenNetwork unix -listenAddr ${workhorse_socket} -authBackend http://127.0.0.1:8080 -authSocket ${unicorn_socket} -documentRoot ${gitlab_home}/public"
 
 if [ ${rails_env} = development ]; then
 	sidekiq_command_args+=" VVERBOSE=1"
@@ -44,7 +44,7 @@ start() {
 	checkpath -d -o "${gitlab_user}:${gitlab_group}" -m750 "$(dirname "${unicorn_pidfile}")"
 	checkpath -d -o "${gitlab_user}:${gitlab_group}" -m750 "$(dirname "${sidekiq_pidfile}")"
 
-	ebegin "Starting GitLab 8.5 Unicorn servers"
+	ebegin "Starting GitLab 8.8 Unicorn servers"
 	start-stop-daemon --start \
 		--chdir "${gitlab_home}" \
 		--user="${gitlab_user}:${gitlab_group}" \
@@ -52,16 +52,17 @@ start() {
 		--exec ${unicorn_command} -- ${unicorn_command_args}
 	eend $?
 
-	ebegin "Starting GitLab 8.5 Sidekiq"
+	ebegin "Starting GitLab 8.8 Sidekiq"
 	cd "${gitlab_home}"
 	sudo -u git -H ${sidekiq_command} ${sidekiq_start_command_args}
 	eend $?
 
-	ebegin "Starting GitLab 8.5 Workhorse"
+	ebegin "Starting GitLab 8.8 Workhorse"
 	start-stop-daemon --start \
 		--chdir "${gitlab_home}" \
 		--user="${gitlab_user}:${gitlab_group}" \
 		--pidfile="${workhorse_pidfile}" \
+		--make-pidfile \
 		--background -1 "${workhorse_log}" -2 "${workhorse_log}" \
 		--exec ${workhorse_command} -- ${workhorse_command_args}
 	eend $?
@@ -69,19 +70,19 @@ start() {
 
 stop() {
 
-	ebegin "Stopping GitLab 8.5 Workhorse"
+	ebegin "Stopping GitLab 8.8 Workhorse"
   	start-stop-daemon --stop \
 		--chdir "${gitlab_home}" \
 		--user="${gitlab_user}:${gitlab_group}" \
 		--pidfile="${workhorse_pidfile}"
 	eend $?
 
-	ebegin "Stopping GitLab 8.5 Sidekiq"
+	ebegin "Stopping GitLab 8.8 Sidekiq"
 	cd "${gitlab_home}"
 	sudo -u git -H ${sidekiq_command} ${sidekiq_stop_command_args}
 	eend $?
 
-	ebegin "Stopping GitLab 8.5 Unicorn servers"
+	ebegin "Stopping GitLab 8.8 Unicorn servers"
 	start-stop-daemon --stop \
 		--chdir "${gitlab_home}" \
 		--user="${gitlab_user}:${gitlab_group}" \

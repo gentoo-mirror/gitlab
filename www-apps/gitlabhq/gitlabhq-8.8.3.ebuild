@@ -51,8 +51,8 @@ GEMS_DEPEND="
 DEPEND="${GEMS_DEPEND}
 	>=dev-lang/ruby-2.0[readline,ssl]
 	>dev-vcs/git-2.2.1
-	>=dev-vcs/gitlab-shell-2.6.10
-	>=www-servers/gitlab-workhorse-0.6.4
+	>=dev-vcs/gitlab-shell-2.7.2
+	>=www-servers/gitlab-workhorse-0.7.2
 	net-misc/curl
 	virtual/ssh"
 RDEPEND="${DEPEND}
@@ -65,6 +65,7 @@ ruby_add_bdepend "
 
 RUBY_PATCHES=(
 	"${P}-fix-checks-gentoo.patch"
+	"${P}-fix-sendmail-param.patch"
 )
 
 GIT_USER="git"
@@ -84,7 +85,7 @@ BUNDLE="${RUBY} /usr/bin/bundle"
 
 pkg_setup() {
 	enewgroup ${GIT_GROUP}
-	enewuser ${GIT_USER} -1 -1 ${DEST_DIR} "$GIT_GROUP}"
+	enewuser ${GIT_USER} -1 -1 ${DEST_DIR} "${GIT_GROUP}"
 }
 
 all_ruby_unpack() {
@@ -167,9 +168,11 @@ each_ruby_install() {
 
 	## Install configs ##
 
-	insinto "${conf}"
-	doins -r config/*
-	dosym "${conf}" "${dest}/config"
+	# Note that we cannot install the config to /etc and symlink
+	# it to ${dest} since require_relative in config/application.rb
+	# seems to get confused by symlinks. So let's install the config
+	# to ${dest} and create a smylink to /etc/gitlabhq-<VERSION>
+	dosym "${dest}/config" "${conf}"
 
 	insinto "${dest}/.ssh"
 	newins "${FILESDIR}/config.ssh" config
@@ -179,7 +182,7 @@ each_ruby_install() {
 	## Install all others ##
 
 	# remove needless dirs
-	rm -Rf config tmp log
+	rm -Rf tmp log
 
 	insinto "${dest}"
 	doins -r ./
@@ -323,7 +326,7 @@ pkg_config() {
 		read -r do_upgrade
 		if [[ $do_upgrade == "n" || $do_upgrade == "N" ]] ; then do_upgrade="" && break
 		elif [[ $do_upgrade == "y" || $do_upgrade == "Y" || $do_upgrade == "" ]] ; then do_upgrade=1 && break
-		else eerrorn "Please type either \"Y\" or \"N\" ... " ; fi
+		else eerror "Please type either \"Y\" or \"N\" ... " ; fi
 	done
 
 	if [[ $do_upgrade ]] ; then
@@ -352,30 +355,37 @@ pkg_config() {
 		einfo "Press ENTER to continue, STRG-C to cancel"
 		read
 
-		einfo "Migrating uploads ..."
-		einfo "This will move your uploads from \"$LATEST_DEST\" to \"${DEST_DIR}\", continue? [Y|n] "
-		migrate_uploads=""
-		while true
-		do
-			read -r migrate_uploads
-			if [[ $migrate_uploads == "n" || $migrate_uploads == "N" ]] ; then migrate_uploads="" && break
-			elif [[ $migrate_uploads == "y" || $migrate_uploads == "Y" || $migrate_uploads == "" ]] ; then migrate_uploads=1 && break
-			else eerror "Please type either \"Y\" or \"N\" ... " ; fi
-		done
-		if [[ $migrate_uploads ]] ; then
-			su -l ${GIT_USER} -s /bin/sh -c "
-				mv ${LATEST_DEST}/public/uploads/* ${DEST_DIR}/public/uploads/" \
-				|| die "failed to migrate uplaods."
+		if [[ ${LATEST_DEST} != ${DEST_DIR} ]] ;
+		then
+			einfo "Found major update, migrate data from \"$LATEST_DEST\":"
+			einfo "Migrating uploads ..."
+			einfo "This will move your uploads from \"$LATEST_DEST\" to \"${DEST_DIR}\", continue? [Y|n] "
+			migrate_uploads=""
+			while true
+			do
+				read -r migrate_uploads
+				if [[ $migrate_uploads == "n" || $migrate_uploads == "N" ]] ; then migrate_uploads="" && break
+				elif [[ $migrate_uploads == "y" || $migrate_uploads == "Y" || $migrate_uploads == "" ]] ; then migrate_uploads=1 && break
+				else eerror "Please type either \"Y\" or \"N\" ... " ; fi
+			done
+			if [[ $migrate_uploads ]] ; then
+				su -l ${GIT_USER} -s /bin/sh -c "
+					mv ${LATEST_DEST}/public/uploads/* ${DEST_DIR}/public/uploads/" \
+					|| die "failed to migrate uplaods."
+	
+				# Fix permissions
+				find "${DEST_DIR}/public/uploads/" -type d -exec chmod 0700 {} \;
+			fi
+	
+			for conf in database.yml gitlab.yml resque.yml unicorn.rb ; do
+				einfo "Migration config file \"$conf\" ..."
+				cp -p "${LATEST_DEST}/config/${conf}" "${DEST_DIR}/config/"
+	
+				example="${DEST_DIR}/config/${conf}.example"
+				test -f "${example}" && mv "${example}" "${DEST_DIR}/config/._cfg0000_${conf}"
+			done
+			CONFIG_PROTECT="${DEST_DIR}" dispatch-conf || die "failed to automatically migrate config, run \"CONFIG_PROTECT=${DEST_DIR} dispatch-conf\" by hand, re-run this routine and skip config migration to proceed."
 		fi
-
-		for conf in database.yml gitlab.yml resque.yml unicorn.rb ; do
-			einfo "Migration config file \"$conf\" ..."
-			cp "${LATEST_DEST}/config/${conf}" "${DEST_DIR}/config/"
-
-			example="${DEST_DIR}/config/${conf}.example"
-			test -f "${example}" && mv "${example}" "${DEST_DIR}/config/._cfg0000_${conf}"
-		done
-		CONFIG_PROTECT="${DEST_DIR}" dispatch-conf || die "failed to automatically migrate config, run \"CONFIG_PROTECT=${DEST_DIR} dispatch-conf\" by hand, re-run this routine and skip config migration to proceed."
 
 		einfo "Migrating database ..."
 		su -l ${GIT_USER} -s /bin/sh -c "
