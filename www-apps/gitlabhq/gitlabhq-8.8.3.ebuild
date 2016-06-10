@@ -376,10 +376,12 @@ pkg_config() {
 				# Fix permissions
 				find "${DEST_DIR}/public/uploads/" -type d -exec chmod 0700 {} \;
 			fi
-	
+			
+			LATEST_P="$(dirname $LATEST_DEST)"			
 			for conf in database.yml gitlab.yml resque.yml unicorn.rb ; do
 				einfo "Migration config file \"$conf\" ..."
 				cp -p "${LATEST_DEST}/config/${conf}" "${DEST_DIR}/config/"
+				sed -s "s/${LATEST_P}/${P}/g" -i "${DEST_DIR}/config/"
 	
 				example="${DEST_DIR}/config/${conf}.example"
 				test -f "${example}" && mv "${example}" "${DEST_DIR}/config/._cfg0000_${conf}"
