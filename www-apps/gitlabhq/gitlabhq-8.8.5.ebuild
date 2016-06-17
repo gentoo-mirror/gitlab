@@ -64,8 +64,8 @@ ruby_add_bdepend "
 	>=dev-ruby/bundler-1.0"
 
 RUBY_PATCHES=(
-	"${P}-fix-checks-gentoo.patch"
-	"${P}-fix-sendmail-param.patch"
+	"${PN}-${SLOT}-fix-checks-gentoo.patch"
+	"${PN}-${SLOT}-fix-sendmail-param.patch"
 )
 
 GIT_USER="git"
@@ -226,7 +226,7 @@ each_ruby_install() {
 	fperms o+Xr "${temp}" # Let nginx access the unicorn socket
 
 	## RC scripts ##
-	local rcscript=${P}.init
+	local rcscript=${PN}-${SLOT}.init
 
 	cp "${FILESDIR}/${rcscript}" "${T}" || die
 	sed -i \
@@ -376,10 +376,12 @@ pkg_config() {
 				# Fix permissions
 				find "${DEST_DIR}/public/uploads/" -type d -exec chmod 0700 {} \;
 			fi
-	
+			
+			LATEST_P="$(dirname $LATEST_DEST)"			
 			for conf in database.yml gitlab.yml resque.yml unicorn.rb ; do
 				einfo "Migration config file \"$conf\" ..."
 				cp -p "${LATEST_DEST}/config/${conf}" "${DEST_DIR}/config/"
+				sed -s "s/${LATEST_P}/${P}/g" -i "${DEST_DIR}/config/"
 	
 				example="${DEST_DIR}/config/${conf}.example"
 				test -f "${example}" && mv "${example}" "${DEST_DIR}/config/._cfg0000_${conf}"
