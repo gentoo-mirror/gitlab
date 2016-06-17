@@ -64,8 +64,8 @@ ruby_add_bdepend "
 	>=dev-ruby/bundler-1.0"
 
 RUBY_PATCHES=(
-	"${P}-fix-checks-gentoo.patch"
-	"${P}-fix-sendmail-param.patch"
+	"${PN}-${SLOT}-fix-checks-gentoo.patch"
+	"${PN}-${SLOT}-fix-sendmail-param.patch"
 )
 
 GIT_USER="git"
@@ -226,7 +226,7 @@ each_ruby_install() {
 	fperms o+Xr "${temp}" # Let nginx access the unicorn socket
 
 	## RC scripts ##
-	local rcscript=${P}.init
+	local rcscript=${PN}-${SLOT}.init
 
 	cp "${FILESDIR}/${rcscript}" "${T}" || die
 	sed -i \
