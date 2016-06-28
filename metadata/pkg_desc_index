@@ -1,4 +1,3 @@
-dev-vcs/gitlab-shell 2.6.3 2.6.5 2.6.10 2.7.2: GitLab Shell is a free SSH access and repository management application
-www-apps/gitlab-ci 7.8.1 7.8.2 7.8.3 7.8.4: Continuous integration server for GitLab
-www-apps/gitlabhq 8.7.7 8.8.5: GitLab is a free project and repository management application
-www-servers/gitlab-workhorse 0.6.4 0.7.2: Handles slow HTTP requests for GitLab
+dev-vcs/gitlab-shell 2.7.2 3.0.0: GitLab Shell is a free SSH access and repository management application
+www-apps/gitlabhq 8.7.7 8.8.5 8.9.1: GitLab is a free project and repository management application
+www-servers/gitlab-workhorse 0.7.2 0.7.5: Handles slow HTTP requests for GitLab
