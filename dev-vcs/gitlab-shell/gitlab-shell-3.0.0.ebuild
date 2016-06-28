@@ -6,7 +6,7 @@ EAPI="5"
 
 EGIT_REPO_URI="https://github.com/gitlabhq/gitlab-shell.git"
 EGIT_COMMIT="v${PV}"
-USE_RUBY="ruby20"
+USE_RUBY="ruby20 ruby21"
 
 inherit eutils git-2 ruby-ng user
 
@@ -16,7 +16,7 @@ LICENSE="MIT"
 SLOT="0"
 KEYWORDS="~amd64 ~x86 ~arm"
 
-DEPEND="$(ruby_implementation_depend ruby20)
+DEPEND="$(ruby_implementations_depend)
 	dev-vcs/git
 	virtual/ssh
 	dev-db/redis"
