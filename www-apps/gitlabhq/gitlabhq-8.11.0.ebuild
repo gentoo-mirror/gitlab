@@ -51,8 +51,8 @@ GEMS_DEPEND="
 DEPEND="${GEMS_DEPEND}
 	>=dev-lang/ruby-2.0[readline,ssl]
 	>dev-vcs/git-2.2.1
-	>=dev-vcs/gitlab-shell-2.7.2
-	>=www-servers/gitlab-workhorse-0.7.2
+	>=dev-vcs/gitlab-shell-3.4.0
+	>=www-servers/gitlab-workhorse-0.7.8
 	net-misc/curl
 	virtual/ssh"
 RDEPEND="${DEPEND}
@@ -370,18 +370,18 @@ pkg_config() {
 			done
 			if [[ $migrate_uploads ]] ; then
 				su -l ${GIT_USER} -s /bin/sh -c "
-					mv ${LATEST_DEST}/public/uploads/* ${DEST_DIR}/public/uploads/" \
-					|| die "failed to migrate uplaods."
-	
+					rm -rf ${DEST_DIR}/public/uploads && \
+					mv ${LATEST_DEST}/public/uploads ${DEST_DIR}/public/uploads" \
+					|| die "failed to migrate uploads."
+
 				# Fix permissions
 				find "${DEST_DIR}/public/uploads/" -type d -exec chmod 0700 {} \;
 			fi
 			
-			LATEST_P="$(dirname $LATEST_DEST)"			
-			for conf in database.yml gitlab.yml resque.yml unicorn.rb ; do
+			for conf in database.yml gitlab.yml resque.yml unicorn.rb secrets.yml ; do
 				einfo "Migration config file \"$conf\" ..."
 				cp -p "${LATEST_DEST}/config/${conf}" "${DEST_DIR}/config/"
-				sed -s "s/${LATEST_P}/${P}/g" -i "${DEST_DIR}/config/"
+				sed -s "s#$(basename $LATEST_DEST)#${PN}-${SLOT}#g" -i "${DEST_DIR}/config/$conf"
 	
 				example="${DEST_DIR}/config/${conf}.example"
 				test -f "${example}" && mv "${example}" "${DEST_DIR}/config/._cfg0000_${conf}"
