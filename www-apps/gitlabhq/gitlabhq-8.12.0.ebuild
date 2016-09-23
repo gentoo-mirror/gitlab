@@ -51,8 +51,8 @@ GEMS_DEPEND="
 DEPEND="${GEMS_DEPEND}
 	>=dev-lang/ruby-2.0[readline,ssl]
 	>dev-vcs/git-2.2.1
-	>=dev-vcs/gitlab-shell-3.0.0
-	>=www-servers/gitlab-workhorse-0.7.5
+	>=dev-vcs/gitlab-shell-3.2.1
+	>=www-servers/gitlab-workhorse-0.7.8
 	net-misc/curl
 	virtual/ssh"
 RDEPEND="${DEPEND}
@@ -379,7 +379,7 @@ pkg_config() {
 				find "${DEST_DIR}/public/uploads/" -type d -exec chmod 0700 {} \;
 			fi
 			
-			for conf in database.yml gitlab.yml resque.yml unicorn.rb ; do
+			for conf in database.yml gitlab.yml resque.yml unicorn.rb secrets.yml ; do
 				einfo "Migration config file \"$conf\" ..."
 				cp -p "${LATEST_DEST}/config/${conf}" "${DEST_DIR}/config/"
 				sed -s "s#$(basename $LATEST_DEST)#${PN}-${SLOT}#g" -i "${DEST_DIR}/config/$conf"
