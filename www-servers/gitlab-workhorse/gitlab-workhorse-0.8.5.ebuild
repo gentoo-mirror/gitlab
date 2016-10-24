@@ -20,6 +20,8 @@ RDEPEND="${DEPEND}"
 
 src_install()
 {
-  into "/usr"
-  dobin "gitlab-workhorse"
+	into "/usr"
+	dobin "gitlab-workhorse"
+	dobin "gitlab-zip-cat"
+	dobin "gitlab-zip-metadata"
 }
