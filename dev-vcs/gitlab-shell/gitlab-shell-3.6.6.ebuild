@@ -4,7 +4,7 @@
 
 EAPI="5"
 
-EGIT_REPO_URI="https://github.com/gitlabhq/gitlab-shell.git"
+EGIT_REPO_URI="https://gitlab.com/gitlab-org/gitlab-shell.git"
 EGIT_COMMIT="v${PV}"
 USE_RUBY="ruby20 ruby21"
 
