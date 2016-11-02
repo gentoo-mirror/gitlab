@@ -1,4 +1,4 @@
-#!/sbin/runscript
+#!/sbin/openrc-run
 
 name="GitLab"
 description="GitLab 8.11 on Unicorns"
