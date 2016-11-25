@@ -51,8 +51,8 @@ GEMS_DEPEND="
 DEPEND="${GEMS_DEPEND}
 	>=dev-lang/ruby-2.0[readline,ssl]
 	>dev-vcs/git-2.2.1
-	>=dev-vcs/gitlab-shell-3.4.0
-	>=www-servers/gitlab-workhorse-0.7.8
+	>=dev-vcs/gitlab-shell-4.0.0
+	>=www-servers/gitlab-workhorse-1.0.0
 	net-misc/curl
 	virtual/ssh"
 RDEPEND="${DEPEND}
@@ -156,7 +156,6 @@ each_ruby_install() {
 	dodir "${temp}"
 
 	diropts -m755
-	keepdir "${conf}"
 	dodir "${dest}"
 	dodir "${uploads}"
 
