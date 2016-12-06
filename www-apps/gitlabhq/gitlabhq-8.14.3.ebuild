@@ -16,7 +16,7 @@ PYTHON_DEPEND="2:2.5"
 EGIT_REPO_URI="https://gitlab.com/gitlab-org/gitlab-ce.git"
 EGIT_COMMIT="v${PV}"
 
-inherit eutils git-2 python ruby-ng versionator user
+inherit eutils git-2 python ruby-ng versionator user linux-info
 
 DESCRIPTION="GitLab is a free project and repository management application"
 HOMEPAGE="https://about.gitlab.com/gitlab-ci/"
@@ -314,6 +314,18 @@ pkg_postinst() {
 	elog "    emerge --config \"=${CATEGORY}/${PF}\""
 	elog
 	elog "Important: Do not remove the earlier version prior migration!"
+
+	if linux_config_exists; then
+		if linux_chkconfig_present CONFIG_PAX ; then
+			ewarn "Warning: PaX support is enabled, you must disable mprotect for ruby. Otherwise "
+			ewarn "FFI will trigger mprotect errors that are hard to trace. Please run: "
+			ewarn "    paxctl -m $(which ${RUBY})"
+		fi
+	else
+		einfo "Important: Cannot find a linux kernel configuration, so cannot check for PaX support."
+		einfo "			  If CONFIG_PAX is set, you should disable mprotect for ruby since FFI may trigger"
+		einfo "			  mprotect errors."
+	fi
 }
 
 pkg_config() {
