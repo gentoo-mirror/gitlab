@@ -14,6 +14,7 @@ description="GitLab 8.14 on Unicorns"
 
 : ${sidekiq_pidfile:="${gitlab_home}/tmp/pids/sidekiq.pid"}
 : ${sidekiq_log:="${gitlab_log}/sidekiq.log"}
+: ${sidekiq_config:="${gitlab_home}/config/sidekiq_queues.yml"}
 
 : ${workhorse_pidfile:="${gitlab_home}/tmp/pids/workhorse.pid"}
 : ${workhorse_log:="${gitlab_log}/workhorse.log"}
@@ -25,7 +26,7 @@ description="GitLab 8.14 on Unicorns"
 unicorn_command="/usr/bin/bundle"
 unicorn_command_args="exec unicorn_rails -c ${gitlab_home}/config/unicorn.rb -E ${rails_env} -D"
 sidekiq_command="/usr/bin/bundle"
-sidekiq_start_command_args="exec sidekiq -c 10 -q post_receive -q mailers -q archive_repo -q system_hook -q project_web_hook -q gitlab_shell -q incoming_email -q runner -q common -q default -e ${rails_env} -d -P ${sidekiq_pidfile} -L ${sidekiq_log} $@ >> ${sidekiq_log} 2>&1"
+sidekiq_start_command_args="exec sidekiq -C ${sidekiq_config} -e ${rails_env} -d -P ${sidekiq_pidfile} -L ${sidekiq_log} $@ >> ${sidekiq_log} 2>&1"
 sidekiq_stop_command_args="exec sidekiqctl stop ${sidekiq_pidfile} >> ${sidekiq_log}"
 workhorse_command="/usr/bin/gitlab-workhorse"
 
