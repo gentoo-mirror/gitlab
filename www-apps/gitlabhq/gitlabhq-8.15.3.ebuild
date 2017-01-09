@@ -316,7 +316,7 @@ pkg_postinst() {
 	elog "Important: Do not remove the earlier version prior migration!"
 
 	if linux_config_exists; then
-		if linux_chkconfig_present CONFIG_PAX ; then
+		if linux_chkconfig_present PAX ; then
 			ewarn "Warning: PaX support is enabled, you must disable mprotect for ruby. Otherwise "
 			ewarn "FFI will trigger mprotect errors that are hard to trace. Please run: "
 			ewarn "    paxctl -m $(which ${RUBY})"
