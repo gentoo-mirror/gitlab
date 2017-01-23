@@ -16,7 +16,7 @@ PYTHON_DEPEND="2:2.5"
 EGIT_REPO_URI="https://gitlab.com/gitlab-org/gitlab-ce.git"
 EGIT_COMMIT="v${PV}"
 
-inherit eutils git-2 python ruby-ng versionator user
+inherit eutils git-2 python ruby-ng versionator user linux-info
 
 DESCRIPTION="GitLab is a free project and repository management application"
 HOMEPAGE="https://about.gitlab.com/gitlab-ci/"
@@ -49,10 +49,10 @@ GEMS_DEPEND="
 	memcached? ( net-misc/memcached )
 	net-libs/http-parser"
 DEPEND="${GEMS_DEPEND}
-	>=dev-lang/ruby-2.0[readline,ssl]
+	>=dev-lang/ruby-2.1[readline,ssl]
 	>dev-vcs/git-2.2.1
-	>=dev-vcs/gitlab-shell-3.6.6
-	>=www-servers/gitlab-workhorse-0.8.5
+	>=dev-vcs/gitlab-shell-4.1.1
+	>=www-servers/gitlab-workhorse-1.3.0
 	net-misc/curl
 	virtual/ssh"
 RDEPEND="${DEPEND}
@@ -156,7 +156,6 @@ each_ruby_install() {
 	dodir "${temp}"
 
 	diropts -m755
-	keepdir "${conf}"
 	dodir "${dest}"
 	dodir "${uploads}"
 
@@ -315,6 +314,18 @@ pkg_postinst() {
 	elog "    emerge --config \"=${CATEGORY}/${PF}\""
 	elog
 	elog "Important: Do not remove the earlier version prior migration!"
+
+	if linux_config_exists; then
+		if linux_chkconfig_present PAX ; then
+			ewarn "Warning: PaX support is enabled, you must disable mprotect for ruby. Otherwise "
+			ewarn "FFI will trigger mprotect errors that are hard to trace. Please run: "
+			ewarn "    paxctl -m $(which ${RUBY})"
+		fi
+	else
+		einfo "Important: Cannot find a linux kernel configuration, so cannot check for PaX support."
+		einfo "			  If CONFIG_PAX is set, you should disable mprotect for ruby since FFI may trigger"
+		einfo "			  mprotect errors."
+	fi
 }
 
 pkg_config() {
