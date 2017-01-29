@@ -10,7 +10,7 @@ EAPI="5"
 #   it should be done, but GitLab has too many dependencies that it will be too
 #   difficult to maintain them via ebuilds.
 
-USE_RUBY="ruby21"
+USE_RUBY="ruby21 ruby22"
 PYTHON_DEPEND="2:2.5"
 
 EGIT_REPO_URI="https://gitlab.com/gitlab-org/gitlab-ce.git"
