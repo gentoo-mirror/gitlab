@@ -10,13 +10,12 @@ EAPI="5"
 #   it should be done, but GitLab has too many dependencies that it will be too
 #   difficult to maintain them via ebuilds.
 
-USE_RUBY="ruby21"
-PYTHON_DEPEND="2:2.5"
+USE_RUBY="ruby21 ruby22"
 
 EGIT_REPO_URI="https://gitlab.com/gitlab-org/gitlab-ce.git"
 EGIT_COMMIT="v${PV}"
 
-inherit eutils git-2 python ruby-ng versionator user linux-info
+inherit eutils git-2 ruby-ng versionator user linux-info
 
 DESCRIPTION="GitLab is a free project and repository management application"
 HOMEPAGE="https://about.gitlab.com/gitlab-ci/"
@@ -44,6 +43,7 @@ GEMS_DEPEND="
 	dev-util/ragel
 	dev-libs/yajl
 	net-libs/nodejs
+	dev-lang/python:2.7
 	postgres? ( dev-db/postgresql )
 	mysql? ( virtual/mysql )
 	memcached? ( net-misc/memcached )
@@ -51,8 +51,8 @@ GEMS_DEPEND="
 DEPEND="${GEMS_DEPEND}
 	>=dev-lang/ruby-2.1[readline,ssl]
 	>dev-vcs/git-2.2.1
-	>=dev-vcs/gitlab-shell-4.0.3
-	>=www-servers/gitlab-workhorse-1.0.1
+	>=dev-vcs/gitlab-shell-4.1.1
+	>=www-servers/gitlab-workhorse-1.3.0
 	net-misc/curl
 	virtual/ssh"
 RDEPEND="${DEPEND}
@@ -316,7 +316,7 @@ pkg_postinst() {
 	elog "Important: Do not remove the earlier version prior migration!"
 
 	if linux_config_exists; then
-		if linux_chkconfig_present CONFIG_PAX ; then
+		if linux_chkconfig_present PAX ; then
 			ewarn "Warning: PaX support is enabled, you must disable mprotect for ruby. Otherwise "
 			ewarn "FFI will trigger mprotect errors that are hard to trace. Please run: "
 			ewarn "    paxctl -m $(which ${RUBY})"
