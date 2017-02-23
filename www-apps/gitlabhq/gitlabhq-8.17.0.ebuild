@@ -10,7 +10,7 @@ EAPI="5"
 #   it should be done, but GitLab has too many dependencies that it will be too
 #   difficult to maintain them via ebuilds.
 
-USE_RUBY="ruby21 ruby22"
+USE_RUBY="ruby23"
 PYTHON_COMPAT=( python2_7 )
 
 EGIT_REPO_URI="https://gitlab.com/gitlab-org/gitlab-ce.git"
@@ -265,7 +265,8 @@ pkg_postinst() {
 			git config --global core.autocrlf 'input';
 			git config --global gc.auto 0;
 			git config --global user.email 'gitlab@localhost';
-			git config --global user.name 'GitLab'" \
+			git config --global user.name 'GitLab'
+			git config --global repack.writeBitmaps true" \
 			|| die "failed to setup git configuration"
 	fi
 
@@ -317,11 +318,13 @@ pkg_postinst() {
 
 	if linux_config_exists; then
 		if linux_chkconfig_present PAX ; then
+			elog  ""
 			ewarn "Warning: PaX support is enabled, you must disable mprotect for ruby. Otherwise "
 			ewarn "FFI will trigger mprotect errors that are hard to trace. Please run: "
 			ewarn "    paxctl -m $(which ${RUBY})"
 		fi
 	else
+		elog  ""
 		einfo "Important: Cannot find a linux kernel configuration, so cannot check for PaX support."
 		einfo "			  If CONFIG_PAX is set, you should disable mprotect for ruby since FFI may trigger"
 		einfo "			  mprotect errors."
@@ -422,6 +425,11 @@ pkg_config() {
 			${BUNDLE} exec rake assets:clean RAILS_ENV=production
 			${BUNDLE} exec rake assets:precompile RAILS_ENV=production" \
 			|| die "failed to run assets:clean and assets:precompile"
+
+		einfo "Configure Git to generate packfile bitmaps ..."
+		su -l ${GIT_USER} -s /bin/sh -c "
+			git config --global repack.writeBitmaps true" \
+			|| die "failed to configure Git"
 
 	else
 
