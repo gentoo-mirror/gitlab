@@ -80,7 +80,7 @@ GITLAB_SHELL="/var/lib/gitlab-shell"
 GITLAB_SHELL_HOOKS="${GITLAB_SHELL}/hooks"
 
 RAILS_ENV=${RAILS_ENV:-production}
-RUBY=${RUBY:-ruby21}
+RUBY=${RUBY:-ruby23}
 BUNDLE="${RUBY} /usr/bin/bundle"
 
 pkg_setup() {
