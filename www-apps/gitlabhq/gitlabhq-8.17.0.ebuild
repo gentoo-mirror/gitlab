@@ -321,7 +321,7 @@ pkg_postinst() {
 			elog  ""
 			ewarn "Warning: PaX support is enabled, you must disable mprotect for ruby. Otherwise "
 			ewarn "FFI will trigger mprotect errors that are hard to trace. Please run: "
-			ewarn "    paxctl -m $(which ${RUBY})"
+			ewarn "    paxctl -m $RUBY"
 		fi
 	else
 		elog  ""
