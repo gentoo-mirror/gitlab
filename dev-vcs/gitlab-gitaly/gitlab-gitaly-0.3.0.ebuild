@@ -21,5 +21,5 @@ RDEPEND="${DEPEND}"
 src_install()
 {
 	into "/usr"
-	dobin "gitaly"
+	newbin "gitaly" "gitlab-gitaly"
 }

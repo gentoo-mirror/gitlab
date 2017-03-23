@@ -378,14 +378,14 @@ pkg_config() {
 		then
 			einfo "Found major update, migrate data from \"$LATEST_DEST\":"
 			einfo "Migrating uploads ..."
-			einfo "This will move your uploads from \"$LATEST_DEST\" to \"${DEST_DIR}\", continue? [Y|n] "
+			einfo "This will move your uploads from \"$LATEST_DEST\" to \"${DEST_DIR}\", (C)ontinue or (s)kip? "
 			migrate_uploads=""
 			while true
 			do
 				read -r migrate_uploads
-				if [[ $migrate_uploads == "n" || $migrate_uploads == "N" ]] ; then migrate_uploads="" && break
-				elif [[ $migrate_uploads == "y" || $migrate_uploads == "Y" || $migrate_uploads == "" ]] ; then migrate_uploads=1 && break
-				else eerror "Please type either \"Y\" or \"N\" ... " ; fi
+				if [[ $migrate_uploads == "s" || $migrate_uploads == "S" ]] ; then migrate_uploads="" && break
+				elif [[ $migrate_uploads == "c" || $migrate_uploads == "C" || $migrate_uploads == "" ]] ; then migrate_uploads=1 && break
+				else eerror "Please type either \"c\" to continue or \"n\" to skip ... " ; fi
 			done
 			if [[ $migrate_uploads ]] ; then
 				su -l ${GIT_USER} -s /bin/sh -c "
@@ -471,7 +471,7 @@ pkg_config() {
     su -l ${GIT_USER} -s /bin/sh -c "
     	export LANG=en_US.UTF-8; export LC_ALL=en_US.UTF-8
         cd ${DEST_DIR}
-        yarn install --production --pure-lockfile />/dev/null
+        yarn install --production --pure-lockfile --no-progress 
         ${BUNDLE} exec rake gitlab:assets:compile RAILS_ENV=production NODE_ENV=production" \
         || die "failed to run yarn install and gitlab:assets:compile"
 

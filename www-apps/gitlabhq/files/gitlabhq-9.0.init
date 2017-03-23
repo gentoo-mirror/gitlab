@@ -80,6 +80,7 @@ start() {
                 --user="${gitlab_user}:${gitlab_group}" \
                 --pidfile="${gitaly_pidfile}" \
                 --make-pidfile \
+		--env GITALY_SOCKET_PATH=${gitaly_socket} \
                 --background -1 "${gitaly_log}" -2 "${gitaly_log}" \
                 --exec ${gitaly_command} -- ${gitaly_command_args}
         eend $?
