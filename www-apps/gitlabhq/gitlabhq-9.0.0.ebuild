@@ -106,6 +106,7 @@ each_ruby_prepare() {
 		-e "s|\(\s*hooks_path:\s\)/.*|\1 ${GITLAB_SHELL_HOOKS}/|" \
 		-e "s|\(\s*path:\s\)/.*/gitlab-satellites/|\1 ${GIT_SATELLITES}/|" \
 		-e "s|\(\s*GITLAB_SHELL:\s*\)|\1\n\tpath: \"${GITLAB_SHELL}\"|" \
+		-e "s|# socket_path: tmp/sockets/private/gitaly\.socket|socket_path: tmp/sockets/gitaly.socket|" \
 		config/gitlab.yml.example || die "failed to filter gitlab.yml.example"
 
 	# modify database settings
