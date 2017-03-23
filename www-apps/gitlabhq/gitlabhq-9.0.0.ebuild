@@ -10,7 +10,7 @@ EAPI="5"
 #   it should be done, but GitLab has too many dependencies that it will be too
 #   difficult to maintain them via ebuilds.
 
-USE_RUBY="ruby21 ruby22"
+USE_RUBY="ruby23"
 PYTHON_COMPAT=( python2_7 )
 
 EGIT_REPO_URI="https://gitlab.com/gitlab-org/gitlab-ce.git"
@@ -51,10 +51,13 @@ GEMS_DEPEND="
 DEPEND="${GEMS_DEPEND}
 	>=dev-lang/ruby-2.1[readline,ssl]
 	>dev-vcs/git-2.2.1
-	>=dev-vcs/gitlab-shell-4.1.1
-	>=www-servers/gitlab-workhorse-1.3.0
+	>=dev-vcs/gitlab-shell-5.0.0
+	>=dev-vcs/gitlab-gitaly-0.3.0
+	>=www-servers/gitlab-workhorse-1.4.1
 	net-misc/curl
-	virtual/ssh"
+	virtual/ssh
+	sys-apps/yarn
+	>=net-libs/nodejs-7.0.0"
 RDEPEND="${DEPEND}
 	>=dev-db/redis-2.8.0
 	virtual/mta
@@ -80,7 +83,7 @@ GITLAB_SHELL="/var/lib/gitlab-shell"
 GITLAB_SHELL_HOOKS="${GITLAB_SHELL}/hooks"
 
 RAILS_ENV=${RAILS_ENV:-production}
-RUBY=${RUBY:-ruby21}
+RUBY=${RUBY:-ruby23}
 BUNDLE="${RUBY} /usr/bin/bundle"
 
 pkg_setup() {
@@ -265,7 +268,8 @@ pkg_postinst() {
 			git config --global core.autocrlf 'input';
 			git config --global gc.auto 0;
 			git config --global user.email 'gitlab@localhost';
-			git config --global user.name 'GitLab'" \
+			git config --global user.name 'GitLab'
+			git config --global repack.writeBitmaps true" \
 			|| die "failed to setup git configuration"
 	fi
 
@@ -317,11 +321,13 @@ pkg_postinst() {
 
 	if linux_config_exists; then
 		if linux_chkconfig_present PAX ; then
+			elog  ""
 			ewarn "Warning: PaX support is enabled, you must disable mprotect for ruby. Otherwise "
 			ewarn "FFI will trigger mprotect errors that are hard to trace. Please run: "
-			ewarn "    paxctl -m $(which ${RUBY})"
+			ewarn "    paxctl -m $RUBY"
 		fi
 	else
+		elog  ""
 		einfo "Important: Cannot find a linux kernel configuration, so cannot check for PaX support."
 		einfo "			  If CONFIG_PAX is set, you should disable mprotect for ruby since FFI may trigger"
 		einfo "			  mprotect errors."
@@ -401,6 +407,13 @@ pkg_config() {
 			CONFIG_PROTECT="${DEST_DIR}" dispatch-conf || die "failed to automatically migrate config, run \"CONFIG_PROTECT=${DEST_DIR} dispatch-conf\" by hand, re-run this routine and skip config migration to proceed."
 		fi
 
+        einfo "Clean up old gems ..."
+        su -l ${GIT_USER} -s /bin/sh -c "
+            export LANG=en_US.UTF-8; export LC_ALL=en_US.UTF-8
+            cd ${DEST_DIR}
+            ${BUNDLE} clean" \
+            || die "failed to clean up old gems ..."
+
 		einfo "Migrating database ..."
 		su -l ${GIT_USER} -s /bin/sh -c "
 			export LANG=en_US.UTF-8; export LC_ALL=en_US.UTF-8
@@ -415,13 +428,17 @@ pkg_config() {
 			${BUNDLE} exec rake cache:clear RAILS_ENV=production" \
 			|| die "failed to run cache:clear"
 
-		einfo "Clear and precompile assets ..."
+		einfo "Clean up assets ..."
 		su -l ${GIT_USER} -s /bin/sh -c "
 			export LANG=en_US.UTF-8; export LC_ALL=en_US.UTF-8
 			cd ${DEST_DIR}
-			${BUNDLE} exec rake assets:clean RAILS_ENV=production
-			${BUNDLE} exec rake assets:precompile RAILS_ENV=production" \
-			|| die "failed to run assets:clean and assets:precompile"
+			${BUNDLE} exec rake gitlab:assets:clean RAILS_ENV=production NODE_ENV=production" \
+			|| die "failed to run gitlab:assets:clean"
+
+		einfo "Configure Git to generate packfile bitmaps ..."
+		su -l ${GIT_USER} -s /bin/sh -c "
+			git config --global repack.writeBitmaps true" \
+			|| die "failed to configure Git"
 
 	else
 
@@ -448,6 +465,15 @@ pkg_config() {
 			${BUNDLE} exec rake gitlab:setup RAILS_ENV=${RAILS_ENV}" \
 				|| die "failed to run rake gitlab:setup"
 	fi
+
+    einfo "Compile assets ..."
+    su -l ${GIT_USER} -s /bin/sh -c "
+    	export LANG=en_US.UTF-8; export LC_ALL=en_US.UTF-8
+        cd ${DEST_DIR}
+        yarn install --production --pure-lockfile />/dev/null
+        ${BUNDLE} exec rake gitlab:assets:compile RAILS_ENV=production NODE_ENV=production" \
+        || die "failed to run yarn install and gitlab:assets:compile"
+
 
 	## (Re-)Link gitlab-shell-secret into gitlab-shell
 	if test -L "${GITLAB_SHELL}/.gitlab_shell_secret"

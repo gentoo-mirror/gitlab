@@ -6,7 +6,7 @@ EAPI="5"
 
 EGIT_REPO_URI="https://gitlab.com/gitlab-org/gitlab-shell.git"
 EGIT_COMMIT="v${PV}"
-USE_RUBY="ruby21 ruby22"
+USE_RUBY="ruby23"
 
 inherit eutils git-2 ruby-ng user
 
