@@ -471,6 +471,7 @@ pkg_config() {
     su -l ${GIT_USER} -s /bin/sh -c "
     	export LANG=en_US.UTF-8; export LC_ALL=en_US.UTF-8
         cd ${DEST_DIR}
+		yarn add mime-db
         yarn install --production --pure-lockfile --no-progress 
         ${BUNDLE} exec rake gitlab:assets:compile RAILS_ENV=production NODE_ENV=production" \
         || die "failed to run yarn install and gitlab:assets:compile"
