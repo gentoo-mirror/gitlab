@@ -53,7 +53,7 @@ DEPEND="${GEMS_DEPEND}
 	>dev-vcs/git-2.2.1
 	>=dev-vcs/gitlab-shell-5.0.0
 	>=dev-vcs/gitlab-gitaly-0.3.0
-	>=www-servers/gitlab-workhorse-1.4.1
+	>=www-servers/gitlab-workhorse-1.4.2
 	net-misc/curl
 	virtual/ssh
 	sys-apps/yarn
