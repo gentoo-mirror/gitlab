@@ -23,7 +23,7 @@ HOMEPAGE="https://about.gitlab.com/gitlab-ci/"
 
 LICENSE="MIT"
 SLOT=$(get_version_component_range 1-2)
-KEYWORDS="~amd64 ~x86 ~arm"
+KEYWORDS="~amd64 ~x86"
 IUSE="memcached mysql +postgres +unicorn"
 
 ## Gems dependencies:
@@ -389,12 +389,12 @@ pkg_config() {
 				# Fix permissions
 				find "${DEST_DIR}/public/uploads/" -type d -exec chmod 0700 {} \;
 			fi
-			
+
 			for conf in database.yml gitlab.yml resque.yml unicorn.rb secrets.yml ; do
 				einfo "Migration config file \"$conf\" ..."
 				cp -p "${LATEST_DEST}/config/${conf}" "${DEST_DIR}/config/"
 				sed -s "s#$(basename $LATEST_DEST)#${PN}-${SLOT}#g" -i "${DEST_DIR}/config/$conf"
-	
+
 				example="${DEST_DIR}/config/${conf}.example"
 				test -f "${example}" && mv "${example}" "${DEST_DIR}/config/._cfg0000_${conf}"
 			done

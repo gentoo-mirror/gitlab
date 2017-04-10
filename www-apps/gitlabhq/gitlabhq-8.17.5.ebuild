@@ -23,7 +23,7 @@ HOMEPAGE="https://about.gitlab.com/gitlab-ci/"
 
 LICENSE="MIT"
 SLOT=$(get_version_component_range 1-2)
-KEYWORDS="~amd64 ~x86 ~arm"
+KEYWORDS="~amd64 ~x86"
 IUSE="memcached mysql +postgres +unicorn"
 
 ## Gems dependencies:
@@ -275,18 +275,18 @@ pkg_postinst() {
 	elog "If this is a new installation, proceed with the following steps:"
 	elog
 	elog "  1. Copy ${CONF_DIR}/gitlab.yml.example to ${CONF_DIR}/gitlab.yml"
-	elog "     and edit this file in order to configure your GitLab settings."
+	elog "	 and edit this file in order to configure your GitLab settings."
 	elog
 	elog "  2. Copy ${CONF_DIR}/database.yml.* to ${CONF_DIR}/database.yml"
-	elog "     and edit this file in order to configure your database settings"
-	elog "     for \"production\" environment."
+	elog "	 and edit this file in order to configure your database settings"
+	elog "	 for \"production\" environment."
 	elog
 	elog "  3. Copy ${CONF_DIR}/initializers/rack_attack.rb.example"
-	elog "     to ${CONF_DIR}/initializers/rack_attack.rb"
+	elog "	 to ${CONF_DIR}/initializers/rack_attack.rb"
 	elog
 	elog "  4. Copy ${CONF_DIR}/resque.yml.example to ${CONF_DIR}/resque.yml"
-	elog "     and edit this file in order to configure your Redis settings"
-	elog "     for \"production\" environment."
+	elog "	 and edit this file in order to configure your Redis settings"
+	elog "	 for \"production\" environment."
 	elog
 
 	if use unicorn; then
@@ -296,25 +296,25 @@ pkg_postinst() {
 
 	elog "  5. If this is a new installation, create a database for your GitLab instance."
 	if use postgres; then
-		elog "    If you have local PostgreSQL running, just copy&run:"
-		elog "        su postgres"
-		elog "        psql -c \"CREATE ROLE gitlab PASSWORD 'gitlab' \\"
-		elog "            NOSUPERUSER NOCREATEDB NOCREATEROLE INHERIT LOGIN;\""
-		elog "        createdb -E UTF-8 -O gitlab gitlab_production"
-		elog "    Note: You should change your password to something more random..."
+		elog "	If you have local PostgreSQL running, just copy&run:"
+		elog "		su postgres"
+		elog "		psql -c \"CREATE ROLE gitlab PASSWORD 'gitlab' \\"
+		elog "			NOSUPERUSER NOCREATEDB NOCREATEROLE INHERIT LOGIN;\""
+		elog "		createdb -E UTF-8 -O gitlab gitlab_production"
+		elog "	Note: You should change your password to something more random..."
 		elog
-		elog "    GitLab uses polymorphic associations which are not SQL-standard friendly."
-		elog "    To get it work you must use this ugly workaround:"
-		elog "        psql -U postgres -d gitlab"
-		elog "        CREATE CAST (integer AS text) WITH INOUT AS IMPLICIT;"
+		elog "	GitLab uses polymorphic associations which are not SQL-standard friendly."
+		elog "	To get it work you must use this ugly workaround:"
+		elog "		psql -U postgres -d gitlab"
+		elog "		CREATE CAST (integer AS text) WITH INOUT AS IMPLICIT;"
 		elog
 	fi
 	elog "  6. Execute the following command to finalize your setup:"
-	elog "         emerge --config \"=${CATEGORY}/${PF}\""
-	elog "     Note: Do not forget to start Redis server."
+	elog "		 emerge --config \"=${CATEGORY}/${PF}\""
+	elog "	 Note: Do not forget to start Redis server."
 	elog
 	elog "To update an existing instance, run the following command and choose upgrading when prompted:"
-	elog "    emerge --config \"=${CATEGORY}/${PF}\""
+	elog "	emerge --config \"=${CATEGORY}/${PF}\""
 	elog
 	elog "Important: Do not remove the earlier version prior migration!"
 
@@ -323,7 +323,7 @@ pkg_postinst() {
 			elog  ""
 			ewarn "Warning: PaX support is enabled, you must disable mprotect for ruby. Otherwise "
 			ewarn "FFI will trigger mprotect errors that are hard to trace. Please run: "
-			ewarn "    paxctl -m $RUBY"
+			ewarn "	paxctl -m $RUBY"
 		fi
 	else
 		elog  ""
@@ -394,24 +394,24 @@ pkg_config() {
 				# Fix permissions
 				find "${DEST_DIR}/public/uploads/" -type d -exec chmod 0700 {} \;
 			fi
-			
+
 			for conf in database.yml gitlab.yml resque.yml unicorn.rb secrets.yml ; do
 				einfo "Migration config file \"$conf\" ..."
 				cp -p "${LATEST_DEST}/config/${conf}" "${DEST_DIR}/config/"
 				sed -s "s#$(basename $LATEST_DEST)#${PN}-${SLOT}#g" -i "${DEST_DIR}/config/$conf"
-	
+
 				example="${DEST_DIR}/config/${conf}.example"
 				test -f "${example}" && mv "${example}" "${DEST_DIR}/config/._cfg0000_${conf}"
 			done
 			CONFIG_PROTECT="${DEST_DIR}" dispatch-conf || die "failed to automatically migrate config, run \"CONFIG_PROTECT=${DEST_DIR} dispatch-conf\" by hand, re-run this routine and skip config migration to proceed."
 		fi
 
-        einfo "Clean up old gems ..."
-        su -l ${GIT_USER} -s /bin/sh -c "
-            export LANG=en_US.UTF-8; export LC_ALL=en_US.UTF-8
-            cd ${DEST_DIR}
-            ${BUNDLE} clean" \
-            || die "failed to clean up old gems ..."
+		einfo "Clean up old gems ..."
+		su -l ${GIT_USER} -s /bin/sh -c "
+			export LANG=en_US.UTF-8; export LC_ALL=en_US.UTF-8
+			cd ${DEST_DIR}
+			${BUNDLE} clean" \
+			|| die "failed to clean up old gems ..."
 
 		einfo "Migrating database ..."
 		su -l ${GIT_USER} -s /bin/sh -c "
@@ -465,14 +465,13 @@ pkg_config() {
 				|| die "failed to run rake gitlab:setup"
 	fi
 
-    einfo "Compile assets ..."
-    su -l ${GIT_USER} -s /bin/sh -c "
-    	export LANG=en_US.UTF-8; export LC_ALL=en_US.UTF-8
-        cd ${DEST_DIR}
-        yarn install --production --pure-lockfile />/dev/null
-        ${BUNDLE} exec rake gitlab:assets:compile RAILS_ENV=production NODE_ENV=production" \
-        || die "failed to run yarn install and gitlab:assets:compile"
-
+	einfo "Compile assets ..."
+	su -l ${GIT_USER} -s /bin/sh -c "
+		export LANG=en_US.UTF-8; export LC_ALL=en_US.UTF-8
+		cd ${DEST_DIR}
+		yarn install --production --pure-lockfile />/dev/null
+		${BUNDLE} exec rake gitlab:assets:compile RAILS_ENV=production NODE_ENV=production" \
+		|| die "failed to run yarn install and gitlab:assets:compile"
 
 	## (Re-)Link gitlab-shell-secret into gitlab-shell
 	if test -L "${GITLAB_SHELL}/.gitlab_shell_secret"
