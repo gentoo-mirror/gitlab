@@ -277,18 +277,18 @@ pkg_postinst() {
 	elog "If this is a new installation, proceed with the following steps:"
 	elog
 	elog "  1. Copy ${CONF_DIR}/gitlab.yml.example to ${CONF_DIR}/gitlab.yml"
-	elog "	 and edit this file in order to configure your GitLab settings."
+	elog "     and edit this file in order to configure your GitLab settings."
 	elog
 	elog "  2. Copy ${CONF_DIR}/database.yml.* to ${CONF_DIR}/database.yml"
-	elog "	 and edit this file in order to configure your database settings"
-	elog "	 for \"production\" environment."
+	elog "     and edit this file in order to configure your database settings"
+	elog "     for \"production\" environment."
 	elog
 	elog "  3. Copy ${CONF_DIR}/initializers/rack_attack.rb.example"
-	elog "	 to ${CONF_DIR}/initializers/rack_attack.rb"
+	elog "     to ${CONF_DIR}/initializers/rack_attack.rb"
 	elog
 	elog "  4. Copy ${CONF_DIR}/resque.yml.example to ${CONF_DIR}/resque.yml"
-	elog "	 and edit this file in order to configure your Redis settings"
-	elog "	 for \"production\" environment."
+	elog "     and edit this file in order to configure your Redis settings"
+	elog "     for \"production\" environment."
 	elog
 
 	if use unicorn; then
@@ -298,25 +298,25 @@ pkg_postinst() {
 
 	elog "  5. If this is a new installation, create a database for your GitLab instance."
 	if use postgres; then
-		elog "	If you have local PostgreSQL running, just copy&run:"
-		elog "		su postgres"
-		elog "		psql -c \"CREATE ROLE gitlab PASSWORD 'gitlab' \\"
-		elog "			NOSUPERUSER NOCREATEDB NOCREATEROLE INHERIT LOGIN;\""
-		elog "		createdb -E UTF-8 -O gitlab gitlab_production"
-		elog "	Note: You should change your password to something more random..."
+		elog "    If you have local PostgreSQL running, just copy&run:"
+		elog "        su postgres"
+		elog "        psql -c \"CREATE ROLE gitlab PASSWORD 'gitlab' \\"
+		elog "            NOSUPERUSER NOCREATEDB NOCREATEROLE INHERIT LOGIN;\""
+		elog "        createdb -E UTF-8 -O gitlab gitlab_production"
+		elog "    Note: You should change your password to something more random..."
 		elog
-		elog "	GitLab uses polymorphic associations which are not SQL-standard friendly."
-		elog "	To get it work you must use this ugly workaround:"
-		elog "		psql -U postgres -d gitlab"
-		elog "		CREATE CAST (integer AS text) WITH INOUT AS IMPLICIT;"
+		elog "    GitLab uses polymorphic associations which are not SQL-standard friendly."
+		elog "    To get it work you must use this ugly workaround:"
+		elog "        psql -U postgres -d gitlab"
+		elog "        CREATE CAST (integer AS text) WITH INOUT AS IMPLICIT;"
 		elog
 	fi
 	elog "  6. Execute the following command to finalize your setup:"
-	elog "		 emerge --config \"=${CATEGORY}/${PF}\""
-	elog "	 Note: Do not forget to start Redis server."
+	elog "         emerge --config \"=${CATEGORY}/${PF}\""
+	elog "     Note: Do not forget to start Redis server."
 	elog
 	elog "To update an existing instance, run the following command and choose upgrading when prompted:"
-	elog "	emerge --config \"=${CATEGORY}/${PF}\""
+	elog "    emerge --config \"=${CATEGORY}/${PF}\""
 	elog
 	elog "Important: Do not remove the earlier version prior migration!"
 
@@ -325,7 +325,7 @@ pkg_postinst() {
 			elog  ""
 			ewarn "Warning: PaX support is enabled, you must disable mprotect for ruby. Otherwise "
 			ewarn "FFI will trigger mprotect errors that are hard to trace. Please run: "
-			ewarn "	paxctl -m $RUBY"
+			ewarn "    paxctl -m $RUBY"
 		fi
 	else
 		elog  ""
