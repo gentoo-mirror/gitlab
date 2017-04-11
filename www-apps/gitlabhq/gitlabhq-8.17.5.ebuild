@@ -350,7 +350,7 @@ pkg_config() {
 
 		LATEST_DEST=$(test -n "${LATEST_DEST}" && echo ${LATEST_DEST} || \
 			find /opt -maxdepth 1 -iname 'gitlabhq-*' -and -type d -and -not -iname "gitlabhq-${SLOT}" | \
-			sort -r | head -n1)
+			sort -rV | head -n1)
 
 		if [[ -z "${LATEST_DEST}" || ! -d "${LATEST_DEST}" ]] ; then
 			einfo "Please enter the path to your latest Gitlab instance:"
