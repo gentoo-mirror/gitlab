@@ -49,11 +49,11 @@ GEMS_DEPEND="
 	memcached? ( net-misc/memcached )
 	net-libs/http-parser"
 DEPEND="${GEMS_DEPEND}
-	>=dev-lang/ruby-2.1[readline,ssl]
+	>=dev-lang/ruby-2.3[readline,ssl]
 	>dev-vcs/git-2.2.1
 	>=dev-vcs/gitlab-shell-5.0.0
 	>=dev-vcs/gitlab-gitaly-0.3.0
-	>=www-servers/gitlab-workhorse-1.4.1
+	>=www-servers/gitlab-workhorse-1.4.2
 	net-misc/curl
 	virtual/ssh
 	sys-apps/yarn
