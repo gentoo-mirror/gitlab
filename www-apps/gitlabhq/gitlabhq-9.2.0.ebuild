@@ -49,10 +49,11 @@ GEMS_DEPEND="
 	memcached? ( net-misc/memcached )
 	net-libs/http-parser"
 DEPEND="${GEMS_DEPEND}
-	>=dev-lang/ruby-2.1[readline,ssl]
+	>=dev-lang/ruby-2.3[readline,ssl]
 	>dev-vcs/git-2.2.1
-	>=dev-vcs/gitlab-shell-4.1.1
-	>=www-servers/gitlab-workhorse-1.3.0
+	>=dev-vcs/gitlab-shell-5.0.3
+	>=dev-vcs/gitlab-gitaly-0.10.0
+	>=www-servers/gitlab-workhorse-2.0.0
 	net-misc/curl
 	virtual/ssh
 	sys-apps/yarn
@@ -105,6 +106,7 @@ each_ruby_prepare() {
 		-e "s|\(\s*hooks_path:\s\)/.*|\1 ${GITLAB_SHELL_HOOKS}/|" \
 		-e "s|\(\s*path:\s\)/.*/gitlab-satellites/|\1 ${GIT_SATELLITES}/|" \
 		-e "s|\(\s*GITLAB_SHELL:\s*\)|\1\n\tpath: \"${GITLAB_SHELL}\"|" \
+		-e "s|# socket_path: tmp/sockets/private/gitaly\.socket|socket_path: tmp/sockets/gitaly.socket|" \
 		config/gitlab.yml.example || die "failed to filter gitlab.yml.example"
 
 	# modify database settings
@@ -376,14 +378,14 @@ pkg_config() {
 		then
 			einfo "Found major update, migrate data from \"$LATEST_DEST\":"
 			einfo "Migrating uploads ..."
-			einfo "This will move your uploads from \"$LATEST_DEST\" to \"${DEST_DIR}\", continue? [Y|n] "
+			einfo "This will move your uploads from \"$LATEST_DEST\" to \"${DEST_DIR}\", (C)ontinue or (s)kip? "
 			migrate_uploads=""
 			while true
 			do
 				read -r migrate_uploads
-				if [[ $migrate_uploads == "n" || $migrate_uploads == "N" ]] ; then migrate_uploads="" && break
-				elif [[ $migrate_uploads == "y" || $migrate_uploads == "Y" || $migrate_uploads == "" ]] ; then migrate_uploads=1 && break
-				else eerror "Please type either \"Y\" or \"N\" ... " ; fi
+				if [[ $migrate_uploads == "s" || $migrate_uploads == "S" ]] ; then migrate_uploads="" && break
+				elif [[ $migrate_uploads == "c" || $migrate_uploads == "C" || $migrate_uploads == "" ]] ; then migrate_uploads=1 && break
+				else eerror "Please type either \"c\" to continue or \"n\" to skip ... " ; fi
 			done
 			if [[ $migrate_uploads ]] ; then
 				su -l ${GIT_USER} -s /bin/sh -c "
@@ -469,7 +471,8 @@ pkg_config() {
 	su -l ${GIT_USER} -s /bin/sh -c "
 		export LANG=en_US.UTF-8; export LC_ALL=en_US.UTF-8
 		cd ${DEST_DIR}
-		yarn install --production --pure-lockfile />/dev/null
+		yarn add mime-db
+		yarn install --production --pure-lockfile --no-progress
 		${BUNDLE} exec rake gitlab:assets:compile RAILS_ENV=production NODE_ENV=production" \
 		|| die "failed to run yarn install and gitlab:assets:compile"
 
