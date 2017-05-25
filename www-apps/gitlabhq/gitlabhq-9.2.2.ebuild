@@ -55,6 +55,7 @@ DEPEND="${GEMS_DEPEND}
 	>=dev-vcs/gitlab-shell-5.0.4
 	>=dev-vcs/gitlab-gitaly-0.10.0
 	>=www-servers/gitlab-workhorse-2.0.0
+	app-eselect/eselect-gitlabhq
 	net-misc/curl
 	virtual/ssh
 	sys-apps/yarn
