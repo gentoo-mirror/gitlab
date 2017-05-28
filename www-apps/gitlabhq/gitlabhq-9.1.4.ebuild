@@ -22,6 +22,7 @@ DESCRIPTION="GitLab is a free project and repository management application"
 HOMEPAGE="https://about.gitlab.com/gitlab-ci/"
 
 LICENSE="MIT"
+RESTRICT="splitdebug"
 SLOT=$(get_version_component_range 1-2)
 KEYWORDS="~amd64 ~x86"
 IUSE="memcached mysql +postgres +unicorn"
