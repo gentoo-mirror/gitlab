@@ -2,7 +2,7 @@
 # Copyright 2017 Gentoo Foundation
 # Distributed under the terms of the GNU GPL version 2 or later
 
-DESCRIPTION="Manage the gitlabhq symlink(s)"
+DESCRIPTION="Manage the gitlabhq slot symlink(s)"
 MAINTAINER="avschie@on.nl"
 VERSION="@VERSION@"
 
@@ -18,6 +18,8 @@ find_targets() {
 # remove the gitlabhq symlink
 remove_symlink() {
     rm "${EROOT}/opt/gitlabhq" || die "failed to remove /opt/gitlabhq symlink"
+    # openrc:
+    rm -f "${EROOT}/etc/init.d/gitlabhq"
 }
 
 # set the gitlabhq symlinks
@@ -46,7 +48,12 @@ set_symlink() {
                "  CONFIG_PROTECT=${EROOT}/opt/${target}/config dispatch-conf"
     fi
 
-    ln -s "${target}" "${EROOT}/opt/gitlabhq"
+    ln -s "${target}" "${EROOT}/opt/gitlabhq" || die -q "Failed to create /opt/gitlabhq symlink!"
+
+    # Optional openrc symlink:
+    if [ -x "${EROOT}/etc/init.d/${target}" ]; then
+        ln -s "${target}" "${EROOT}/etc/init.d/gitlabhq"
+    fi
 }
 
 ### show action ###
