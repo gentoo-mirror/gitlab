@@ -1,3 +1,4 @@
+app-eselect/eselect-gitlabhq 20170603: Manages multiple gitlabhq versions
 dev-vcs/gitlab-gitaly 0.3.0 0.6.0 0.10.0: Gitaly is a Git RPC service for handling all the git calls made by GitLab.
 dev-vcs/gitlab-shell 5.0.0 5.0.2 5.0.4: GitLab Shell is a free SSH access and repository management application
 www-apps/gitlabhq 9.0.7 9.1.4 9.2.2: GitLab is a free project and repository management application
