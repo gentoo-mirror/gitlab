@@ -16,7 +16,7 @@ PYTHON_COMPAT=( python2_7 )
 EGIT_REPO_URI="https://gitlab.com/gitlab-org/gitlab-ce.git"
 EGIT_COMMIT="v${PV}"
 
-inherit eutils git-2 python-r1 ruby-ng versionator user linux-info
+inherit eutils git-2 python-r1 ruby-ng versionator user linux-info systemd
 
 DESCRIPTION="GitLab is a free project and repository management application"
 HOMEPAGE="https://about.gitlab.com/gitlab-ci/"
@@ -52,9 +52,10 @@ GEMS_DEPEND="
 DEPEND="${GEMS_DEPEND}
 	>=dev-lang/ruby-2.3[readline,ssl]
 	>dev-vcs/git-2.2.1
-	>=dev-vcs/gitlab-shell-5.0.0
-	>=dev-vcs/gitlab-gitaly-0.3.0
-	>=www-servers/gitlab-workhorse-1.4.2
+	>=dev-vcs/gitlab-shell-5.0.4
+	>=dev-vcs/gitlab-gitaly-0.10.0
+	>=www-servers/gitlab-workhorse-2.0.0
+	app-eselect/eselect-gitlabhq
 	net-misc/curl
 	virtual/ssh
 	sys-apps/yarn
@@ -145,6 +146,18 @@ each_ruby_prepare() {
 			config/unicorn.rb.example \
 			|| die "failed to modify unicorn.rb.example"
 	fi
+}
+
+src_install() {
+	# DO NOT REMOVE - without this, the package won't install
+	ruby-ng_src_install
+	
+	elog "Installing systemd unit files"
+	systemd_dounit "${FILESDIR}/${PN}-${SLOT}-mailroom.service"
+	systemd_dounit "${FILESDIR}/${PN}-${SLOT}-sidekiq.service"
+	systemd_dounit "${FILESDIR}/${PN}-${SLOT}-unicorn.service"
+	systemd_dounit "${FILESDIR}/${PN}-${SLOT}-workhorse.service"
+	systemd_dotmpfilesd "${FILESDIR}/${PN}-${SLOT}-tmpfiles.conf"
 }
 
 each_ruby_install() {
@@ -334,12 +347,17 @@ pkg_postinst() {
 		einfo "			  If CONFIG_PAX is set, you should disable mprotect for ruby since FFI may trigger"
 		einfo "			  mprotect errors."
 	fi
+
+	systemd_dounit "${FILESDIR}"/gitlab-mailroom-9.2.service
+	systemd_dounit "${FILESDIR}"/gitlab-sidekiq-9.2.service
+	systemd_dounit "${FILESDIR}"/gitlab-tempdir-9.2.service
+	systemd_dounit "${FILESDIR}"/gitlab-unicorn-9.2.service
+	systemd_dounit "${FILESDIR}"/gitlab-workhorse-9.2.service
 }
 
 pkg_config() {
-
 	# Ask user whether this is the first installation
-	einfo "Do you want to upgrade an existing installation? [Y|n] "
+	einfon "Do you want to upgrade an existing installation? [Y|n] "
 	do_upgrade=""
 	while true
 	do
@@ -356,7 +374,7 @@ pkg_config() {
 			sort -rV | head -n1)
 
 		if [[ -z "${LATEST_DEST}" || ! -d "${LATEST_DEST}" ]] ; then
-			einfo "Please enter the path to your latest Gitlab instance:"
+			einfon "Please enter the path to your latest Gitlab instance:"
 			while true
 			do
 				read -r LATEST_DEST
@@ -372,14 +390,19 @@ pkg_config() {
 		elog "\$ /etc/init.d/${LATEST_DEST#*/opt/} stop"
 		elog ""
 
-		einfo "Press ENTER to continue, STRG-C to cancel"
-		read
+		einfon "Proceeed? [Y|n] "
+		read -r proceed
+		if [[ $proceed != "y" && $proceed != "Y" && $proceed != "" ]]
+		then
+			einfo "Aborting migration"
+			return
+		fi
 
 		if [[ ${LATEST_DEST} != ${DEST_DIR} ]] ;
 		then
 			einfo "Found major update, migrate data from \"$LATEST_DEST\":"
 			einfo "Migrating uploads ..."
-			einfo "This will move your uploads from \"$LATEST_DEST\" to \"${DEST_DIR}\", (C)ontinue or (s)kip? "
+			einfon "This will move your uploads from \"$LATEST_DEST\" to \"${DEST_DIR}\", (C)ontinue or (s)kip? "
 			migrate_uploads=""
 			while true
 			do
@@ -398,15 +421,41 @@ pkg_config() {
 				find "${DEST_DIR}/public/uploads/" -type d -exec chmod 0700 {} \;
 			fi
 
-			for conf in database.yml gitlab.yml resque.yml unicorn.rb secrets.yml ; do
-				einfo "Migration config file \"$conf\" ..."
-				cp -p "${LATEST_DEST}/config/${conf}" "${DEST_DIR}/config/"
-				sed -s "s#$(basename $LATEST_DEST)#${PN}-${SLOT}#g" -i "${DEST_DIR}/config/$conf"
-
-				example="${DEST_DIR}/config/${conf}.example"
-				test -f "${example}" && mv "${example}" "${DEST_DIR}/config/._cfg0000_${conf}"
+			einfon "Migrate configuration, (C)ontinue or (s)kip? "
+			while true
+			do
+				read -r skip_config
+				if [[ $skip_config == "s" || $skip_config == "S" ]] ; then skip_config="" && break
+				elif [[ $skip_config == "c" || $skip_config == "C" || $merge_config == "" ]] ; then merge_config=1 && break
+				else eerror "Please type either \"c\" to continue or \"s\" to skip ... " ; fi
 			done
-			CONFIG_PROTECT="${DEST_DIR}" dispatch-conf || die "failed to automatically migrate config, run \"CONFIG_PROTECT=${DEST_DIR} dispatch-conf\" by hand, re-run this routine and skip config migration to proceed."
+			if [[ $skip_config ]]
+			then
+				for conf in database.yml gitlab.yml resque.yml unicorn.rb secrets.yml ; do
+					einfo "Migration config file \"$conf\" ..."
+					cp -p "${LATEST_DEST}/config/${conf}" "${DEST_DIR}/config/"
+					sed -s "s#$(basename $LATEST_DEST)#${PN}-${SLOT}#g" -i "${DEST_DIR}/config/$conf"
+	
+					example="${DEST_DIR}/config/${conf}.example"
+					test -f "${example}" && cp -p "${example}" "${DEST_DIR}/config/._cfg0000_${conf}"
+				done
+	
+				# if the user's console is not 80x24, it is better to manually run dispatch-conf
+				einfon "Merge config with dispatch-conf, (C)ontinue or (q)uit? "
+				while true
+				do
+					read -r merge_config
+					if [[ $merge_config == "q" || $merge_config == "Q" ]] ; then merge_config="" && break
+					elif [[ $merge_config == "c" || $merge_config == "C" || $merge_config == "" ]] ; then merge_config=1 && break
+					else eerror "Please type either \"c\" to continue or \"q\" to quit ... " ; fi
+				done
+				if [[ $merge_config ]] ; then
+					CONFIG_PROTECT="${DEST_DIR}" dispatch-conf || die "failed to automatically migrate config, run \"CONFIG_PROTECT=${DEST_DIR} dispatch-conf\" by hand, re-run this routine and skip config migration to proceed."
+				else
+					echo "Manually run \"CONFIG_PROTECT=${DEST_DIR} dispatch-conf\" and re-run this routine and skip config migration to proceed." 
+					return
+				fi
+			fi
 		fi
 
 		einfo "Clean up old gems ..."
