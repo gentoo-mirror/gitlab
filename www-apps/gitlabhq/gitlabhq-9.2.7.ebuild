@@ -347,12 +347,6 @@ pkg_postinst() {
 		einfo "			  If CONFIG_PAX is set, you should disable mprotect for ruby since FFI may trigger"
 		einfo "			  mprotect errors."
 	fi
-
-	systemd_dounit "${FILESDIR}"/gitlab-mailroom-9.2.service
-	systemd_dounit "${FILESDIR}"/gitlab-sidekiq-9.2.service
-	systemd_dounit "${FILESDIR}"/gitlab-tempdir-9.2.service
-	systemd_dounit "${FILESDIR}"/gitlab-unicorn-9.2.service
-	systemd_dounit "${FILESDIR}"/gitlab-workhorse-9.2.service
 }
 
 pkg_config() {
