@@ -418,12 +418,12 @@ pkg_config() {
 			einfon "Migrate configuration, (C)ontinue or (s)kip? "
 			while true
 			do
-				read -r skip_config
-				if [[ $skip_config == "s" || $skip_config == "S" ]] ; then skip_config="" && break
-				elif [[ $skip_config == "c" || $skip_config == "C" || $merge_config == "" ]] ; then merge_config=1 && break
+				read -r migrate_config
+				if [[ $migrate_config == "s" || $migrate_config == "S" ]] ; then migrate_config="" && break
+				elif [[ $migrate_config == "c" || $migrate_config == "C" || $migrate_config == "" ]] ; then migrate_config=1 && break
 				else eerror "Please type either \"c\" to continue or \"s\" to skip ... " ; fi
 			done
-			if [[ $skip_config ]]
+			if [[ $migrate_config ]]
 			then
 				for conf in database.yml gitlab.yml resque.yml unicorn.rb secrets.yml ; do
 					einfo "Migration config file \"$conf\" ..."
