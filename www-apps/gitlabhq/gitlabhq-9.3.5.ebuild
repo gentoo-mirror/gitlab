@@ -52,7 +52,7 @@ GEMS_DEPEND="
 DEPEND="${GEMS_DEPEND}
 	>=dev-lang/ruby-2.3[readline,ssl]
 	>dev-vcs/git-2.2.1
-	>=dev-vcs/gitlab-shell-5.0.5
+	>=dev-vcs/gitlab-shell-5.1.1
 	>=dev-vcs/gitlab-gitaly-0.11.2
 	>=www-servers/gitlab-workhorse-2.1.1
 	app-eselect/eselect-gitlabhq
