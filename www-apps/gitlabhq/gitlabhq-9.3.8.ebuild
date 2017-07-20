@@ -59,7 +59,8 @@ DEPEND="${GEMS_DEPEND}
 	net-misc/curl
 	virtual/ssh
 	sys-apps/yarn
-	>=net-libs/nodejs-7.0.0"
+	>=net-libs/nodejs-7.0.0
+	dev-libs/re2"
 RDEPEND="${DEPEND}
 	>=dev-db/redis-2.8.0
 	virtual/mta
