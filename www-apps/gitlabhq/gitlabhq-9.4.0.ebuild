@@ -72,6 +72,7 @@ ruby_add_bdepend "
 RUBY_PATCHES=(
 	"${PN}-${SLOT}-fix-checks-gentoo.patch"
 	"${PN}-${SLOT}-fix-sendmail-param.patch"
+	"${PN}-${SLOT}-fix-ci-api-entities.patch"
 )
 
 GIT_USER="git"
