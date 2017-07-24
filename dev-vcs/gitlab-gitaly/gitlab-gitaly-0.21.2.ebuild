@@ -15,11 +15,20 @@ LICENSE="MIT"
 SLOT="0"
 KEYWORDS="~amd64 ~x86 ~arm"
 
-DEPEND=">=dev-lang/go-1.5.1"
+DEPEND=">=dev-lang/go-1.8.3"
 RDEPEND="${DEPEND}"
+
+src_prepare()
+{
+	sed -s 's#^socket_path = .*#socket_path = "/opt/gitlabhq/tmp/sockets/gitaly.socket"#' -i "config.toml.example" || die
+	sed -s 's#^path = .*#path = "/var/lib/git/repositories"#' -i "config.toml.example" || die
+}
 
 src_install()
 {
-	into "/usr"
+	into "/usr" # This will install the binary to /usr/bin. Don't specify the "bin" folder!
 	newbin "gitaly" "gitlab-gitaly"
+
+	insinto "/etc/gitaly"
+	newins "config.toml.example" "config.toml"
 }
