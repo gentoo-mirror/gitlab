@@ -3,6 +3,8 @@
 profiles
 ## Ignore the Metadata directory
 metadata
+## Ignore the E-Build Manifests
+**/Manifest
 
 # LFS Files
 # - Ignore compressed files
