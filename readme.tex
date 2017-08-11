@@ -102,6 +102,12 @@ One never merges a package branch back into the \branch{template} branch.
 This allows the developer to work on an unstable package while providing a stable \branch{master} branch.
 One intends on registering this overlay with the Gentoo overlay(s) project so that the master branch is always available via Layman, allowing one to checkout an unstable branch as they develop their \eBuild{}s without confusing Portage\footnote{Registration is necessary as the work flow is quite brutal. \eBuild{}s will flicker in and out of the portage tree as one switches branches which can't be good}.
 
+\subsection{\branch{project}}
+
+It may be useful to create a \branch{project} branch to develop multiple \eBuild{s} concurrently for a large project.
+Once the project is working one would split it up into the various \branch{\package[category]{package}} branches.
+Similarly one may leverage \branch{project} branches to combine multiple \eBuild{s} together before pushing them into \branch{master}.
+
 \subsection{\branch{template}}
 
 The idea behind this branch is that it provides a template for package authors.
