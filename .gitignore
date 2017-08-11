@@ -1,9 +1,9 @@
 # Gentoo specific files
-## Ignore the Profile directory
+# - Ignore the Profile directory
 profiles
-## Ignore the Metadata directory
+# - Ignore the Metadata directory
 metadata
-## Ignore the E-Build Manifests
+# - Ignore the E-Build Manifests
 **/Manifest
 
 # LFS Files
