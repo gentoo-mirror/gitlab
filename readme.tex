@@ -1,0 +1,229 @@
+\documentclass{article}
+
+\title{Manaikan Overlay}
+\author{Carel van Dam}
+
+% Note : 
+%
+%   The following has been extracted from my linux package and
+%   must be removed the moment that is contributed to CTAN.
+%  
+\usepackage{xparse}
+\usepackage{xspace}
+\usepackage{menukeys}
+\usepackage{listings}
+\usepackage{todonotes}
+\usepackage[listings]{tcolorbox}
+
+% Green is used to indicate a new feature
+% Black is used to indicate an existing feature
+% Blue is used to highlight an existing feature
+% red is currently unassigned but should probably represent the current commit
+% red with green fill cculd represent the same, simlarly 
+\NewDocumentCommand{\branch}{o m}{%
+ \IfValueT{#1}{\textbf{#1}\,}%
+ \tikz \draw let \n{len}={0.5ex} in
+             (-0.5*\n{len},  1.0*\n{len}) node [draw, black, fill=white, circle, inner sep=0.2*\n{len}] {} 
+          -- (-0.5*\n{len},- 1.0*\n{len}) node [draw, black, fill=white, circle, inner sep=0.2*\n{len}] {}
+             (-0.5*\n{len},- 0.25*\n{len}) -- ( 0.5*\n{len}, 0.25*\n{len})
+          -- ( 0.5*\n{len},  1.0*\n{len}) node [draw, blue,  fill=white, circle, inner sep=0.2*\n{len}] {};%
+ \,\textbf{#2}\xspace
+}
+\NewDocumentCommand{\package}{o m}%
+  {\IfValueT{#1}%
+    {\textsc{#1}\textsc{/}}%
+   \textsc{#2}\xspace}
+\ProvideDocumentCommand{\ebuild}{s o m o}%
+  {\IfNoValueTF{#2}%
+    {\menu{\textit{#3}}}%
+    {\menu{#2>\textit{#3}}}%
+  \IfValueT{#4}%
+    {\menu{\textbf{#4}}}%
+  \xspace}
+\NewDocumentCommand{\eBuild}{}{E-Build\xspace}
+% I have no idea where these were originally defined, presumably compeng but they are marked off there.
+\newmenumacro{\nixfile}[/]{hyphenatepaths}
+\newmenumacro{\nixpath}[/]{hyphenatepathswithfolder}
+\definecolor{todofillcolour}{rgb}{ 1.0, 0.9, 0.35}
+\newcounter{notecounter}
+\newcommand{\note}[2][]{%
+ \stepcounter{notecounter}%
+  \todo%
+   [prepend,%
+    inline,%
+    size = \small,%
+    color=todofillcolour,%
+    caption=\textbf{NOTE \thenotecounter\ },%
+    #1]%
+    {#2}}
+\begin{document}
+
+\maketitle
+
+\tableofcontents
+
+\section{Introduction}
+
+This overlay is largely used to support the packages I depend upon that are present in neither the portage tree nor in a third parties overlay.
+This document also provides a template for documenting the various packages that have been contributed.
+
+\section{Usage}
+
+Currently one must pull down the repository into their local portage tree, \nixpath{/usr/local/portage}, and provide both a \nixpath{metadata} and the \nixpath{profiles} directory for the overlay.
+Within the \nixpath{metadata} folder one should add a \nixfile{layout.conf} file containing the following.
+\begin{tcblisting}{title=\nixfile{metadata/layout.conf},listing only}
+masters = gentoo
+auto-sync = false
+\end{tcblisting}
+\noindent
+While in the \nixpath{profiles} folder one should add a file called \nixfile{repo\_name} with the name of the repository.
+\begin{tcblisting}{title=\nixfile{profiles/repo\_name},listing only}
+Manaikan
+\end{tcblisting}
+
+Section \ref{ssec:issues:git} discusses why this is the currently needed.
+
+\note{If ones local portage tree is already under version control it is recommended, while not ideal, that they simply copy the \eBuild{s} of interest into their own tree.}
+
+\section{Structure}
+
+\subsection{\branch{master}}
+
+The canonical branch of the repository that the typical user is interested in is the \branch{master} branch. 
+It provides the complete set of packages that are considered stable.
+One may pull this down and should be able to readily use the e-builds contained within it.
+
+\subsection{\branch{\package[category]{package}}}
+
+The \eBuild{}(s) for each package, \package[category]{package}, is developed within it's own branch, \branch{\package[category]{package}}. 
+The \branch{template} branch forms the starting point for every package branch and developers must create their package branches from it.
+Once the \eBuild{}(s) in a package branch is/are considered stable the branch may be merged into the \branch{master} branch.
+One never merges a package branch back into the \branch{template} branch.
+This allows the developer to work on an unstable package while providing a stable \branch{master} branch.
+One intends on registering this overlay with the Gentoo overlay(s) project so that the master branch is always available via Layman, allowing one to checkout an unstable branch as they develop their \eBuild{}s without confusing Portage\footnote{Registration is necessary as the work flow is quite brutal. \eBuild{}s will flicker in and out of the portage tree as one switches branches which can't be good}.
+
+\subsection{\branch{template}}
+
+The idea behind this branch is that it provides a template for package authors.
+It presents a snapshot of the master branch after the first initial commit when it did not contain any packages.
+In practice it actually branches from the skeleton branch, which represents this snapshot, since there will eventually be some need to update the initial snapshot.
+
+\subsection{\branch{skeleton}}
+
+A \branch{skeleton} branch is provided that retains a snapshot of the \branch{master} branch when it was still empty.
+That is before any packages where merged into it.
+Should one need to create or update a file that is not part of a \branch{\package[category]{package}} branch they should do so here.
+The changes one may make here are strictly limited those necessary for git and Gentoo. 
+That is the \nixfile{.gitignore} and \nixfile{.gitattributes} file(s) for git and the \nixpath{metadata} and \nixpath{profile} folders for Gentoo.
+Any file(s) not included in that set such as the \nixfile{readme} and \nixfile{licence} files are created or modified in the \branch{templates} branch.
+If you're not sure which branch your modification should be included into use the \branch{template} branch instead of \branch{skeleton}.
+
+% The purpose of this is to allow one to modify files in the \branch{master} branch that are not themselves part of a package this should be done in the master branch
+
+\section{Work flow}
+
+\subsection{\branch{master}}
+
+One only ever works in the master branch when pulling in a package branch.
+
+\subsection{\branch{\package[category]{package}}}
+
+The \branch{template} branch is the canonical root for all packages. 
+
+\vspace{0.75ex}
+\noindent
+\begin{minipage}{0.48\textwidth}
+% New Package
+New \branch{\package[category]{package}} branch(es) should be created from the \branch{template} branch.
+\begin{lstlisting}[basicstyle=\small]
+git checkout template
+git checkout -b CAT./PKG.
+\end{lstlisting}
+\end{minipage}
+\hfill\hfill
+\begin{minipage}{0.48\textwidth}
+% Existing Package
+Old \branch{\package[category]{package}} branch(es) should be updated from the \branch{template} branch.
+\begin{lstlisting}[basicstyle=\small]
+git checkout CAT./PKG.
+git merge template
+\end{lstlisting}
+\end{minipage}
+\noindent
+Once one is satisifed the packages is stable one should commit
+\begin{lstlisting}
+git add .
+git commit -m "PACKAGE/CATEGORY-VERSION:Created/Updated|MESSAGE"
+\end{lstlisting}
+and merge\footnote{\lstinline|git diff <source branch> <target branch>| may be used to compare two branches before merging them} it into the \branch{master} branch.
+\begin{lstlisting}
+git checkout master
+git merge template
+\end{lstlisting}
+
+I'm not sure if one must perform a commit within the master branch here or not but should it be necessary the following format should be used
+\begin{lstlisting}
+git commit -m "PACKAGE/CATEGORY-VERSION:Merged"
+\end{lstlisting}
+
+\subsection{\branch{template}}
+
+If one modifies the \branch{template} branch they need not merge it with any other branches. 
+The package branches will eventually pull in any changes into the master branch
+
+\subsection{\branch{skeleton}}
+
+If one must modify the \branch{skeleton} branch they should merge it with the with the \branch{template} branch as soon as possible.
+
+\section{Trouble Shooting}
+
+\subsection{Git repositories and Portage Overlays} \label{ssec:issues:git}
+
+\subsubsection{Multiple Machines}
+
+When trying to use the same repository on two separate machine I kept getting erors pertaining to inconsistencies in the digest/manifest files and the has of the current \eBuild{(s)}.
+I think this was made worse since I was traversing two separate architectures.
+I never worked out why this was but found that using the \lstinline|--force| switch resolved this and allowed the \eBuild{(s)} to be merged.
+
+\subsubsection{Git Repositories}
+
+Occasionally I will see some error in the portage output describing it could not synchronize the local repository.
+This seems to be tied to the \lstinline|autosync| attribute in the \nixpath{metadata/layout.conf} file.
+I have not resolved why this is so but note it here for later review.
+
+\section{Templates}
+
+The rest of the document concentrates upon describing how an \eBuild has been created and discusses any nuances in it's development.
+The intentions here is to document ones \eBuild{(s)}. 
+While this is an ideal use case for Doc\TeX\ it is currently not being enforced.
+The structure for each category and it's packages should roughly adhere to the following outline.
+
+\begin{description}
+\item[CATEGORY]
+Sections are used to organize packages by their package category in the same fashion as portage does and provide :
+\begin{itemize}
+\item An Overview of the category.
+\item A Summary of the packages it provides.
+\end{itemize}
+\begin{description}
+\item[PACKAGE]
+Subsections are used to described the packages' \eBuild and should provide
+\begin{itemize}
+\item An overview of any nuances
+\item A change log of supported versions
+\item A comparision against or an acknowledgement of third party \eBuild{s}
+\end{itemize}
+\begin{description}
+\item[METHOD(S)] If a default or an inherited method is overridden one should motivate this.
+Perhaps include how it was overridden and which methods of the inheritted classes were included or excluded.
+A comparison towards the packages Makefile is always useful. 
+
+\item[Files] Discusses the included auxillary files e.g. \nixfile{.init} scripts and \nixfile{.conf} files.
+\item[Help] Covers man pages and help files
+\item[Issues] Covers trouble shooting and installation problems.
+\end{description}
+\end{description}
+\end{description}
+
+
+\end{document}
