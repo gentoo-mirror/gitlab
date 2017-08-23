@@ -14,12 +14,12 @@ After=redis.service postgresql-9.5.service
 
 [Service]
 User=git
-WorkingDirectory=/opt/gitlabhq-9.2
+WorkingDirectory=/opt/gitlabhq-9.5
 Environment=RAILS_ENV=production
 SyslogIdentifier=gitlab-unicorn
-PIDFile=/opt/gitlabhq-9.2/tmp/pids/unicorn.pid
+PIDFile=/opt/gitlabhq-9.5/tmp/pids/unicorn.pid
 
-ExecStart=/usr/bin/bundle exec "unicorn_rails -D -c /opt/gitlabhq-9.2/config/unicorn.rb -E production"
+ExecStart=/usr/bin/bundle exec "unicorn_rails -D -c /opt/gitlabhq-9.5/config/unicorn.rb -E production"
 
 [Install]
 WantedBy=multi-user.target
