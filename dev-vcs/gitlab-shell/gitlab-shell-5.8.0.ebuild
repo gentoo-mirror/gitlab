@@ -46,9 +46,14 @@ all_ruby_unpack() {
 		config.yml.example || die "failed to filter config.yml.example"
 }
 
+all_ruby_compile() {
+	./bin/compile
+	default
+}
+
 all_ruby_install() {
 
-	rm -Rf .git .gitignore
+	rm -Rf .git .gitignore go_build
 
 	insinto ${DEST_DIR}
 	touch gitlab-shell.log
@@ -58,13 +63,10 @@ all_ruby_install() {
 	dosym ${DEST_DIR}/bin/gitlab-projects /usr/bin/gitlab-projects || die
 	dosym ${DEST_DIR}/bin/gitlab-shell /usr/bin/gitlab-shell || die
 	dosym ${DEST_DIR}/bin/check /usr/bin/gitlab-check || die
-
-	fperms 0755 ${DEST_DIR}/bin/gitlab-keys || die
-	fperms 0755 ${DEST_DIR}/bin/gitlab-projects || die
-	fperms 0755 ${DEST_DIR}/bin/gitlab-shell || die
-	fperms 0755 ${DEST_DIR}/bin/check || die
-	fperms 0755 ${DEST_DIR}/bin/create-hooks || die
-	fperms 0755 ${DEST_DIR}/bin/install || die
+	
+	for bin in gitlab-keys gitlab-projects gitlab-shell check create-hooks install gitaly-receive-pack gitaly-upload-pack ; do
+		fperms 0755 ${DEST_DIR}/bin/${bin} || die
+	done
 
 	fperms 0755 ${DEST_DIR}/hooks/post-receive || die
 	fperms 0755 ${DEST_DIR}/hooks/pre-receive || die
