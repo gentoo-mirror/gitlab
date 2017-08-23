@@ -15,14 +15,14 @@ After=redis.service postgresql-9.5.service
 [Service]
 Type=forking
 User=git
-WorkingDirectory=/opt/gitlabhq-9.2
+WorkingDirectory=/opt/gitlabhq-9.5
 Environment=RAILS_ENV=production
 SyslogIdentifier=gitlab-sidekiq
-PIDFile=/opt/gitlabhq-9.2/tmp/pids/sidekiq.pid
-RuntimeDirectory=/var/tmp/gitlabhq-9.2
+PIDFile=/opt/gitlabhq-9.5/tmp/pids/sidekiq.pid
+RuntimeDirectory=/var/tmp/gitlabhq-9.5
 
 ExecStart=/usr/bin/bundle exec "sidekiq -C config/sidekiq_queues.yml -c 5 -e production -P tmp/pids/sidekiq.pid -d -L log/sidekiq.log >> log/sidekiq.log 2>&1"
-ExecStop=/usr/bin/bundle exec "sidekiqctl stop /opt/gitlabhq-9.2/tmp/pids/sidekiq.pid >> /opt/gitlabhq-9.2/log/sidekiq.log 2>&1"
+ExecStop=/usr/bin/bundle exec "sidekiqctl stop /opt/gitlabhq-9.5/tmp/pids/sidekiq.pid >> /opt/gitlabhq-9.5/log/sidekiq.log 2>&1"
 
 [Install]
 WantedBy=multi-user.target
