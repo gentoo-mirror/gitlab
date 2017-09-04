@@ -1,0 +1,2 @@
+dev-vcs/gitlab-gitaly 0.11.2 0.21.2 0.33.0: Gitaly is a Git RPC service for handling all the git calls made by GitLab.
+www-servers/gitlab-workhorse 2.1.1 2.3.0 3.0.0: Handles slow HTTP requests for GitLab
