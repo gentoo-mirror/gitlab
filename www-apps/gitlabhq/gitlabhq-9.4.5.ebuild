@@ -76,7 +76,7 @@ RUBY_PATCHES=(
 
 GIT_USER="git"
 GIT_GROUP="git"
-GIT_HOME=$(getent passwd $GIT_USER  | cut -d: -f6)
+GIT_HOME="/var/lib/git"
 DEST_DIR="/opt/${PN}-${SLOT}"
 CONF_DIR="/etc/${PN}-${SLOT}"
 

@@ -53,7 +53,7 @@ DEPEND="${GEMS_DEPEND}
 	>=dev-lang/ruby-2.3[readline,ssl]
 	>dev-vcs/git-2.2.1
 	>=dev-vcs/gitlab-shell-5.8.0
-	>=dev-vcs/gitlab-gitaly-0.33.0
+	>=dev-vcs/gitlab-gitaly-0.35.0
 	>=www-servers/gitlab-workhorse-3.0.0
 	app-eselect/eselect-gitlabhq
 	net-misc/curl
@@ -76,7 +76,7 @@ RUBY_PATCHES=(
 
 GIT_USER="git"
 GIT_GROUP="git"
-GIT_HOME=$(getent passwd $GIT_USER  | cut -d: -f6)
+GIT_HOME="/var/lib/git"
 DEST_DIR="/opt/${PN}-${SLOT}"
 CONF_DIR="/etc/${PN}-${SLOT}"
 
