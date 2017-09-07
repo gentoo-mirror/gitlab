@@ -31,11 +31,21 @@ src_prepare()
 
 src_install()
 {
+	# Cleanup unneeded temp/object/source files
+	find ruby/vendor -name '*.[choa]' -delete
+	find ruby/vendor -name '*.[ch]pp' -delete
+	find ruby/vendor -iname 'Makefile' -delete
+	# Other cleanup candidates: a.out *.bin
+
 	into "/usr" # This will install the binary to /usr/bin. Don't specify the "bin" folder!
 	newbin "gitaly" "gitlab-gitaly"
 
 	insinto "/var/lib/gitlab-gitaly"
 	doins -r "ruby"
+
+	# make binaries executable
+	exeinto "/var/lib/gitlab-gitaly/ruby/bin"
+	doexe "ruby/bin/"*
 
 	insinto "/etc/gitaly"
 	newins "config.toml.example" "config.toml"
