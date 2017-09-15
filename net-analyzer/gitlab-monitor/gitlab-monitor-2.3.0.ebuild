@@ -16,7 +16,8 @@ LICENSE="MIT"
 SLOT="0"
 KEYWORDS="~amd64 ~x86 ~arm"
 
-DEPEND="$(ruby_implementations_depend)"
+DEPEND="$(ruby_implementations_depend)
+		dev-ruby/bundler"
 RDEPEND="${DEPEND}"
 
 GIT_GROUP="git"
