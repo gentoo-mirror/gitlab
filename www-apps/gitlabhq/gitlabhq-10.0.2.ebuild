@@ -396,6 +396,7 @@ pkg_config() {
 		if [[ ${LATEST_DEST} != ${DEST_DIR} ]] ;
 		then
 			einfo "Found major update, migrate data from \"$LATEST_DEST\":"
+
 			einfo "Migrating uploads ..."
 			einfon "This will move your uploads from \"$LATEST_DEST\" to \"${DEST_DIR}\", (C)ontinue or (s)kip? "
 			migrate_uploads=""
@@ -415,6 +416,26 @@ pkg_config() {
 				# Fix permissions
 				find "${DEST_DIR}/public/uploads/" -type d -exec chmod 0700 {} \;
 			fi
+
+            einfo "Migrating shared data ..."
+            einfon "This will move your shared data from \"$LATEST_DEST\" to \"${DEST_DIR}\", (C)ontinue or (s)kip? "
+            migrate_shared=""
+            while true
+            do
+                read -r migrate_shared
+                if [[ $migrate_shared == "s" || $migrate_shared == "S" ]] ; then migrate_shared="" && break
+                elif [[ $migrate_shared == "c" || $migrate_shared == "C" || $migrate_shared == "" ]] ; then migrate_shared=1 && break
+                else eerror "Please type either \"c\" to continue or \"n\" to skip ... " ; fi
+            done
+            if [[ $migrate_shared ]] ; then
+                su -l ${GIT_USER} -s /bin/sh -c "
+                    rm -rf ${DEST_DIR}/shared && \
+                    mv ${LATEST_DEST}/shared ${DEST_DIR}/shared" \
+                    || die "failed to migrate shared data."
+
+                # Fix permissions
+                find "${DEST_DIR}/shared/" -type d -exec chmod 0700 {} \;
+            fi			
 
 			einfon "Migrate configuration, (C)ontinue or (s)kip? "
 			while true
