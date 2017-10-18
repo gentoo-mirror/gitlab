@@ -499,7 +499,7 @@ pkg_config() {
 		su -l ${GIT_USER} -s /bin/sh -c "
 			export LANG=en_US.UTF-8; export LC_ALL=en_US.UTF-8
 			cd ${DEST_DIR}
-			${BUNDLE} exec rake gitlab:assets:clean RAILS_ENV=production NODE_ENV=production" \
+			${BUNDLE} exec rake gitlab:assets:clean RAILS_ENV=${RAILS_ENV} NODE_ENV=production" \
 			|| die "failed to run gitlab:assets:clean"
 
 		einfo "Configure Git to generate packfile bitmaps ..."
@@ -533,14 +533,23 @@ pkg_config() {
 				|| die "failed to run rake gitlab:setup"
 	fi
 
+	einfo "Compile GetText PO files ..."
+	su -l ${GIT_USER} -s /bin/sh -c "
+		export LANG=en_US.UTF-8; export LC_ALL=en_US.UTF-8
+        cd ${DEST_DIR}
+		${BUNDLE} exec rake gettext:pack RAILS_ENV=${RAILS_ENV}
+		${BUNDLE} exec rake gettext:po_to_json RAILS_ENV=${RAILS_ENV}" \
+			|| die "failed to compile GetText PO files"
+
 	einfo "Compile assets ..."
 	su -l ${GIT_USER} -s /bin/sh -c "
 		export LANG=en_US.UTF-8; export LC_ALL=en_US.UTF-8
 		cd ${DEST_DIR}
-		yarn add mime-db
+		echo \"Fixing https://gitlab.com/gitlab-org/gitlab-ce/issues/38275 ...\"
+		yarn add ajv@^4.0.0
 		yarn install --production --pure-lockfile --no-progress
-		${BUNDLE} exec rake gitlab:assets:compile RAILS_ENV=production NODE_ENV=production" \
-		|| die "failed to run yarn install and gitlab:assets:compile"
+		${BUNDLE} exec rake gitlab:assets:compile RAILS_ENV=${RAILS_ENV} NODE_ENV=production" \
+			|| die "failed to run yarn install and gitlab:assets:compile"
 
 	## (Re-)Link gitlab-shell-secret into gitlab-shell
 	if test -L "${GITLAB_SHELL}/.gitlab_shell_secret"
