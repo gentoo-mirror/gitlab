@@ -1,14 +1,14 @@
 #!/sbin/openrc-run
 
 name="GitLab"
-description="GitLab 9.4 on Unicorns"
+description="GitLab 10.0 on Unicorns"
 
 : ${rails_env:=production}
 
 : ${gitlab_user:=git}
 : ${gitlab_group:=git}
-: ${gitlab_home:="/opt/gitlabhq-9.4"}
-: ${gitlab_log:="/var/log/gitlabhq-9.4"}
+: ${gitlab_home:="/opt/gitlabhq-10.0"}
+: ${gitlab_log:="/var/log/gitlabhq-10.0"}
 
 : ${unicorn_pidfile:="${gitlab_home}/tmp/pids/unicorn.pid"}
 : ${unicorn_log:="${gitlab_log}/unicorn.log"}
@@ -51,7 +51,7 @@ start() {
 	checkpath -d -o "${gitlab_user}:${gitlab_group}" -m750 "$(dirname "${unicorn_pidfile}")"
 	checkpath -d -o "${gitlab_user}:${gitlab_group}" -m750 "$(dirname "${sidekiq_pidfile}")"
 
-	ebegin "Starting GitLab 9.4 Unicorn servers"
+	ebegin "Starting GitLab 10.0 Unicorn servers"
 	start-stop-daemon --start \
 		--chdir "${gitlab_home}" \
 		--user="${gitlab_user}:${gitlab_group}" \
@@ -59,12 +59,12 @@ start() {
 		--exec ${unicorn_command} -- ${unicorn_command_args}
 	eend $?
 
-	ebegin "Starting GitLab 9.4 Sidekiq"
+	ebegin "Starting GitLab 10.0 Sidekiq"
 	cd "${gitlab_home}"
 	sudo -u git -H ${sidekiq_command} ${sidekiq_start_command_args}
 	eend $?
 
-	ebegin "Starting GitLab 9.4 Workhorse"
+	ebegin "Starting GitLab 10.0 Workhorse"
 	start-stop-daemon --start \
 		--chdir "${gitlab_home}" \
 		--user="${gitlab_user}:${gitlab_group}" \
@@ -74,7 +74,7 @@ start() {
 		--exec ${workhorse_command} -- ${workhorse_command_args}
 	eend $?
 
-        ebegin "Starting GitLab 9.4 Gitaly"
+        ebegin "Starting GitLab 10.0 Gitaly"
         start-stop-daemon --start \
                 --chdir "${gitlab_home}" \
                 --user="${gitlab_user}:${gitlab_group}" \
@@ -87,26 +87,26 @@ start() {
 }
 
 stop() {
-        ebegin "Stopping GitLab 9.4 Gitaly"
+        ebegin "Stopping GitLab 10.0 Gitaly"
         start-stop-daemon --stop \
                 --chdir "${gitlab_home}" \
                 --user="${gitlab_user}:${gitlab_group}" \
                 --pidfile="${gitaly_pidfile}"
         eend $?
 
-	ebegin "Stopping GitLab 9.4 Workhorse"
+	ebegin "Stopping GitLab 10.0 Workhorse"
   	start-stop-daemon --stop \
 		--chdir "${gitlab_home}" \
 		--user="${gitlab_user}:${gitlab_group}" \
 		--pidfile="${workhorse_pidfile}"
 	eend $?
 
-	ebegin "Stopping GitLab 9.4 Sidekiq"
+	ebegin "Stopping GitLab 10.0 Sidekiq"
 	cd "${gitlab_home}"
 	sudo -u git -H ${sidekiq_command} ${sidekiq_stop_command_args}
 	eend $?
 
-	ebegin "Stopping GitLab 9.4 Unicorn servers"
+	ebegin "Stopping GitLab 10.0 Unicorn servers"
 	start-stop-daemon --stop \
 		--chdir "${gitlab_home}" \
 		--user="${gitlab_user}:${gitlab_group}" \
