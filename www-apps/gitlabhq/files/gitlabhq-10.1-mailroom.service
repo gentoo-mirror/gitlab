@@ -15,14 +15,14 @@ After=gitlab-unicorn.service
 [Service]
 User=git
 Environment=RAILS_ENV=production
-WorkingDirectory=/opt/gitlabhq-10.0
+WorkingDirectory=/opt/gitlabhq-10.1
 SyslogIdentifier=gitlab-mailroom
-PIDFile=/opt/gitlabhq-10.0/tmp/pids/gitlab-mailroom.pid
+PIDFile=/opt/gitlabhq-10.1/tmp/pids/gitlab-mailroom.pid
 Type=oneshot
 RemainAfterExit=yes
 
-ExecStart=/opt/gitlabhq-10.0/bin/mail_room start
-ExecStop=/opt/gitlabhq-10.0/bin/mail_room stop
+ExecStart=/opt/gitlabhq-10.1/bin/mail_room start
+ExecStop=/opt/gitlabhq-10.1/bin/mail_room stop
 
 [Install]
 WantedBy=multi-user.target
