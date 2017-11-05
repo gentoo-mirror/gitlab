@@ -154,10 +154,17 @@ src_install() {
 	ruby-ng_src_install
 	
 	elog "Installing systemd unit files"
-	systemd_dounit "${FILESDIR}/${PN}-${SLOT}-mailroom.service"
-	systemd_dounit "${FILESDIR}/${PN}-${SLOT}-sidekiq.service"
-	systemd_dounit "${FILESDIR}/${PN}-${SLOT}-unicorn.service"
-	systemd_dounit "${FILESDIR}/${PN}-${SLOT}-workhorse.service"
+	for file in "${FILESDIR}/${PN}-${SLOT}-"*.service "${FILESDIR}/${PN}-${SLOT}.target"; do
+		unit=$(basename $file)
+		sed -e "s#@DEST_DIR@#${DEST_DIR}#g" \
+		    -e "s#@CONF_DIR@#${DEST_DIR}/config#" \
+		    -e "s#@LOG_DIR@#/var/log/${PN}-${SLOT}#" \
+		    -e "s#@TMP_DIR@#/var/tmp/${PN}-${SLOT}#g" \
+		    -e "s#@SLOT@#${SLOT}#g" \
+			"${file}" > "${T}/${unit}" || die "Failed to configure: $unit"
+		systemd_dounit "${T}/${unit}" 
+	done
+
 	systemd_dotmpfilesd "${FILESDIR}/${PN}-${SLOT}-tmpfiles.conf"
 }
 
@@ -204,6 +211,9 @@ each_ruby_install() {
 
 	insinto "${dest}"
 	doins -r ./
+	# need to install some needed/usefull binaries as executable
+	exeinto ${dest}/bin
+	doexe bin/bundle bin/mail_room bin/check bin/upgrade.rb
 
 	## Install logrotate config ##
 

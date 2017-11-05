@@ -9,20 +9,19 @@
 [Unit]
 Description=GitLab Sidekiq Worker
 Requires=redis.service gitlab-tmpdir.service
-Wants=postgresql-10.0.service
-After=redis.service postgresql-10.0.service
+# Wants symlinks to postgresql-9.5.service or mysqld.service should to be added to
+#   /etc/systemd/systemd/gitlabhq.target.wants
+After=redis.service postgresql-9.5.service mysqld.service
+PartOf=gitlabhq-@SLOT@.target
 
 [Service]
 Type=forking
 User=git
-WorkingDirectory=/opt/gitlabhq-10.0
+WorkingDirectory=@DEST_DIR@
+Environment=sidekiq_args="-C config/sidekiq_queues.yml -c 5"
 Environment=RAILS_ENV=production
 SyslogIdentifier=gitlab-sidekiq
-PIDFile=/opt/gitlabhq-10.0/tmp/pids/sidekiq.pid
-RuntimeDirectory=/var/tmp/gitlabhq-10.0
-
-ExecStart=/usr/bin/bundle exec "sidekiq -C config/sidekiq_queues.yml -c 5 -e production -P tmp/pids/sidekiq.pid -d -L log/sidekiq.log >> log/sidekiq.log 2>&1"
-ExecStop=/usr/bin/bundle exec "sidekiqctl stop /opt/gitlabhq-10.0/tmp/pids/sidekiq.pid >> /opt/gitlabhq-10.0/log/sidekiq.log 2>&1"
-
-[Install]
-WantedBy=multi-user.target
+PIDFile=@TMP_DIR@/pids/sidekiq.pid
+RuntimeDirectory=@TMP_DIR@
+ExecStart=@DEST_DIR@/bin/bundle exec "sidekiq $sidekiq_args -e production -P tmp/pids/sidekiq.pid -d -L log/sidekiq.log >> log/sidekiq.log 2>&1"
+ExecStop=@DEST_DIR@/bin/bundle exec "sidekiqctl stop @TMP_DIR@/pids/sidekiq.pid >> @LOG_DIR@/sidekiq.log 2>&1"
