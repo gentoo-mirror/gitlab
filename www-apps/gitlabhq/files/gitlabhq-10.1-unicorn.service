@@ -8,18 +8,18 @@
 
 [Unit]
 Description=GitLab Unicorn Server
+# Only start service when config/unicorn.rb exist
+ConditionFileNotEmpty=@CONF_DIR@/unicorn.rb
 Requires=redis.service gitlab-tmpdir.service
-Wants=postgresql-10.0.service
-After=redis.service postgresql-10.0.service
+# Wants symlinks to postgresql-9.5.service or mysqld.service should to be added to
+#   /etc/systemd/systemd/gitlabhq.target.wants
+After=redis.service postgresql-9.5.service mysqld.service
+PartOf=gitlabhq-@SLOT@.target
 
 [Service]
 User=git
-WorkingDirectory=/opt/gitlabhq-10.0
+WorkingDirectory=@DEST_DIR@
 Environment=RAILS_ENV=production
 SyslogIdentifier=gitlab-unicorn
-PIDFile=/opt/gitlabhq-10.0/tmp/pids/unicorn.pid
-
-ExecStart=/usr/bin/bundle exec "unicorn_rails -D -c /opt/gitlabhq-10.0/config/unicorn.rb -E production"
-
-[Install]
-WantedBy=multi-user.target
+PIDFile=@TMP_DIR@/pids/unicorn.pid
+ExecStart=@DEST_DIR@/bin/bundle exec "unicorn_rails -D -c @CONF_DIR@/unicorn.rb -E ${RAILS_ENV}"
