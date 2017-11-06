@@ -242,6 +242,8 @@ each_ruby_install() {
 	# fix permissions
 	fowners -R ${GIT_USER}:${GIT_GROUP} "${dest}" "${conf}" "${temp}" "${logs}"
 	fperms o+Xr "${temp}" # Let nginx access the unicorn socket
+	# fix QA Security Notice: world writable file(s) vendor/bundle/ruby/2.3.0/gems/attr_required-1.0.0/*
+	fperms go-w -R vendor/bundle/ruby/*/gems/attr_required-*
 
 	## RC scripts ##
 	local rcscript=${PN}-${SLOT}.init
