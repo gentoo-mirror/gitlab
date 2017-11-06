@@ -1,6 +1,5 @@
 #####################################################
 #
-# GitLab version    : 8.x - 8.x
 # Contributors      : davispuh, mtorromeo, axilleas, boeserwolf91, Stefan Tatschner (rumpelsepp), firelizzard
 # Originally from   : https://gitlab.com/gitlab-org/gitlab-recipes/tree/master/init/systemd
 #
@@ -8,21 +7,19 @@
 
 [Unit]
 Description=Gitlab mailroom Worker
-Requires=gitlab-unicorn.service
-Wants=gitlab-unicorn.service
-After=gitlab-unicorn.service
+Requires=gitlabhq-@SLOT@-unicorn.service
+Wants=gitlabhq-@SLOT@-unicorn.service
+After=gitlabhq-@SLOT@-unicorn.service
+PartOf=gitlabhq-@SLOT@.target
 
 [Service]
 User=git
 Environment=RAILS_ENV=production
-WorkingDirectory=/opt/gitlabhq-9.5
+WorkingDirectory=@DEST_DIR@
 SyslogIdentifier=gitlab-mailroom
-PIDFile=/opt/gitlabhq-9.5/tmp/pids/gitlab-mailroom.pid
+PIDFile=@TMP_DIR@/pids/gitlab-mailroom.pid
 Type=oneshot
 RemainAfterExit=yes
 
-ExecStart=/opt/gitlabhq-9.5/bin/mail_room start
-ExecStop=/opt/gitlabhq-9.5/bin/mail_room stop
-
-[Install]
-WantedBy=multi-user.target
+ExecStart=@DEST_DIR@/bin/mail_room start
+ExecStop=@DEST_DIR@/bin/mail_room stop
