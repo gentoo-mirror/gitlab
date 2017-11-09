@@ -1,0 +1,14 @@
+DEFINED_PHASES=compile configure install postinst preinst prepare setup test unpack
+DEPEND=dev-libs/icu dev-libs/libxml2 dev-libs/libxslt dev-util/ragel dev-libs/yajl net-libs/nodejs postgres? ( dev-db/postgresql ) mysql? ( virtual/mysql ) memcached? ( net-misc/memcached ) net-libs/http-parser >=dev-lang/ruby-2.3[readline,ssl] >dev-vcs/git-2.2.1 >=dev-vcs/gitlab-shell-5.8.0 >=dev-vcs/gitlab-gitaly-0.35.0 >=www-servers/gitlab-workhorse-3.0.0 app-eselect/eselect-gitlabhq net-misc/curl virtual/ssh >=sys-apps/yarn-0.27.5 >=net-libs/nodejs-7.0.0 dev-libs/re2 ruby_targets_ruby23? ( virtual/rubygems[ruby_targets_ruby23] >=dev-ruby/bundler-1.0[ruby_targets_ruby23] ) dev-vcs/git ruby_targets_ruby23? ( dev-lang/ruby:2.3 ) virtual/pkgconfig
+DESCRIPTION=GitLab is a free project and repository management application
+EAPI=5
+HOMEPAGE=https://about.gitlab.com/gitlab-ci/
+IUSE=memcached mysql +postgres +unicorn python_targets_python2_7 elibc_FreeBSD ruby_targets_ruby23
+KEYWORDS=~amd64 ~x86
+LICENSE=MIT
+RDEPEND=dev-libs/icu dev-libs/libxml2 dev-libs/libxslt dev-util/ragel dev-libs/yajl net-libs/nodejs postgres? ( dev-db/postgresql ) mysql? ( virtual/mysql ) memcached? ( net-misc/memcached ) net-libs/http-parser >=dev-lang/ruby-2.3[readline,ssl] >dev-vcs/git-2.2.1 >=dev-vcs/gitlab-shell-5.8.0 >=dev-vcs/gitlab-gitaly-0.35.0 >=www-servers/gitlab-workhorse-3.0.0 app-eselect/eselect-gitlabhq net-misc/curl virtual/ssh >=sys-apps/yarn-0.27.5 >=net-libs/nodejs-7.0.0 dev-libs/re2 >=dev-db/redis-2.8.0 virtual/mta virtual/krb5 ruby_targets_ruby23? ( dev-lang/ruby:2.3 )
+REQUIRED_USE=|| ( ruby_targets_ruby23 )
+RESTRICT=splitdebug
+SLOT=9.5
+_eclasses_=epatch	8233751dc5105a6ae8fcd86ce2bb0247	estack	43ddf5aaffa7a8d0482df54d25a66a1f	eutils	227b041a120d309fdefbebb3b8c1dfa9	git-2	195a672bfaf52d868442171c9469bbb6	java-utils-2	1971a6927fcd7ec839f7e12b28a24bdd	linux-info	ca370deef9d44125d829f2eb6ebc83e0	ltprune	2770eed66a9b8ef944714cd0e968182e	multibuild	72647e255187a1fadc81097b3657e5c3	multilib	97f470f374f2e94ccab04a2fb21d811e	python-r1	e9350ec46bb5c9f3504b4fbe8b8d8987	python-utils-r1	c9de01becf9df3f8c10aeec3dc693f5d	ruby-ng	dbd648644c9f5bec523dc17dc34d8671	ruby-utils	453e0fe0dd06baac93b584c91528cc62	systemd	34815d3b76e745c5ca33eec9f95074c2	toolchain-funcs	185a06792159ca143528e7010368e8af	user	e4b567c44272a719fabf53f0f885d3f7	versionator	c80ccf29e90adea7c5cae94b42eb76d0
+_md5_=cc6028bfad3d656955d6c1c8551b33eb
