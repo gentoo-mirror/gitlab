@@ -24,13 +24,13 @@ RDEPEND="${DEPEND}"
 
 GIT_USER="git"
 GIT_GROUP="git"
-HOME=$(if [ -n "$(getent passwd git | cut -d: -f6)" ]; then (getent passwd git | cut -d: -f6); else (echo /var/lib/git); fi)
-REPO_DIR="${HOME}/repositories"
-AUTH_FILE="${HOME}/.ssh/authorized_keys"
-KEY_DIR=$(dirname "${AUTH_FILE}")
 DEST_DIR="/var/lib/${PN}"
 
 pkg_setup() {
+	HOME=$(if [ -n "$(getent passwd git | cut -d: -f6)" ]; then (getent passwd git | cut -d: -f6); else (echo /var/lib/git); fi)
+	REPO_DIR="${HOME}/repositories"
+	AUTH_FILE="${HOME}/.ssh/authorized_keys"
+	KEY_DIR=$(dirname "${AUTH_FILE}")
 
 	enewgroup ${GIT_GROUP}
 	enewuser ${GIT_USER} -1 -1 "${HOME}" ${GIT_GROUP}
