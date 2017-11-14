@@ -52,9 +52,9 @@ GEMS_DEPEND="
 DEPEND="${GEMS_DEPEND}
 	>=dev-lang/ruby-2.3[readline,ssl]
 	>dev-vcs/git-2.2.1
-	>=dev-vcs/gitlab-shell-5.9.0
-	>=dev-vcs/gitlab-gitaly-0.38.0
-	>=www-servers/gitlab-workhorse-3.0.0
+	>=dev-vcs/gitlab-shell-5.9.3
+	>=dev-vcs/gitlab-gitaly-0.43.0
+	>=www-servers/gitlab-workhorse-3.2.0
 	app-eselect/eselect-gitlabhq
 	net-misc/curl
 	virtual/ssh
@@ -154,10 +154,17 @@ src_install() {
 	ruby-ng_src_install
 	
 	elog "Installing systemd unit files"
-	systemd_dounit "${FILESDIR}/${PN}-${SLOT}-mailroom.service"
-	systemd_dounit "${FILESDIR}/${PN}-${SLOT}-sidekiq.service"
-	systemd_dounit "${FILESDIR}/${PN}-${SLOT}-unicorn.service"
-	systemd_dounit "${FILESDIR}/${PN}-${SLOT}-workhorse.service"
+	for file in "${FILESDIR}/${PN}-${SLOT}-"*.service "${FILESDIR}/${PN}-${SLOT}.target"; do
+		unit=$(basename $file)
+		sed -e "s#@DEST_DIR@#${DEST_DIR}#g" \
+		    -e "s#@CONF_DIR@#${DEST_DIR}/config#" \
+		    -e "s#@LOG_DIR@#/var/log/${PN}-${SLOT}#" \
+		    -e "s#@TMP_DIR@#/var/tmp/${PN}-${SLOT}#g" \
+		    -e "s#@SLOT@#${SLOT}#g" \
+			"${file}" > "${T}/${unit}" || die "Failed to configure: $unit"
+		systemd_dounit "${T}/${unit}" 
+	done
+
 	systemd_dotmpfilesd "${FILESDIR}/${PN}-${SLOT}-tmpfiles.conf"
 }
 
@@ -204,6 +211,9 @@ each_ruby_install() {
 
 	insinto "${dest}"
 	doins -r ./
+	# need to install some needed/usefull binaries as executable
+	exeinto ${dest}/bin
+	doexe bin/bundle bin/mail_room bin/check bin/upgrade.rb
 
 	## Install logrotate config ##
 
@@ -242,6 +252,8 @@ each_ruby_install() {
 	# fix permissions
 	fowners -R ${GIT_USER}:${GIT_GROUP} "${dest}" "${conf}" "${temp}" "${logs}"
 	fperms o+Xr "${temp}" # Let nginx access the unicorn socket
+	# fix QA Security Notice: world writable file(s) vendor/bundle/ruby/2.3.0/gems/attr_required-1.0.0/*
+	fperms go-w -R vendor/bundle/ruby/*/gems/attr_required-*
 
 	## RC scripts ##
 	local rcscript=${PN}-${SLOT}.init
@@ -499,7 +511,7 @@ pkg_config() {
 		su -l ${GIT_USER} -s /bin/sh -c "
 			export LANG=en_US.UTF-8; export LC_ALL=en_US.UTF-8
 			cd ${DEST_DIR}
-			${BUNDLE} exec rake gitlab:assets:clean RAILS_ENV=production NODE_ENV=production" \
+			${BUNDLE} exec rake gitlab:assets:clean RAILS_ENV=${RAILS_ENV} NODE_ENV=production" \
 			|| die "failed to run gitlab:assets:clean"
 
 		einfo "Configure Git to generate packfile bitmaps ..."
@@ -533,14 +545,23 @@ pkg_config() {
 				|| die "failed to run rake gitlab:setup"
 	fi
 
+	einfo "Compile GetText PO files ..."
+	su -l ${GIT_USER} -s /bin/sh -c "
+		export LANG=en_US.UTF-8; export LC_ALL=en_US.UTF-8
+        cd ${DEST_DIR}
+		${BUNDLE} exec rake gettext:pack RAILS_ENV=${RAILS_ENV}
+		${BUNDLE} exec rake gettext:po_to_json RAILS_ENV=${RAILS_ENV}" \
+			|| die "failed to compile GetText PO files"
+
 	einfo "Compile assets ..."
 	su -l ${GIT_USER} -s /bin/sh -c "
 		export LANG=en_US.UTF-8; export LC_ALL=en_US.UTF-8
 		cd ${DEST_DIR}
-		yarn add mime-db
+		echo \"Fixing https://gitlab.com/gitlab-org/gitlab-ce/issues/38275 ...\"
+		yarn add ajv@^4.0.0
 		yarn install --production --pure-lockfile --no-progress
-		${BUNDLE} exec rake gitlab:assets:compile RAILS_ENV=production NODE_ENV=production" \
-		|| die "failed to run yarn install and gitlab:assets:compile"
+		${BUNDLE} exec rake gitlab:assets:compile RAILS_ENV=${RAILS_ENV} NODE_ENV=production" \
+			|| die "failed to run yarn install and gitlab:assets:compile"
 
 	## (Re-)Link gitlab-shell-secret into gitlab-shell
 	if test -L "${GITLAB_SHELL}/.gitlab_shell_secret"
