@@ -158,8 +158,8 @@ src_install() {
 		unit=$(basename $file)
 		sed -e "s#@DEST_DIR@#${DEST_DIR}#g" \
 		    -e "s#@CONF_DIR@#${DEST_DIR}/config#" \
-		    -e "s#@LOG_DIR@#/var/log/${PN}-${SLOT}#" \
-		    -e "s#@TMP_DIR@#/var/tmp/${PN}-${SLOT}#g" \
+		    -e "s#@LOG_DIR@#${DEST_DIR}/log#" \
+		    -e "s#@TMP_DIR@#${DEST_DIR}/tmp#g" \
 		    -e "s#@SLOT@#${SLOT}#g" \
 			"${file}" > "${T}/${unit}" || die "Failed to configure: $unit"
 		systemd_dounit "${T}/${unit}" 

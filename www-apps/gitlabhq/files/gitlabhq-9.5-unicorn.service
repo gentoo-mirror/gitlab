@@ -9,7 +9,7 @@
 Description=GitLab Unicorn Server
 # Only start service when config/unicorn.rb exist
 ConditionFileNotEmpty=@CONF_DIR@/unicorn.rb
-Requires=redis.service gitlab-tmpdir.service
+Requires=redis.service
 # Wants symlinks to postgresql-9.5.service or mysqld.service should to be added to
 #   /etc/systemd/systemd/gitlabhq.target.wants
 After=redis.service postgresql-9.5.service mysqld.service
