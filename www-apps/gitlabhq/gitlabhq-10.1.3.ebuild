@@ -53,7 +53,7 @@ DEPEND="${GEMS_DEPEND}
 	>=dev-lang/ruby-2.3[readline,ssl]
 	>dev-vcs/git-2.2.1
 	>=dev-vcs/gitlab-shell-5.9.3
-	>=dev-vcs/gitlab-gitaly-0.43.0
+	>=dev-vcs/gitlab-gitaly-0.43.1
 	>=www-servers/gitlab-workhorse-3.2.0
 	app-eselect/eselect-gitlabhq
 	net-misc/curl
@@ -283,12 +283,6 @@ pkg_preinst() {
 }
 
 pkg_postinst() {
-	if [ ! -e "${GIT_HOME}/.ssh/id_rsa" ]; then
-		einfo "Generating SSH key for git user"
-		su -l ${GIT_USER} -s /bin/sh -c "
-			ssh-keygen -q -N '' -t rsa -f ${GIT_HOME}/.ssh/id_rsa" \
-			|| die "failed to generate SSH key"
-	fi
 	if [ ! -e "${GIT_HOME}/.gitconfig" ]; then
 		einfo "Setting git user in ${GIT_HOME}/.gitconfig, feel free to "
 		einfo "modify this file according to your needs!"
