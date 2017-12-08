@@ -15,6 +15,8 @@ description="GitLab 10.2 on Unicorns"
 : ${unicorn_socket:="${gitlab_home}/tmp/sockets/gitlab.socket"}
 : ${unicorn_command:="/usr/bin/bundle"}
 : ${unicorn_command_args:="exec unicorn_rails -c ${gitlab_home}/config/unicorn.rb -E ${rails_env} -D"}
+: ${unicorn_mem_min:=""}
+: ${unicorn_mem_max:=""}
 
 : ${sidekiq_pidfile:="${gitlab_home}/tmp/pids/sidekiq.pid"}
 : ${sidekiq_log:="${gitlab_log}/sidekiq.log"}
@@ -53,6 +55,8 @@ start() {
 
 	ebegin "Starting GitLab 10.2 Unicorn servers"
 	start-stop-daemon --start \
+		--env GITLAB_UNICORN_MEMORY_MIN="${unicorn_mem_min}" \
+		--env GITLAB_UNICORN_MEMORY_MAX="${unicorn_mem_max}" \
 		--chdir "${gitlab_home}" \
 		--user="${gitlab_user}:${gitlab_group}" \
 		--pidfile="${unicorn_pidfile}" \
