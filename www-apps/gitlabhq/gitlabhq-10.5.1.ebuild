@@ -211,9 +211,6 @@ each_ruby_install() {
 
 	insinto "${dest}"
 	doins -r ./
-	# need to install some needed/usefull binaries as executable
-	exeinto ${dest}/bin
-	doexe bin/bundle bin/mail_room bin/check bin/upgrade.rb
 
 	## Install logrotate config ##
 
