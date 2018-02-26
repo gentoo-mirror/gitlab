@@ -117,3 +117,28 @@ stop() {
 		--pidfile="${unicorn_pidfile}"
 	eend $?
 }
+
+test_status()
+{
+	test -e $1 && ps -p $(cat $1) &>/dev/null
+	return $?
+}
+
+status()
+{
+	ebegin "Status for GitLab 10.5 Gitaly"
+	test_status ${gitaly_pidfile}
+	eend $?
+
+	ebegin "Status for GitLab 10.5 Workhorse"
+	test_status ${workhorse_pidfile}
+	eend $?
+
+	ebegin "Status for GitLab 10.5 Sidekiq"
+	test_status ${sidekiq_pidfile}
+	eend $?
+
+	ebegin "Status for GitLab 10.5 Unicorn servers"
+	test_status ${unicorn_pidfile}
+	eend $?
+}
