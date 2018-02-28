@@ -120,8 +120,12 @@ stop() {
 
 test_status()
 {
-	test -e $1 && ps -p $(cat $1) &>/dev/null
-	return $?
+	if test -e $1 && ps -p $(cat $1) &>/dev/null ; then
+		einfo "... Running"
+	else
+		einfo "... Stopped"
+	fi
+	return 0
 }
 
 status()
