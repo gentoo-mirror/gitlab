@@ -212,6 +212,12 @@ each_ruby_install() {
 	insinto "${dest}"
 	doins -r ./
 
+	## Make binaries executable
+	exeinto "${dest}/bin"
+	doexe bin/*
+	exeinto "${dest}/qa/bin"
+	doexe qa/bin/*
+
 	## Install logrotate config ##
 
 	dodir /etc/logrotate.d
