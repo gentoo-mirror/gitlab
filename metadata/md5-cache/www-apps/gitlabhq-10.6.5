@@ -1,4 +1,4 @@
-DEFINED_PHASES=compile configure install postinst preinst prepare setup test unpack
+DEFINED_PHASES=compile config configure install postinst preinst prepare setup test unpack
 DEPEND=dev-libs/icu dev-libs/libxml2 dev-libs/libxslt dev-util/ragel dev-libs/yajl net-libs/nodejs postgres? ( dev-db/postgresql ) mysql? ( virtual/mysql ) memcached? ( net-misc/memcached ) net-libs/http-parser >=dev-lang/ruby-2.3[readline,ssl] >dev-vcs/git-2.2.1 >=dev-vcs/gitlab-shell-7.1.1 >=dev-vcs/gitlab-gitaly-0.91.0 >=www-servers/gitlab-workhorse-4.0.0 app-eselect/eselect-gitlabhq net-misc/curl virtual/ssh >=sys-apps/yarn-0.27.5 >=net-libs/nodejs-8.9.3 dev-libs/re2 ruby_targets_ruby23? ( virtual/rubygems[ruby_targets_ruby23] >=dev-ruby/bundler-1.0[ruby_targets_ruby23] ) dev-vcs/git ruby_targets_ruby23? ( dev-lang/ruby:2.3 ) virtual/pkgconfig
 DESCRIPTION=GitLab is a free project and repository management application
 EAPI=5
