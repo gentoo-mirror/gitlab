@@ -1,14 +1,15 @@
 #!/sbin/openrc-run
 
 name="GitLab"
-description="GitLab 10.5 on Unicorns"
+description="GitLab 10.8 on Unicorns"
 
 : ${rails_env:=production}
 
 : ${gitlab_user:=git}
 : ${gitlab_group:=git}
-: ${gitlab_home:="/opt/gitlabhq-10.5"}
-: ${gitlab_log:="/var/log/gitlabhq-10.5"}
+: ${gitlab_home:="/opt/gitlabhq-10.8"}
+: ${gitlab_log:="/var/log/gitlabhq-10.8"}
+: ${gitlab_env:=""}
 
 : ${unicorn_pidfile:="${gitlab_home}/tmp/pids/unicorn.pid"}
 : ${unicorn_log:="${gitlab_log}/unicorn.log"}
@@ -53,8 +54,9 @@ start() {
 	checkpath -d -o "${gitlab_user}:${gitlab_group}" -m750 "$(dirname "${unicorn_pidfile}")"
 	checkpath -d -o "${gitlab_user}:${gitlab_group}" -m750 "$(dirname "${sidekiq_pidfile}")"
 
-	ebegin "Starting GitLab 10.5 Unicorn servers"
+	ebegin "Starting GitLab 10.8 Unicorn servers"
 	start-stop-daemon --start \
+		$(for env in $gitlab_env ; do echo "--env $env" ; done) \
 		--env GITLAB_UNICORN_MEMORY_MIN="${unicorn_mem_min}" \
 		--env GITLAB_UNICORN_MEMORY_MAX="${unicorn_mem_max}" \
 		--chdir "${gitlab_home}" \
@@ -63,13 +65,18 @@ start() {
 		--exec ${unicorn_command} -- ${unicorn_command_args}
 	eend $?
 
-	ebegin "Starting GitLab 10.5 Sidekiq"
-	cd "${gitlab_home}"
-	sudo -u git -H ${sidekiq_command} ${sidekiq_start_command_args}
+	ebegin "Starting GitLab 10.8 Sidekiq"
+	start-stop-daemon --start \
+		$(for env in $gitlab_env ; do echo "--env $env" ; done) \
+		--chdir "${gitlab_home}" \
+		--user="${gitlab_user}:${gitlab_group}" \
+		--pidfile="${sidekiq_pidfile}" \
+		--exec ${sidekiq_command} -- ${sidekiq_start_command_args}
 	eend $?
 
-	ebegin "Starting GitLab 10.5 Workhorse"
+	ebegin "Starting GitLab 10.8 Workhorse"
 	start-stop-daemon --start \
+		$(for env in $gitlab_env ; do echo "--env $env" ; done) \
 		--chdir "${gitlab_home}" \
 		--user="${gitlab_user}:${gitlab_group}" \
 		--pidfile="${workhorse_pidfile}" \
@@ -78,8 +85,9 @@ start() {
 		--exec ${workhorse_command} -- ${workhorse_command_args}
 	eend $?
 
-        ebegin "Starting GitLab 10.5 Gitaly"
+        ebegin "Starting GitLab 10.8 Gitaly"
         start-stop-daemon --start \
+		$(for env in $gitlab_env ; do echo "--env $env" ; done) \
                 --chdir "${gitlab_home}" \
                 --user="${gitlab_user}:${gitlab_group}" \
                 --pidfile="${gitaly_pidfile}" \
@@ -91,26 +99,29 @@ start() {
 }
 
 stop() {
-        ebegin "Stopping GitLab 10.5 Gitaly"
+        ebegin "Stopping GitLab 10.8 Gitaly"
         start-stop-daemon --stop \
                 --chdir "${gitlab_home}" \
                 --user="${gitlab_user}:${gitlab_group}" \
                 --pidfile="${gitaly_pidfile}"
         eend $?
 
-	ebegin "Stopping GitLab 10.5 Workhorse"
+	ebegin "Stopping GitLab 10.8 Workhorse"
   	start-stop-daemon --stop \
 		--chdir "${gitlab_home}" \
 		--user="${gitlab_user}:${gitlab_group}" \
 		--pidfile="${workhorse_pidfile}"
 	eend $?
 
-	ebegin "Stopping GitLab 10.5 Sidekiq"
-	cd "${gitlab_home}"
-	sudo -u git -H ${sidekiq_command} ${sidekiq_stop_command_args}
+	ebegin "Stopping GitLab 10.8 Sidekiq"
+	start-stop-daemon --stop \
+		--chdir "${gitlab_home}" \
+		--user="${gitlab_user}:${gitlab_group}" \
+		--pidfile="${sidekiq_pidfile}" \
+		--exec ${sidekiq_command} -- ${sidekiq_stop_command_args}
 	eend $?
 
-	ebegin "Stopping GitLab 10.5 Unicorn servers"
+	ebegin "Stopping GitLab 10.8 Unicorn servers"
 	start-stop-daemon --stop \
 		--chdir "${gitlab_home}" \
 		--user="${gitlab_user}:${gitlab_group}" \
@@ -118,31 +129,26 @@ stop() {
 	eend $?
 }
 
-test_status()
+do_status()
 {
-	if test -e $1 && ps -p $(cat $1) &>/dev/null ; then
-		einfo "... Running"
+	name="Gitlab 10.8 $1"
+	msg=$(pidfile=$2 default_status 2>&1 | awk -F': ' '{print $2}')
+	pidfile=$2 default_status &>/dev/null
+	status=$?
+
+	if [[ $status -eq 0 ]] ; then
+		einfo "$name: $msg"
 	else
-		einfo "... Stopped"
+		eerror "$name: $msg"
 	fi
-	return 0
+	
+	eend $status
 }
 
 status()
 {
-	ebegin "Status for GitLab 10.5 Gitaly"
-	test_status ${gitaly_pidfile}
-	eend $?
-
-	ebegin "Status for GitLab 10.5 Workhorse"
-	test_status ${workhorse_pidfile}
-	eend $?
-
-	ebegin "Status for GitLab 10.5 Sidekiq"
-	test_status ${sidekiq_pidfile}
-	eend $?
-
-	ebegin "Status for GitLab 10.5 Unicorn servers"
-	test_status ${unicorn_pidfile}
-	eend $?
+	do_status "Gitaly" ${gitaly_pidfile}
+	do_status "Workhorse" ${workhorse_pidfile}
+	do_status "Sidekiq" ${sidekiq_pidfile}
+	do_status "Unicorn" ${unicorn_pidfile}
 }
