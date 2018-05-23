@@ -21,6 +21,6 @@ Environment=sidekiq_args="-C config/sidekiq_queues.yml -c 5"
 Environment=RAILS_ENV=production
 SyslogIdentifier=gitlab-sidekiq
 PIDFile=@TMP_DIR@/pids/sidekiq.pid
-RuntimeDirectory=@TMP_DIR@
+ConditionPathExists=@TMP_DIR@
 ExecStart=@DEST_DIR@/bin/bundle exec "sidekiq $sidekiq_args -e production -P tmp/pids/sidekiq.pid -d -L log/sidekiq.log >> log/sidekiq.log 2>&1"
 ExecStop=@DEST_DIR@/bin/bundle exec "sidekiqctl stop @TMP_DIR@/pids/sidekiq.pid >> @LOG_DIR@/sidekiq.log 2>&1"
