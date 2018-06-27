@@ -229,9 +229,6 @@ each_ruby_install() {
 	done
 	local bundle_args="--deployment ${without:+--without ${without}}"
 
-	# Use systemlibs for nokogiri as suggested
-	${BUNDLE} config build.nokogiri --use-system-libraries
-
 	# Fix invalid ldflags for charlock_holmes,
 	# see https://github.com/brianmario/charlock_holmes/issues/32
 	${BUNDLE} config build.charlock_holmes --with-ldflags='-L. -Wl,-O1 -Wl,--as-needed -rdynamic -Wl,-export-dynamic -Wl,--no-undefined -lz -licuuc'
