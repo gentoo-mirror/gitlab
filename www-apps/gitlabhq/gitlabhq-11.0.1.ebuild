@@ -120,12 +120,6 @@ each_ruby_prepare() {
 		config/database.yml.postgresql \
 		|| die "failed to filter database.yml.postgresql"
 
-	# replace "secret" token with random one
-	local randpw=$(echo ${RANDOM}|sha512sum|cut -c 1-128)
-	sed -i -e "/secret_token =/ s/=.*/= '${randpw}'/" \
-		config/initializers/secret_token.rb \
-		|| die "failed to filter secret_token.rb"
-
 	# remove needless files
 	rm .foreman .gitignore Procfile
 	use unicorn || rm config/unicorn.rb.example
