@@ -7,8 +7,6 @@
 
 [Unit]
 Description=Gitlab Gitaly handles Gitlab RPC calls.
-# Check if gitaly is disabled in gitlab.yml (socket not created by gitlab-unicorn)
-ConditionPathExists=@TMP_DIR@/sockets/gitaly.socket
 Wants=gitlabhq-@SLOT@-unicorn.service
 After=gitlabhq-@SLOT@-unicorn.service
 PartOf=gitlabhq-@SLOT@.target

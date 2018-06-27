@@ -52,9 +52,9 @@ GEMS_DEPEND="
 DEPEND="${GEMS_DEPEND}
 	>=dev-lang/ruby-2.3[readline,ssl]
 	>dev-vcs/git-2.2.1
-	>=dev-vcs/gitlab-shell-7.1.1
-	>=dev-vcs/gitlab-gitaly-0.91.0
-	>=www-servers/gitlab-workhorse-4.0.0
+	>=dev-vcs/gitlab-shell-7.1.4
+	>=dev-vcs/gitlab-gitaly-0.105.0
+	>=www-servers/gitlab-workhorse-4.3.1
 	app-eselect/eselect-gitlabhq
 	net-misc/curl
 	virtual/ssh
@@ -119,12 +119,6 @@ each_ruby_prepare() {
 		-e 's|\(socket:\).*|/run/postgresql/.s.PGSQL.5432|' \
 		config/database.yml.postgresql \
 		|| die "failed to filter database.yml.postgresql"
-
-	# replace "secret" token with random one
-	local randpw=$(echo ${RANDOM}|sha512sum|cut -c 1-128)
-	sed -i -e "/secret_token =/ s/=.*/= '${randpw}'/" \
-		config/initializers/secret_token.rb \
-		|| die "failed to filter secret_token.rb"
 
 	# remove needless files
 	rm .foreman .gitignore Procfile
@@ -211,6 +205,12 @@ each_ruby_install() {
 
 	insinto "${dest}"
 	doins -r ./
+
+	## Make binaries executable
+	exeinto "${dest}/bin"
+	doexe bin/*
+	exeinto "${dest}/qa/bin"
+	doexe qa/bin/*
 
 	## Install logrotate config ##
 
