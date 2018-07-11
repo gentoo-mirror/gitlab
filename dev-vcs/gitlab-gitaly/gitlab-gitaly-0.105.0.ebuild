@@ -49,7 +49,7 @@ src_install()
 	exeinto "/var/lib/gitlab-gitaly/ruby/bin"
 	doexe "ruby/bin/"*
 
-	exeinto "/var/lib/gitlab-gitaly/ruby/vendor/bundle/ruby/*/bin/"
+	exeinto "/var/lib/gitlab-gitaly"
 	doexe "ruby/vendor/bundle/ruby/*/bin/*"
 
 	insinto "/etc/gitaly"
