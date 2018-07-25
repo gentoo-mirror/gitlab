@@ -229,9 +229,6 @@ each_ruby_install() {
 	done
 	local bundle_args="--deployment ${without:+--without ${without}}"
 
-	# Use systemlibs for nokogiri as suggested
-	${BUNDLE} config build.nokogiri --use-system-libraries
-
 	# Fix compiling of nokogumbo, see 
 	# https://github.com/rubys/nokogumbo/issues/40#issuecomment-182667202
 	${BUNDLE} config build.nokogumbo --with-ldflags=-Wl,--undefined
