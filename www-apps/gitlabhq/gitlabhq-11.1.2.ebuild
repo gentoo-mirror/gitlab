@@ -86,7 +86,7 @@ GITLAB_SHELL="/var/lib/gitlab-shell"
 GITLAB_SHELL_HOOKS="${GITLAB_SHELL}/hooks"
 
 RAILS_ENV=${RAILS_ENV:-production}
-RUBY=${RUBY:-ruby23}
+RUBY=${RUBY:-$USE_RUBY}
 BUNDLE="${RUBY} /usr/bin/bundle"
 
 pkg_setup() {
@@ -173,7 +173,7 @@ each_ruby_install() {
 
 	diropts -m750
 	keepdir "${logs}"
-	dodir "${temp}"
+	keepdir "${temp}"
 
 	diropts -m755
 	dodir "${dest}"
