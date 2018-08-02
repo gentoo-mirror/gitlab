@@ -7,4 +7,6 @@
 	delaycompress
 	compress
 	copytruncate
+	size 50M
+	rotate 2
 }
