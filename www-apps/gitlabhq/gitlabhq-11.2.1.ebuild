@@ -10,7 +10,7 @@ EAPI="5"
 #   it should be done, but GitLab has too many dependencies that it will be too
 #   difficult to maintain them via ebuilds.
 
-USE_RUBY="ruby23"
+USE_RUBY="ruby24"
 PYTHON_COMPAT=( python2_7 )
 
 EGIT_REPO_URI="https://gitlab.com/gitlab-org/gitlab-ce.git"
@@ -52,9 +52,9 @@ GEMS_DEPEND="
 DEPEND="${GEMS_DEPEND}
 	>=dev-lang/ruby-2.3[readline,ssl]
 	>dev-vcs/git-2.2.1
-	>=dev-vcs/gitlab-shell-7.1.2
-	>=dev-vcs/gitlab-gitaly-0.100.0
-	>=www-servers/gitlab-workhorse-4.2.0
+	>=dev-vcs/gitlab-shell-8.1.1
+	>=dev-vcs/gitlab-gitaly-0.117.2
+	>=www-servers/gitlab-workhorse-5.1.0
 	app-eselect/eselect-gitlabhq
 	net-misc/curl
 	virtual/ssh
@@ -86,7 +86,7 @@ GITLAB_SHELL="/var/lib/gitlab-shell"
 GITLAB_SHELL_HOOKS="${GITLAB_SHELL}/hooks"
 
 RAILS_ENV=${RAILS_ENV:-production}
-RUBY=${RUBY:-ruby23}
+RUBY=${RUBY:-$USE_RUBY}
 BUNDLE="${RUBY} /usr/bin/bundle"
 
 pkg_setup() {
@@ -119,12 +119,6 @@ each_ruby_prepare() {
 		-e 's|\(socket:\).*|/run/postgresql/.s.PGSQL.5432|' \
 		config/database.yml.postgresql \
 		|| die "failed to filter database.yml.postgresql"
-
-	# replace "secret" token with random one
-	local randpw=$(echo ${RANDOM}|sha512sum|cut -c 1-128)
-	sed -i -e "/secret_token =/ s/=.*/= '${randpw}'/" \
-		config/initializers/secret_token.rb \
-		|| die "failed to filter secret_token.rb"
 
 	# remove needless files
 	rm .foreman .gitignore Procfile
@@ -179,7 +173,7 @@ each_ruby_install() {
 
 	diropts -m750
 	keepdir "${logs}"
-	dodir "${temp}"
+	keepdir "${temp}"
 
 	diropts -m755
 	dodir "${dest}"
@@ -235,8 +229,9 @@ each_ruby_install() {
 	done
 	local bundle_args="--deployment ${without:+--without ${without}}"
 
-	# Use systemlibs for nokogiri as suggested
-	${BUNDLE} config build.nokogiri --use-system-libraries
+	# Fix compiling of nokogumbo, see 
+	# https://github.com/rubys/nokogumbo/issues/40#issuecomment-182667202
+	${BUNDLE} config build.nokogumbo --with-ldflags=-Wl,--undefined
 
 	# Fix invalid ldflags for charlock_holmes,
 	# see https://github.com/brianmario/charlock_holmes/issues/32
