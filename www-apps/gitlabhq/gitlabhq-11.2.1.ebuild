@@ -50,7 +50,7 @@ GEMS_DEPEND="
 	memcached? ( net-misc/memcached )
 	net-libs/http-parser"
 DEPEND="${GEMS_DEPEND}
-	>=dev-lang/ruby-2.3[readline,ssl]
+	>=dev-lang/ruby-2.4[readline,ssl]
 	>dev-vcs/git-2.2.1
 	>=dev-vcs/gitlab-shell-8.1.1
 	>=dev-vcs/gitlab-gitaly-0.117.2
@@ -58,7 +58,7 @@ DEPEND="${GEMS_DEPEND}
 	app-eselect/eselect-gitlabhq
 	net-misc/curl
 	virtual/ssh
-	>=sys-apps/yarn-0.27.5
+	>=sys-apps/yarn-1.2.0
 	>=net-libs/nodejs-8.9.3
 	dev-libs/re2"
 RDEPEND="${DEPEND}
@@ -229,12 +229,9 @@ each_ruby_install() {
 	done
 	local bundle_args="--deployment ${without:+--without ${without}}"
 
-	# Use systemlibs for nokogiri as suggested
-	${BUNDLE} config build.nokogiri --use-system-libraries
-
 	# Fix compiling of nokogumbo, see 
 	# https://github.com/rubys/nokogumbo/issues/40#issuecomment-182667202
-	${BUNDLE} config build.nokogumbo --with-ldflags='-L. -Wl,-O1 -Wl,--as-needed -fstack-protector -rdynamic -Wl,-export-dynamic'
+	${BUNDLE} config build.nokogumbo --with-ldflags='-Wl,--undefined'
 
 	# Fix invalid ldflags for charlock_holmes,
 	# see https://github.com/brianmario/charlock_holmes/issues/32
