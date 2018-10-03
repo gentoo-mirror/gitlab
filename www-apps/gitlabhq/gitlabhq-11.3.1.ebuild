@@ -551,7 +551,7 @@ pkg_config() {
 		cd ${DEST_DIR}
 		echo \"Fixing https://gitlab.com/gitlab-org/gitlab-ce/issues/38275 ...\"
 		yarn add ajv@^4.0.0
-		yarn install --production --pure-lockfile --no-progress
+		yarn install --production=false --pure-lockfile --no-progress
 		${BUNDLE} exec rake gitlab:assets:compile RAILS_ENV=${RAILS_ENV} NODE_ENV=production" \
 			|| die "failed to run yarn install and gitlab:assets:compile"
 
