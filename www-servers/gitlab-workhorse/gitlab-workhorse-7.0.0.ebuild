@@ -15,7 +15,7 @@ LICENSE="MIT"
 SLOT="0"
 KEYWORDS="~amd64 ~x86 ~arm"
 
-DEPEND=">=dev-lang/go-1.8.3"
+DEPEND=">=dev-lang/go-1.9.0"
 RDEPEND="${DEPEND}"
 
 src_install()

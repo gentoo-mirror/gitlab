@@ -30,6 +30,12 @@ src_prepare()
 
 	# See https://gitlab.com/gitlab-org/gitaly/issues/493
 	sed -s 's#LDFLAGS#GO_LDFLAGS#g' -i Makefile || die
+
+    # Fix compiling of nokogumbo, see 
+	# https://github.com/rubys/nokogumbo/issues/40#issuecomment-182667202
+	pushd ruby
+	bundle config build.nokogumbo --with-ldflags='-Wl,--undefined'
+	popd
 }
 
 src_install()
