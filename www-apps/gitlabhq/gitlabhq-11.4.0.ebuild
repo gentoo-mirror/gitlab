@@ -50,15 +50,15 @@ GEMS_DEPEND="
 	memcached? ( net-misc/memcached )
 	net-libs/http-parser"
 DEPEND="${GEMS_DEPEND}
-	>=dev-lang/ruby-2.3[readline,ssl]
+	>=dev-lang/ruby-2.4[ssl]
 	>dev-vcs/git-2.2.1
-	>=dev-vcs/gitlab-shell-7.1.4
-	>=dev-vcs/gitlab-gitaly-0.111.2
-	>=www-servers/gitlab-workhorse-5.0.0
+	>=dev-vcs/gitlab-shell-8.3.3
+	>=dev-vcs/gitlab-gitaly-0.125.0
+	>=www-servers/gitlab-workhorse-7.0.0
 	app-eselect/eselect-gitlabhq
 	net-misc/curl
 	virtual/ssh
-	>=sys-apps/yarn-0.27.5
+	>=sys-apps/yarn-1.2.0
 	>=net-libs/nodejs-8.9.3
 	dev-libs/re2"
 RDEPEND="${DEPEND}
@@ -231,7 +231,7 @@ each_ruby_install() {
 
 	# Fix compiling of nokogumbo, see 
 	# https://github.com/rubys/nokogumbo/issues/40#issuecomment-182667202
-	${BUNDLE} config build.nokogumbo --with-ldflags=-Wl,--undefined
+	${BUNDLE} config build.nokogumbo --with-ldflags='-Wl,--undefined'
 
 	# Fix invalid ldflags for charlock_holmes,
 	# see https://github.com/brianmario/charlock_holmes/issues/32
@@ -537,23 +537,23 @@ pkg_config() {
 				|| die "failed to run rake gitlab:setup"
 	fi
 
-	einfo "Compile GetText PO files ..."
-	su -l ${GIT_USER} -s /bin/sh -c "
-		export LANG=en_US.UTF-8; export LC_ALL=en_US.UTF-8
-        cd ${DEST_DIR}
-		${BUNDLE} exec rake gettext:pack RAILS_ENV=${RAILS_ENV}
-		${BUNDLE} exec rake gettext:po_to_json RAILS_ENV=${RAILS_ENV}" \
-			|| die "failed to compile GetText PO files"
-
 	einfo "Compile assets ..."
 	su -l ${GIT_USER} -s /bin/sh -c "
 		export LANG=en_US.UTF-8; export LC_ALL=en_US.UTF-8
 		cd ${DEST_DIR}
 		echo \"Fixing https://gitlab.com/gitlab-org/gitlab-ce/issues/38275 ...\"
 		yarn add ajv@^4.0.0
-		yarn install --production --pure-lockfile --no-progress
+		yarn install --production=false --pure-lockfile --no-progress
 		${BUNDLE} exec rake gitlab:assets:compile RAILS_ENV=${RAILS_ENV} NODE_ENV=production" \
 			|| die "failed to run yarn install and gitlab:assets:compile"
+
+    einfo "Compile GetText PO files ..."
+    su -l ${GIT_USER} -s /bin/sh -c "
+        export LANG=en_US.UTF-8; export LC_ALL=en_US.UTF-8
+        cd ${DEST_DIR}
+        ${BUNDLE} exec rake gettext:pack RAILS_ENV=${RAILS_ENV}
+        ${BUNDLE} exec rake gettext:po_to_json RAILS_ENV=${RAILS_ENV}" \
+            || die "failed to compile GetText PO files"
 
 	## (Re-)Link gitlab-shell-secret into gitlab-shell
 	if test -L "${GITLAB_SHELL}/.gitlab_shell_secret"
