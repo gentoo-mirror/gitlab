@@ -52,9 +52,9 @@ GEMS_DEPEND="
 DEPEND="${GEMS_DEPEND}
 	>=dev-lang/ruby-2.4[ssl]
 	>dev-vcs/git-2.2.1
-	>=dev-vcs/gitlab-shell-8.1.1
-	>=dev-vcs/gitlab-gitaly-0.117.2
-	>=www-servers/gitlab-workhorse-5.1.0
+	>=dev-vcs/gitlab-shell-8.4.1
+	>=dev-vcs/gitlab-gitaly-0.129.0
+	>=www-servers/gitlab-workhorse-7.1.0
 	app-eselect/eselect-gitlabhq
 	net-misc/curl
 	virtual/ssh
@@ -537,23 +537,23 @@ pkg_config() {
 				|| die "failed to run rake gitlab:setup"
 	fi
 
-	einfo "Compile GetText PO files ..."
-	su -l ${GIT_USER} -s /bin/sh -c "
-		export LANG=en_US.UTF-8; export LC_ALL=en_US.UTF-8
-        cd ${DEST_DIR}
-		${BUNDLE} exec rake gettext:pack RAILS_ENV=${RAILS_ENV}
-		${BUNDLE} exec rake gettext:po_to_json RAILS_ENV=${RAILS_ENV}" \
-			|| die "failed to compile GetText PO files"
-
 	einfo "Compile assets ..."
 	su -l ${GIT_USER} -s /bin/sh -c "
 		export LANG=en_US.UTF-8; export LC_ALL=en_US.UTF-8
 		cd ${DEST_DIR}
 		echo \"Fixing https://gitlab.com/gitlab-org/gitlab-ce/issues/38275 ...\"
 		yarn add ajv@^4.0.0
-		yarn install --production --pure-lockfile --no-progress
+		yarn install --production=false --pure-lockfile --no-progress
 		${BUNDLE} exec rake gitlab:assets:compile RAILS_ENV=${RAILS_ENV} NODE_ENV=production" \
 			|| die "failed to run yarn install and gitlab:assets:compile"
+
+    einfo "Compile GetText PO files ..."
+    su -l ${GIT_USER} -s /bin/sh -c "
+        export LANG=en_US.UTF-8; export LC_ALL=en_US.UTF-8
+        cd ${DEST_DIR}
+        ${BUNDLE} exec rake gettext:pack RAILS_ENV=${RAILS_ENV}
+        ${BUNDLE} exec rake gettext:po_to_json RAILS_ENV=${RAILS_ENV}" \
+            || die "failed to compile GetText PO files"
 
 	## (Re-)Link gitlab-shell-secret into gitlab-shell
 	if test -L "${GITLAB_SHELL}/.gitlab_shell_secret"

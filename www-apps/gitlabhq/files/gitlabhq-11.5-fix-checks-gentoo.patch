@@ -1,4 +1,4 @@
---- lib/tasks/gitlab/check.rake.orig	2017-07-03 11:26:11.483241898 +0200
+--- lib/tasks/gitlab/check.rake.orig	2017-07-03 11:26:11.583241898 +0200
 +++ lib/tasks/gitlab/check.rake	2017-07-03 11:26:30.189242167 +0200
 @@ -27,8 +27,6 @@
          SystemCheck::App::UploadsDirectoryExistsCheck,
