@@ -62,8 +62,8 @@ all_ruby_install() {
 	dosym ${DEST_DIR}/bin/gitlab-keys /usr/bin/gitlab-keys || die
 	dosym ${DEST_DIR}/bin/gitlab-shell /usr/bin/gitlab-shell || die
 	dosym ${DEST_DIR}/bin/check /usr/bin/gitlab-check || die
-	
-	for bin in authorized_keys  check  compile  create-hooks  gitaly-receive-pack  gitaly-upload-pack  gitlab-keys  gitlab-shell  gitlab-shell-authorized-keys-check  install ; do 
+
+	for bin in $(ls bin) ; do
 		fperms 0755 ${DEST_DIR}/bin/${bin} || die
 	done
 
