@@ -25,7 +25,7 @@ LICENSE="MIT"
 RESTRICT="splitdebug"
 SLOT=$(get_version_component_range 1-2)
 KEYWORDS="~amd64 ~x86"
-IUSE="memcached mysql +postgres +unicorn"
+IUSE="memcached mysql +postgres +unicorn kerberos"
 
 ## Gems dependencies:
 #   charlock_holmes		dev-libs/icu
@@ -64,7 +64,7 @@ DEPEND="${GEMS_DEPEND}
 RDEPEND="${DEPEND}
 	>=dev-db/redis-2.8.0
 	virtual/mta
-	virtual/krb5"
+	kerberos? ( app-crypt/mit-krb5 )"
 ruby_add_bdepend "
 	virtual/rubygems
 	>=dev-ruby/bundler-1.0"
@@ -224,7 +224,7 @@ each_ruby_install() {
 	cd "${D}/${dest}"
 
 	local without="development test thin"
-	local flag; for flag in memcached mysql postgres unicorn; do
+	local flag; for flag in memcached mysql postgres unicorn kerberos; do
 		without+="$(use $flag || echo ' '$flag)"
 	done
 	local bundle_args="--deployment ${without:+--without ${without}}"
