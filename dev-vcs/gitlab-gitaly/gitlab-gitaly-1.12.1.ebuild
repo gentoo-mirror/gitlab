@@ -48,6 +48,7 @@ src_install()
 
 	into "/usr" # This will install the binary to /usr/bin. Don't specify the "bin" folder!
 	newbin "gitaly" "gitlab-gitaly"
+	dobin "gitaly-ssh"
 
 	insinto "/var/lib/gitlab-gitaly"
 	doins -r "ruby"
