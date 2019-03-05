@@ -544,7 +544,7 @@ pkg_config() {
 		echo \"Fixing https://gitlab.com/gitlab-org/gitlab-ce/issues/38275 ...\"
 		yarn add ajv@^4.0.0
 		yarn install --production=false --pure-lockfile --no-progress
-		${BUNDLE} exec rake gitlab:assets:compile RAILS_ENV=${RAILS_ENV} NODE_ENV=production" \
+		${BUNDLE} exec rake gitlab:assets:compile RAILS_ENV=${RAILS_ENV} NODE_ENV=production NODE_OPTIONS=\"--max-old-space-size=4096\"" \
 			|| die "failed to run yarn install and gitlab:assets:compile"
 
     einfo "Compile GetText PO files ..."
