@@ -22,7 +22,7 @@ DESCRIPTION="GitLab is a free project and repository management application"
 HOMEPAGE="https://about.gitlab.com/gitlab-ci/"
 
 LICENSE="MIT"
-RESTRICT="splitdebug"
+RESTRICT="splitdebug network-sandbox"
 SLOT=$(get_version_component_range 1-2)
 KEYWORDS="~amd64 ~x86"
 IUSE="memcached mysql +postgres +unicorn kerberos"
@@ -238,7 +238,7 @@ each_ruby_install() {
 	${BUNDLE} config build.charlock_holmes --with-ldflags='-L. -Wl,-O1 -Wl,--as-needed -rdynamic -Wl,-export-dynamic -Wl,--no-undefined -lz -licuuc'
 
 	einfo "Running bundle install ${bundle_args} ..."
-	${BUNDLE} install -V ${bundle_args} || die "bundler failed"
+	${BUNDLE} install ${bundle_args} || die "bundler failed"
 
 	## Clean ##
 
