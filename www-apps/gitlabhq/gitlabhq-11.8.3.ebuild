@@ -238,7 +238,7 @@ each_ruby_install() {
 	${BUNDLE} config build.charlock_holmes --with-ldflags='-L. -Wl,-O1 -Wl,--as-needed -rdynamic -Wl,-export-dynamic -Wl,--no-undefined -lz -licuuc'
 
 	einfo "Running bundle install ${bundle_args} ..."
-	${BUNDLE} install ${bundle_args} || die "bundler failed"
+	${BUNDLE} install -V ${bundle_args} || die "bundler failed"
 
 	## Clean ##
 
