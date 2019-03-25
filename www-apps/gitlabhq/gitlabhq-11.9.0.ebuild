@@ -52,13 +52,13 @@ GEMS_DEPEND="
 DEPEND="${GEMS_DEPEND}
 	>=dev-lang/ruby-2.4[ssl]
 	>dev-vcs/git-2.2.1
-	>=dev-vcs/gitlab-shell-8.4.4
-	>=dev-vcs/gitlab-gitaly-1.20.0
+	>=dev-vcs/gitlab-shell-8.7.1
+	>=dev-vcs/gitlab-gitaly-1.29.0
 	>=www-servers/gitlab-workhorse-8.3.1
 	app-eselect/eselect-gitlabhq
 	net-misc/curl
 	virtual/ssh
-	>=sys-apps/yarn-1.2.0
+	>=sys-apps/yarn-1.15.0
 	>=net-libs/nodejs-8.9.3
 	dev-libs/re2"
 RDEPEND="${DEPEND}
