@@ -22,7 +22,7 @@ DESCRIPTION="GitLab is a free project and repository management application"
 HOMEPAGE="https://about.gitlab.com/gitlab-ci/"
 
 LICENSE="MIT"
-RESTRICT="splitdebug"
+RESTRICT="splitdebug network-sandbox"
 SLOT=$(get_version_component_range 1-2)
 KEYWORDS="~amd64 ~x86"
 IUSE="memcached mysql +postgres +unicorn kerberos"
@@ -52,13 +52,13 @@ GEMS_DEPEND="
 DEPEND="${GEMS_DEPEND}
 	>=dev-lang/ruby-2.4[ssl]
 	>dev-vcs/git-2.2.1
-	>=dev-vcs/gitlab-shell-8.4.3
-	>=dev-vcs/gitlab-gitaly-1.7.1
-	>=www-servers/gitlab-workhorse-7.6.0
+	>=dev-vcs/gitlab-shell-8.7.1
+	>=dev-vcs/gitlab-gitaly-1.27.1
+	>=www-servers/gitlab-workhorse-8.3.1
 	app-eselect/eselect-gitlabhq
 	net-misc/curl
 	virtual/ssh
-	>=sys-apps/yarn-1.2.0
+	>=sys-apps/yarn-1.15.0
 	>=net-libs/nodejs-8.9.3
 	dev-libs/re2"
 RDEPEND="${DEPEND}
@@ -544,7 +544,7 @@ pkg_config() {
 		echo \"Fixing https://gitlab.com/gitlab-org/gitlab-ce/issues/38275 ...\"
 		yarn add ajv@^4.0.0
 		yarn install --production=false --pure-lockfile --no-progress
-		${BUNDLE} exec rake gitlab:assets:compile RAILS_ENV=${RAILS_ENV} NODE_ENV=production" \
+		${BUNDLE} exec rake gitlab:assets:compile RAILS_ENV=${RAILS_ENV} NODE_ENV=production NODE_OPTIONS=\"--max-old-space-size=4096\"" \
 			|| die "failed to run yarn install and gitlab:assets:compile"
 
     einfo "Compile GetText PO files ..."

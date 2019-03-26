@@ -15,7 +15,7 @@ HOMEPAGE="https://github.com/gitlabhq/gitlab-shell"
 LICENSE="MIT"
 SLOT="0"
 KEYWORDS="~amd64 ~x86 ~arm"
-
+RESTRICT="network-sandbox"
 DEPEND="$(ruby_implementations_depend)
 	dev-vcs/git
 	virtual/ssh
