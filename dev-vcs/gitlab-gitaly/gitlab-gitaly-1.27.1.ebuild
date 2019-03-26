@@ -14,7 +14,7 @@ HOMEPAGE="https://gitlab.com/gitlab-org/gitaly"
 LICENSE="MIT"
 SLOT="0"
 KEYWORDS="~amd64 ~x86 ~arm"
-
+RESTRICT="network-sandbox"
 DEPEND=">=dev-lang/go-1.8.3
 		dev-libs/icu
 		dev-ruby/bundler"
