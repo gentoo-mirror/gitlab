@@ -52,6 +52,7 @@ src_install()
 
 	insinto "/var/lib/gitlab-gitaly"
 	doins -r "ruby"
+	fperms 0755 /var/lib/gitlab-gitaly/ruby/git-hooks/gitlab-shell-hook
 
 	# make binaries executable
 	exeinto "/var/lib/gitlab-gitaly/ruby/bin"
