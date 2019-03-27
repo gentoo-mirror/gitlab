@@ -31,11 +31,18 @@ src_prepare()
 	# See https://gitlab.com/gitlab-org/gitaly/issues/493
 	sed -s 's#LDFLAGS#GO_LDFLAGS#g' -i Makefile || die
 
-    # Fix compiling of nokogumbo, see 
+	# Fix compiling of nokogumbo, see 
 	# https://github.com/rubys/nokogumbo/issues/40#issuecomment-182667202
 	pushd ruby
 	bundle config build.nokogumbo --with-ldflags='-Wl,--undefined'
 	popd
+}
+
+find_files()
+{
+	for f in $(find ${ED}${1} -type f) ; do
+		echo $f | sed "s#${ED}##"
+	done
 }
 
 src_install()
@@ -52,14 +59,21 @@ src_install()
 
 	insinto "/var/lib/gitlab-gitaly"
 	doins -r "ruby"
+
 	fperms 0755 /var/lib/gitlab-gitaly/ruby/git-hooks/gitlab-shell-hook
 
-	# make binaries executable
-	exeinto "/var/lib/gitlab-gitaly/ruby/bin"
-	doexe "ruby/bin/"*
-
-	exeinto /var/lib/gitlab-gitaly/ruby/vendor/bundle/ruby/*/bin/
-	doexe ruby/vendor/bundle/ruby/*/bin/*
+	# If we are using wildcards, the shell fills them without prefixing ${ED}. Thus
+	# we would target a file list from the real system instead from the sandbox which
+	# results in errors if the system has other files than the sandbox.
+	for bin in $(find_files /var/lib/gitlab-gitaly/ruby/bin) ; do
+		fperms 0755 $bin
+	done
+	for hook in $(find_files /var/lib/gitlab-gitaly/ruby/vendor/gitlab-shell/hooks) ; do
+		fperms 0755 $hook 
+	done
+	for bin in $(find_files "/var/lib/gitlab-gitaly/ruby/vendor/bundle/ruby/*/bin") ; do
+		fperms 0755 $bin
+	done
 
 	insinto "/etc/gitaly"
 	newins "config.toml.example" "config.toml"
