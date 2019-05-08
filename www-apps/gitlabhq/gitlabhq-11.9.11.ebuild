@@ -50,7 +50,7 @@ GEMS_DEPEND="
 	memcached? ( net-misc/memcached )
 	net-libs/http-parser"
 DEPEND="${GEMS_DEPEND}
-	>=dev-lang/ruby-2.4[ssl]
+	>=dev-lang/ruby-2.5[ssl]
 	>dev-vcs/git-2.2.1
 	>=dev-vcs/gitlab-shell-8.7.1
 	>=dev-vcs/gitlab-gitaly-1.27.1
@@ -59,7 +59,7 @@ DEPEND="${GEMS_DEPEND}
 	net-misc/curl
 	virtual/ssh
 	>=sys-apps/yarn-1.15.0
-	>=net-libs/nodejs-8.9.3
+	>=net-libs/nodejs-8.10.0
 	dev-libs/re2"
 RDEPEND="${DEPEND}
 	>=dev-db/redis-2.8.0
