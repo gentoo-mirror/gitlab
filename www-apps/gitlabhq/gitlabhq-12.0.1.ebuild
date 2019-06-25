@@ -52,8 +52,8 @@ GEMS_DEPEND="
 DEPEND="${GEMS_DEPEND}
 	>=dev-lang/ruby-2.5[ssl]
 	>dev-vcs/git-2.2.1
-	>=dev-vcs/gitlab-shell-9.2.0
-	>=dev-vcs/gitlab-gitaly-1.43.0
+	>=dev-vcs/gitlab-shell-9.3.0
+	>=dev-vcs/gitlab-gitaly-1.47.0
 	>=www-servers/gitlab-workhorse-8.7.0
 	app-eselect/eselect-gitlabhq
 	net-misc/curl
@@ -231,7 +231,7 @@ each_ruby_install() {
 
 	# Fix compiling of nokogumbo, see 
 	# https://github.com/rubys/nokogumbo/issues/40#issuecomment-182667202
-	${BUNDLE} config build.nokogumbo --with-ldflags='-Wl,--undefined'
+	${BUNDLE} config build.nokogumbo --with-ldflags='-L. -Wl,-O1 -Wl,--as-needed -fstack-protector -rdynamic -Wl,-export-dynamic'
 
 	# Fix invalid ldflags for charlock_holmes,
 	# see https://github.com/brianmario/charlock_holmes/issues/32

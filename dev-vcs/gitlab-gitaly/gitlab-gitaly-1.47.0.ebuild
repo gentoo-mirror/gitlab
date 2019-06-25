@@ -15,7 +15,7 @@ LICENSE="MIT"
 SLOT="0"
 KEYWORDS="~amd64 ~x86 ~arm"
 RESTRICT="network-sandbox"
-DEPEND=">=dev-lang/go-1.8.3
+DEPEND=">=dev-lang/go-1.10.0
 		dev-libs/icu
 		dev-ruby/bundler"
 RDEPEND="${DEPEND}"
@@ -68,7 +68,7 @@ src_install()
 	for bin in $(find_files /var/lib/gitlab-gitaly/ruby/bin) ; do
 		fperms 0755 $bin
 	done
-	for hook in $(find_files /var/lib/gitlab-gitaly/ruby/vendor/gitlab-shell/hooks) ; do
+	for hook in $(find_files /var/lib/gitlab-gitaly/ruby/gitlab-shell/hooks) ; do
 		fperms 0755 $hook 
 	done
 	for bin in $(find_files "/var/lib/gitlab-gitaly/ruby/vendor/bundle/ruby/*/bin") ; do
