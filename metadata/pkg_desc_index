@@ -1,6 +1,6 @@
 app-eselect/eselect-gitlabhq 20170603: Manages multiple gitlabhq versions
-dev-vcs/gitlab-gitaly 1.47.0 1.53.0 1.59.2: Gitaly is a Git RPC service for handling all the git calls made by GitLab.
-dev-vcs/gitlab-shell 9.2.0 9.3.0: GitLab Shell is a free SSH access and repository management application
+dev-vcs/gitlab-gitaly 1.53.0 1.59.2 1.65.0: Gitaly is a Git RPC service for handling all the git calls made by GitLab.
+dev-vcs/gitlab-shell 9.3.0 10.0.0: GitLab Shell is a free SSH access and repository management application
 net-analyzer/gitlab-monitor 2.3.0: Tooling used to monitor some aspects of GitLab.com
-www-apps/gitlabhq 12.0.9 12.1.11 12.2.5: GitLab is a free project and repository management application
-www-servers/gitlab-workhorse 8.7.0 8.8.1: Handles slow HTTP requests for GitLab
+www-apps/gitlabhq 12.1.11 12.2.5 12.3.1: GitLab is a free project and repository management application
+www-servers/gitlab-workhorse 8.7.0 8.8.1 8.10.0: Handles slow HTTP requests for GitLab
