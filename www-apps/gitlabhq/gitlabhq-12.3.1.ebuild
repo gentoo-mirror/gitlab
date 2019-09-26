@@ -51,10 +51,10 @@ GEMS_DEPEND="
 	net-libs/http-parser"
 DEPEND="${GEMS_DEPEND}
 	>=dev-lang/ruby-2.5[ssl]
-	>dev-vcs/git-2.2.1
-	>=dev-vcs/gitlab-shell-9.3.0
-	>=dev-vcs/gitlab-gitaly-1.47.0
-	>=www-servers/gitlab-workhorse-8.7.0
+	>=dev-vcs/git-2.22.0
+	>=dev-vcs/gitlab-shell-10.0.0
+	>=dev-vcs/gitlab-gitaly-1.65.0
+	>=www-servers/gitlab-workhorse-8.10.0
 	app-eselect/eselect-gitlabhq
 	net-misc/curl
 	virtual/ssh
