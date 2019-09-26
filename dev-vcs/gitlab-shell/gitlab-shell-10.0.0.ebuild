@@ -19,8 +19,7 @@ RESTRICT="network-sandbox"
 DEPEND="$(ruby_implementations_depend)
 	dev-vcs/git
 	virtual/ssh
-	dev-db/redis
-	=dev-ruby/rake-12.3.3"
+	dev-db/redis"
 RDEPEND="${DEPEND}"
 
 GIT_USER="git"
