@@ -14,6 +14,7 @@ HOMEPAGE="https://about.gitlab.com/gitlab-workhorse/"
 LICENSE="MIT"
 SLOT="0"
 KEYWORDS="~amd64 ~x86 ~arm"
+RESTRICT="network-sandbox"
 
 DEPEND=">=dev-lang/go-1.10.0"
 RDEPEND="${DEPEND}"

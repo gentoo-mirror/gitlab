@@ -1,4 +1,4 @@
-# Copyright 1999-2013 Gentoo Foundation
+# Copyright 1999-2019 Gentoo Foundation
 # Distributed under the terms of the GNU General Public License v2
 # $Header: $
 
@@ -26,6 +26,11 @@ GIT_USER="git"
 GIT_GROUP="git"
 DEST_DIR="/var/lib/${PN}"
 
+RAILS_ENV=${RAILS_ENV:-production}
+RUBY=${RUBY:-$USE_RUBY}
+BUNDLE="${RUBY} /usr/bin/bundle"
+REDIS_URL="unix:/var/run/redis/redis.sock"
+
 pkg_setup() {
 	HOME=$(if [ -n "$(getent passwd git | cut -d: -f6)" ]; then (getent passwd git | cut -d: -f6); else (echo /var/lib/git); fi)
 	REPO_DIR="${HOME}/repositories"
@@ -38,21 +43,27 @@ pkg_setup() {
 
 all_ruby_unpack() {
 	git-2_src_unpack
-	cd ${P}
+}
+
+each_ruby_prepare() {
+	einfo $(pwd)
+	cp config.yml.example config.yml
 	sed -i \
 		-e "s|\(user:\).*|\1 ${GIT_USER}|" \
 		-e "s|\(repos_path:\).*|\1 \"${REPO_DIR}\"|" \
 		-e "s|\(auth_file:\).*|\1 \"${AUTH_FILE}\"|" \
-		config.yml.example || die "failed to filter config.yml.example"
+		config.yml || die "failed to filter config.yml"
 }
 
-all_ruby_compile() {
-	./bin/compile
-	default
+each_ruby_compile() {
+	einfo "Running \"bundle install\" ..."
+	export LANG=en_US.UTF-8
+	export LC_ALL=en_US.UTF-8
+	${BUNDLE} install || die "failed to run bundle install"
+	./bin/compile || die "failed to run ./bin/compile"
 }
 
-all_ruby_install() {
-
+each_ruby_install() {
 	rm -Rf .git .gitignore go_build
 
 	insinto ${DEST_DIR}
@@ -70,7 +81,7 @@ all_ruby_install() {
 	fperms 0755 ${DEST_DIR}/hooks/post-receive || die
 	fperms 0755 ${DEST_DIR}/hooks/pre-receive || die
 	fperms 0755 ${DEST_DIR}/hooks/update || die
-	
+
 	fowners ${GIT_USER} ${DEST_DIR}/gitlab-shell.log
 	fowners ${GIT_USER} ${DEST_DIR} || die
 }
