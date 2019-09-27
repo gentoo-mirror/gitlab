@@ -7,7 +7,9 @@ EAPI="5"
 EGIT_REPO_URI="https://gitlab.com/gitlab-org/gitaly.git"
 EGIT_COMMIT="v${PV}"
 
-inherit eutils git-2 user
+USE_RUBY="ruby25"
+
+inherit eutils git-2 user ruby-single
 
 DESCRIPTION="Gitaly is a Git RPC service for handling all the git calls made by GitLab."
 HOMEPAGE="https://gitlab.com/gitlab-org/gitaly"
@@ -18,7 +20,8 @@ RESTRICT="network-sandbox"
 DEPEND=">=dev-lang/go-1.10.0
 		dev-libs/icu
 		dev-ruby/bundler
-		dev-util/cmake"
+		dev-util/cmake
+		${RUBY_DEPS}"
 RDEPEND="${DEPEND}"
 
 src_prepare()
