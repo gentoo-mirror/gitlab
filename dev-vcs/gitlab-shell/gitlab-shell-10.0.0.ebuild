@@ -59,7 +59,9 @@ each_ruby_compile() {
 	einfo "Running \"bundle install\" ..."
 	export LANG=en_US.UTF-8
 	export LC_ALL=en_US.UTF-8
-	${BUNDLE} install || die "failed to run bundle install"
+	${BUNDLE} install --path vendor/bundle || die "failed to run bundle install"
+	ruby_version=$(ls $PWD/vendor/bundle/ruby)
+	export PATH=$PWD/vendor/bundle/ruby/$ruby_version/bin:$PATH
 	./bin/compile || die "failed to run ./bin/compile"
 }
 
