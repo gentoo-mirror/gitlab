@@ -13,7 +13,7 @@ EAPI="5"
 USE_RUBY="ruby25"
 PYTHON_COMPAT=( python2_7 )
 
-EGIT_REPO_URI="https://gitlab.com/gitlab-org/gitlab-ce.git"
+EGIT_REPO_URI="https://gitlab.com/gitlab-org/gitlab-foss.git"
 EGIT_COMMIT="v${PV}"
 
 inherit eutils git-2 python-r1 ruby-ng versionator user linux-info systemd
