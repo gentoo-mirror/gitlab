@@ -54,7 +54,7 @@ DEPEND="${GEMS_DEPEND}
 	>=dev-vcs/git-2.22.0
 	>=dev-vcs/gitlab-shell-11.0.0
 	>=dev-vcs/gitlab-gitaly-1.83.0
-	>=www-servers/gitlab-workhorse-8.19.0
+	>=www-servers/gitlab-workhorse-8.20.0
 	app-eselect/eselect-gitlabhq
 	net-misc/curl
 	virtual/ssh
