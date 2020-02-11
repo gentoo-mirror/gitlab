@@ -17,7 +17,7 @@ EGIT_REPO_URI="https://gitlab.com/gitlab-org/gitlab-foss.git"
 EGIT_COMMIT="v${PV}"
 EGIT_CHECKOUT_DIR="${WORKDIR}/all"
 
-inherit eutils git-2 python-r1 ruby-ng versionator user linux-info systemd git-r3
+inherit eutils python-r1 ruby-ng versionator user linux-info systemd git-r3
 
 DESCRIPTION="GitLab is a free project and repository management application"
 HOMEPAGE="https://about.gitlab.com/gitlab-ci/"
