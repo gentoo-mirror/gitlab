@@ -7,7 +7,7 @@ EAPI="5"
 EGIT_REPO_URI="https://gitlab.com/gitlab-org/gitlab-workhorse.git"
 EGIT_COMMIT="v${PV}"
 
-inherit eutils git-2 user
+inherit eutils git-r3 user
 
 DESCRIPTION="Handles slow HTTP requests for GitLab"
 HOMEPAGE="https://about.gitlab.com/gitlab-workhorse/"
