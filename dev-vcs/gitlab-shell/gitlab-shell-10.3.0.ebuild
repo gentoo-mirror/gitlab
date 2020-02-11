@@ -6,9 +6,10 @@ EAPI="5"
 
 EGIT_REPO_URI="https://gitlab.com/gitlab-org/gitlab-shell.git"
 EGIT_COMMIT="v${PV}"
+EGIT_CHECKOUT_DIR="${WORKDIR}/all"
 USE_RUBY="ruby25"
 
-inherit eutils git-2 ruby-ng user
+inherit eutils ruby-ng user git-r3
 
 DESCRIPTION="GitLab Shell is a free SSH access and repository management application"
 HOMEPAGE="https://github.com/gitlabhq/gitlab-shell"
@@ -42,7 +43,7 @@ pkg_setup() {
 }
 
 all_ruby_unpack() {
-	git-2_src_unpack
+	git-r3_src_unpack
 }
 
 each_ruby_prepare() {

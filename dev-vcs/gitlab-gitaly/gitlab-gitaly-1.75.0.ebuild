@@ -9,7 +9,7 @@ EGIT_COMMIT="v${PV}"
 
 USE_RUBY="ruby25"
 
-inherit eutils git-2 user ruby-single
+inherit eutils git-r3 user ruby-single
 
 DESCRIPTION="Gitaly is a Git RPC service for handling all the git calls made by GitLab."
 HOMEPAGE="https://gitlab.com/gitlab-org/gitaly"
