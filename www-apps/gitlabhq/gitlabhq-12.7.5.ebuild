@@ -15,8 +15,9 @@ PYTHON_COMPAT=( python2_7 )
 
 EGIT_REPO_URI="https://gitlab.com/gitlab-org/gitlab-foss.git"
 EGIT_COMMIT="v${PV}"
+EGIT_CHECKOUT_DIR="${WORKDIR}/all"
 
-inherit eutils git-2 python-r1 ruby-ng versionator user linux-info systemd
+inherit eutils git-2 python-r1 ruby-ng versionator user linux-info systemd git-r3
 
 DESCRIPTION="GitLab is a free project and repository management application"
 HOMEPAGE="https://about.gitlab.com/gitlab-ci/"
@@ -95,7 +96,7 @@ pkg_setup() {
 }
 
 all_ruby_unpack() {
-	git-2_src_unpack
+	git-r3_src_unpack
 }
 
 each_ruby_prepare() {
@@ -124,7 +125,6 @@ each_ruby_prepare() {
 	rm .foreman .gitignore Procfile
 	use unicorn || rm config/unicorn.rb.example
 	use postgres || rm config/database.yml.postgresql
-	use mysql || rm config/database.yml.mysql
 
 	# change cache_store
 	if use memcached; then
