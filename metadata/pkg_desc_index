@@ -1,1 +1,2 @@
 app-eselect/eselect-gitlabhq 20170603: Manages multiple gitlabhq versions
+www-servers/gitlab-workhorse 8.14.1 8.18.0 8.20.0: Handles slow HTTP requests for GitLab
