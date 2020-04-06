@@ -567,3 +567,10 @@ pkg_config() {
 	einfo ""
 	einfo "GitLab is prepared, now you should configure your web server."
 }
+
+pkg_postrm() {
+	local temp="/var/tmp/${PN}-${SLOT}"
+	einfo "Removing temporary files from \"$temp\" ..."
+	rm -r "$temp"
+}
+
