@@ -7,7 +7,7 @@ EAPI="5"
 EGIT_REPO_URI="https://gitlab.com/gitlab-org/gitlab-shell.git"
 EGIT_COMMIT="v${PV}"
 EGIT_CHECKOUT_DIR="${WORKDIR}/all"
-USE_RUBY="ruby26"
+USE_RUBY="ruby25 ruby26"
 
 inherit eutils ruby-ng user git-r3
 

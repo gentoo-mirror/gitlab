@@ -10,7 +10,7 @@ EAPI="5"
 #   it should be done, but GitLab has too many dependencies that it will be too
 #   difficult to maintain them via ebuilds.
 
-USE_RUBY="ruby26"
+USE_RUBY="ruby25 ruby26"
 PYTHON_COMPAT=( python2_7 )
 
 EGIT_REPO_URI="https://gitlab.com/gitlab-org/gitlab-foss.git"
@@ -51,7 +51,7 @@ GEMS_DEPEND="
 	memcached? ( net-misc/memcached )
 	net-libs/http-parser"
 DEPEND="${GEMS_DEPEND}
-	>=dev-lang/ruby-2.6[ssl]
+	>=dev-lang/ruby-2.5[ssl]
 	>=dev-vcs/git-2.22.0
 	>=dev-vcs/gitlab-shell-11.0.0
 	>=dev-vcs/gitlab-gitaly-1.87.0
