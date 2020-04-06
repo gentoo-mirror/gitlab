@@ -7,7 +7,7 @@ EAPI="5"
 EGIT_REPO_URI="https://gitlab.com/gitlab-org/gitaly.git"
 EGIT_COMMIT="v${PV}"
 
-USE_RUBY="ruby25"
+USE_RUBY="ruby25 ruby26"
 
 inherit eutils git-r3 user ruby-single
 
