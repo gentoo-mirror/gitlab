@@ -88,8 +88,7 @@ GITLAB_SHELL="/var/lib/gitlab-shell"
 GITLAB_SHELL_HOOKS="${GITLAB_SHELL}/hooks"
 
 RAILS_ENV=${RAILS_ENV:-production}
-RUBY=${RUBY:-$USE_RUBY}
-BUNDLE="${RUBY} /usr/bin/bundle"
+BUNDLE="ruby /usr/bin/bundle"
 
 pkg_setup() {
 	enewgroup ${GIT_GROUP}
@@ -230,6 +229,8 @@ each_ruby_install() {
 	done
 	local bundle_args="--deployment ${without:+--without ${without}}"
 
+	einfo "Current ruby version is \"$(ruby --version)\""
+
 	# Fix compiling of nokogumbo, see 
 	# https://github.com/rubys/nokogumbo/issues/40#issuecomment-182667202
 	${BUNDLE} config build.nokogumbo --with-ldflags='-L. -Wl,-O1 -Wl,--as-needed -fstack-protector -rdynamic -Wl,-export-dynamic'
@@ -345,7 +346,7 @@ pkg_postinst() {
 			elog  ""
 			ewarn "Warning: PaX support is enabled, you must disable mprotect for ruby. Otherwise "
 			ewarn "FFI will trigger mprotect errors that are hard to trace. Please run: "
-			ewarn "    paxctl -m $RUBY"
+			ewarn "    paxctl -m ruby"
 		fi
 	else
 		elog  ""

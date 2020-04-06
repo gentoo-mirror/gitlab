@@ -88,8 +88,7 @@ GITLAB_SHELL="/var/lib/gitlab-shell"
 GITLAB_SHELL_HOOKS="${GITLAB_SHELL}/hooks"
 
 RAILS_ENV=${RAILS_ENV:-production}
-RUBY=${RUBY:-$USE_RUBY}
-BUNDLE="${RUBY} /usr/bin/bundle"
+BUNDLE="ruby /usr/bin/bundle"
 
 pkg_setup() {
 	enewgroup ${GIT_GROUP}
@@ -345,7 +344,7 @@ pkg_postinst() {
 			elog  ""
 			ewarn "Warning: PaX support is enabled, you must disable mprotect for ruby. Otherwise "
 			ewarn "FFI will trigger mprotect errors that are hard to trace. Please run: "
-			ewarn "    paxctl -m $RUBY"
+			ewarn "    paxctl -m ruby"
 		fi
 	else
 		elog  ""
