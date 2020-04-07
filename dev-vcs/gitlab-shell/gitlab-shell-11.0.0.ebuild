@@ -28,8 +28,6 @@ GIT_GROUP="git"
 DEST_DIR="/var/lib/${PN}"
 
 RAILS_ENV=${RAILS_ENV:-production}
-RUBY=${RUBY:-$USE_RUBY}
-BUNDLE="${RUBY} /usr/bin/bundle"
 REDIS_URL="unix:/var/run/redis/redis.sock"
 
 pkg_setup() {
@@ -60,7 +58,8 @@ each_ruby_compile() {
 	einfo "Running \"bundle install\" ..."
 	export LANG=en_US.UTF-8
 	export LC_ALL=en_US.UTF-8
-	${BUNDLE} install --path vendor/bundle || die "failed to run bundle install"
+	local RUBY=${RUBY:-ruby}
+	${RUBY} /usr/bin/bundle install --path vendor/bundle || die "failed to run bundle install"
 	ruby_version=$(ls $PWD/vendor/bundle/ruby)
 	export PATH=$PWD/vendor/bundle/ruby/$ruby_version/bin:$PATH
 	make compile || die "failed to run make compile"
