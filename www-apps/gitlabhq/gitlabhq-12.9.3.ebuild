@@ -11,13 +11,12 @@ EAPI="5"
 #   difficult to maintain them via ebuilds.
 
 USE_RUBY="ruby25 ruby26"
-PYTHON_COMPAT=( python2_7 )
 
 EGIT_REPO_URI="https://gitlab.com/gitlab-org/gitlab-foss.git"
 EGIT_COMMIT="v${PV}"
 EGIT_CHECKOUT_DIR="${WORKDIR}/all"
 
-inherit eutils python-r1 ruby-ng versionator user linux-info systemd git-r3
+inherit eutils ruby-ng versionator user linux-info systemd git-r3
 
 DESCRIPTION="GitLab is a free project and repository management application"
 HOMEPAGE="https://about.gitlab.com/gitlab-ci/"
@@ -33,7 +32,6 @@ IUSE="memcached mysql +postgres +unicorn kerberos"
 #	grape, capybara		dev-libs/libxml2, dev-libs/libxslt
 #   json				dev-util/ragel
 #   yajl-ruby			dev-libs/yajl
-#   pygments.rb			python 2.5+
 #   execjs				net-libs/nodejs, or any other JS runtime
 #   pg					dev-db/postgresql-base
 #   mysql				virtual/mysql
