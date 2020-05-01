@@ -31,6 +31,7 @@ src_prepare()
 	sed -s 's#^dir = "/home/git/gitaly/ruby"#dir = "/var/lib/gitlab-gitaly/ruby"#' -i "config.toml.example" || die
 	sed -s 's#^dir = "/home/git/gitlab-shell"#dir = "/var/lib/gitlab-shell"#' -i "config.toml.example" || die
 	sed -s 's#^bin_dir = "/home/git/gitaly"#bin_dir = "/usr/bin"#' -i "config.toml.example" || die
+	sed -s 's#$GITALY_BIN_DIR#/usr/bin#' -i "ruby/git-hooks/gitlab-shell-hook" || die
 
 	# See https://gitlab.com/gitlab-org/gitaly/issues/493
 	sed -s 's#LDFLAGS#GO_LDFLAGS#g' -i Makefile || die

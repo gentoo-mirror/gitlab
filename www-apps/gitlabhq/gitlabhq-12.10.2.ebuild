@@ -11,13 +11,12 @@ EAPI="5"
 #   difficult to maintain them via ebuilds.
 
 USE_RUBY="ruby25 ruby26"
-PYTHON_COMPAT=( python2_7 )
 
 EGIT_REPO_URI="https://gitlab.com/gitlab-org/gitlab-foss.git"
 EGIT_COMMIT="v${PV}"
 EGIT_CHECKOUT_DIR="${WORKDIR}/all"
 
-inherit eutils python-r1 ruby-ng versionator user linux-info systemd git-r3
+inherit eutils ruby-ng versionator user linux-info systemd git-r3
 
 DESCRIPTION="GitLab is a free project and repository management application"
 HOMEPAGE="https://about.gitlab.com/gitlab-ci/"
@@ -33,7 +32,6 @@ IUSE="memcached mysql +postgres +unicorn kerberos"
 #	grape, capybara		dev-libs/libxml2, dev-libs/libxslt
 #   json				dev-util/ragel
 #   yajl-ruby			dev-libs/yajl
-#   pygments.rb			python 2.5+
 #   execjs				net-libs/nodejs, or any other JS runtime
 #   pg					dev-db/postgresql-base
 #   mysql				virtual/mysql
@@ -53,9 +51,9 @@ GEMS_DEPEND="
 DEPEND="${GEMS_DEPEND}
 	>=dev-lang/ruby-2.5[ssl]
 	>=dev-vcs/git-2.22.0
-	>=dev-vcs/gitlab-shell-11.0.0
-	>=dev-vcs/gitlab-gitaly-1.83.0
-	>=www-servers/gitlab-workhorse-8.20.0
+	>=dev-vcs/gitlab-shell-12.2.0
+	>=dev-vcs/gitlab-gitaly-12.10.2
+	>=www-servers/gitlab-workhorse-8.30.1
 	app-eselect/eselect-gitlabhq
 	net-misc/curl
 	virtual/ssh
@@ -228,6 +226,8 @@ each_ruby_install() {
 		without+="$(use $flag || echo ' '$flag)"
 	done
 	local bundle_args="--deployment ${without:+--without ${without}}"
+
+	einfo "Current ruby version is \"$(ruby --version)\""
 
 	# Fix compiling of nokogumbo, see 
 	# https://github.com/rubys/nokogumbo/issues/40#issuecomment-182667202
@@ -566,3 +566,10 @@ pkg_config() {
 	einfo ""
 	einfo "GitLab is prepared, now you should configure your web server."
 }
+
+pkg_postrm() {
+	local temp="/var/tmp/${PN}-${SLOT}"
+	einfo "Removing temporary files from \"$temp\" ..."
+	rm -r "$temp"
+}
+
