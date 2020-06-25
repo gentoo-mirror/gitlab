@@ -67,7 +67,7 @@ RDEPEND="${DEPEND}
 	kerberos? ( app-crypt/mit-krb5 )"
 ruby_add_bdepend "
 	virtual/rubygems
-	>=dev-ruby/bundler-1.0"
+	>=dev-ruby/bundler-1.17.3"
 
 RUBY_PATCHES=(
 	"${PN}-${SLOT}-fix-checks-gentoo.patch"

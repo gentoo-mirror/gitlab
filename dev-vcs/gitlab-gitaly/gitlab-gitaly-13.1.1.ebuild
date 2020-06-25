@@ -19,7 +19,7 @@ KEYWORDS="~amd64 ~x86 ~arm"
 RESTRICT="network-sandbox"
 DEPEND=">=dev-lang/go-1.10.0
 		dev-libs/icu
-		dev-ruby/bundler
+		>=dev-ruby/bundler-1.17.3
 		dev-util/cmake
 		${RUBY_DEPS}"
 RDEPEND="${DEPEND}"
