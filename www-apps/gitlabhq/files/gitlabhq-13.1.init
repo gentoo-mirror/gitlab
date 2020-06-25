@@ -1,14 +1,14 @@
 #!/sbin/openrc-run
 
 name="GitLab"
-description="GitLab 12.9 on Unicorns"
+description="GitLab 13.1 on Unicorns"
 
 : ${rails_env:=production}
 
 : ${gitlab_user:=git}
 : ${gitlab_group:=git}
-: ${gitlab_home:="/opt/gitlabhq-12.9"}
-: ${gitlab_log:="/var/log/gitlabhq-12.9"}
+: ${gitlab_home:="/opt/gitlabhq-13.1"}
+: ${gitlab_log:="/var/log/gitlabhq-13.1"}
 : ${gitlab_env:=""}
 
 : ${unicorn_pidfile:="${gitlab_home}/tmp/pids/unicorn.pid"}
@@ -54,7 +54,7 @@ start() {
 	checkpath -d -o "${gitlab_user}:${gitlab_group}" -m750 "$(dirname "${unicorn_pidfile}")"
 	checkpath -d -o "${gitlab_user}:${gitlab_group}" -m750 "$(dirname "${sidekiq_pidfile}")"
 
-	ebegin "Starting GitLab 12.9 Unicorn servers"
+	ebegin "Starting GitLab 13.1 Unicorn servers"
 	start-stop-daemon --start \
 		$(for env in $gitlab_env ; do echo "--env $env" ; done) \
 		--env GITLAB_UNICORN_MEMORY_MIN="${unicorn_mem_min}" \
@@ -65,7 +65,7 @@ start() {
 		--exec ${unicorn_command} -- ${unicorn_command_args}
 	eend $?
 
-	ebegin "Starting GitLab 12.9 Sidekiq"
+	ebegin "Starting GitLab 13.1 Sidekiq"
 	start-stop-daemon --start \
 		$(for env in $gitlab_env ; do echo "--env $env" ; done) \
 		--chdir "${gitlab_home}" \
@@ -74,7 +74,7 @@ start() {
 		--exec ${sidekiq_command} -- ${sidekiq_start_command_args}
 	eend $?
 
-	ebegin "Starting GitLab 12.9 Workhorse"
+	ebegin "Starting GitLab 13.1 Workhorse"
 	start-stop-daemon --start \
 		$(for env in $gitlab_env ; do echo "--env $env" ; done) \
 		--chdir "${gitlab_home}" \
@@ -85,7 +85,7 @@ start() {
 		--exec ${workhorse_command} -- ${workhorse_command_args}
 	eend $?
 
-        ebegin "Starting GitLab 12.9 Gitaly"
+        ebegin "Starting GitLab 13.1 Gitaly"
         start-stop-daemon --start \
 		$(for env in $gitlab_env ; do echo "--env $env" ; done) \
                 --chdir "${gitlab_home}" \
@@ -99,21 +99,21 @@ start() {
 }
 
 stop() {
-        ebegin "Stopping GitLab 12.9 Gitaly"
+        ebegin "Stopping GitLab 13.1 Gitaly"
         start-stop-daemon --stop \
                 --chdir "${gitlab_home}" \
                 --user="${gitlab_user}:${gitlab_group}" \
                 --pidfile="${gitaly_pidfile}"
         eend $?
 
-	ebegin "Stopping GitLab 12.9 Workhorse"
+	ebegin "Stopping GitLab 13.1 Workhorse"
   	start-stop-daemon --stop \
 		--chdir "${gitlab_home}" \
 		--user="${gitlab_user}:${gitlab_group}" \
 		--pidfile="${workhorse_pidfile}"
 	eend $?
 
-	ebegin "Stopping GitLab 12.9 Sidekiq"
+	ebegin "Stopping GitLab 13.1 Sidekiq"
 	start-stop-daemon --stop \
 		--chdir "${gitlab_home}" \
 		--user="${gitlab_user}:${gitlab_group}" \
@@ -121,7 +121,7 @@ stop() {
 		--exec ${sidekiq_command} -- ${sidekiq_stop_command_args}
 	eend $?
 
-	ebegin "Stopping GitLab 12.9 Unicorn servers"
+	ebegin "Stopping GitLab 13.1 Unicorn servers"
 	start-stop-daemon --stop \
 		--chdir "${gitlab_home}" \
 		--user="${gitlab_user}:${gitlab_group}" \
@@ -131,7 +131,7 @@ stop() {
 
 do_status()
 {
-	name="Gitlab 12.9 $1"
+	name="Gitlab 13.1 $1"
 	msg=$(pidfile=$2 default_status 2>&1 | awk -F': ' '{print $2}')
 	pidfile=$2 default_status &>/dev/null
 	status=$?

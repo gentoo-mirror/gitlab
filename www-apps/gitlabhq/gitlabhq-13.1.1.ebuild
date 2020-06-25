@@ -51,9 +51,9 @@ GEMS_DEPEND="
 DEPEND="${GEMS_DEPEND}
 	>=dev-lang/ruby-2.5[ssl]
 	>=dev-vcs/git-2.22.0
-	>=dev-vcs/gitlab-shell-12.1.0
-	>=dev-vcs/gitlab-gitaly-12.9.4
-	>=www-servers/gitlab-workhorse-8.30.1
+	>=dev-vcs/gitlab-shell-13.3.0
+	>=dev-vcs/gitlab-gitaly-13.1.1
+	>=www-servers/gitlab-workhorse-8.35.0
 	app-eselect/eselect-gitlabhq
 	net-misc/curl
 	virtual/ssh
@@ -144,7 +144,7 @@ each_ruby_prepare() {
 src_install() {
 	# DO NOT REMOVE - without this, the package won't install
 	ruby-ng_src_install
-	
+
 	elog "Installing systemd unit files"
 	for file in "${FILESDIR}/${PN}-${SLOT}-"*.service "${FILESDIR}/${PN}-${SLOT}.target"; do
 		unit=$(basename $file)
@@ -278,6 +278,12 @@ each_ruby_install() {
 pkg_preinst() {
 	diropts -m "0750" -o "${GIT_USER}" -g "${GIT_GROUP}"
 	dodir "${GIT_SATELLITES}"
+	# if the tmp dir for our ${SLOT} exists set a flag file to keep it (see pkg_postrm())
+	local temp="/var/tmp/${PN}-${SLOT}"
+	if [ -e "$temp" ]; then
+		einfo "Keeping temporary files from \"$temp\" ..."
+		touch "${temp}/MINOR-UPGRADE"
+	fi
 }
 
 pkg_postinst() {
@@ -421,25 +427,25 @@ pkg_config() {
 				find "${DEST_DIR}/public/uploads/" -type d -exec chmod 0700 {} \;
 			fi
 
-            einfo "Migrating shared data ..."
-            einfon "This will move your shared data from \"$LATEST_DEST\" to \"${DEST_DIR}\", (C)ontinue or (s)kip? "
-            migrate_shared=""
-            while true
-            do
-                read -r migrate_shared
-                if [[ $migrate_shared == "s" || $migrate_shared == "S" ]] ; then migrate_shared="" && break
-                elif [[ $migrate_shared == "c" || $migrate_shared == "C" || $migrate_shared == "" ]] ; then migrate_shared=1 && break
-                else eerror "Please type either \"c\" to continue or \"n\" to skip ... " ; fi
-            done
-            if [[ $migrate_shared ]] ; then
-                su -l ${GIT_USER} -s /bin/sh -c "
-                    rm -rf ${DEST_DIR}/shared && \
-                    mv ${LATEST_DEST}/shared ${DEST_DIR}/shared" \
-                    || die "failed to migrate shared data."
+			einfo "Migrating shared data ..."
+			einfon "This will move your shared data from \"$LATEST_DEST\" to \"${DEST_DIR}\", (C)ontinue or (s)kip? "
+			migrate_shared=""
+			while true
+			do
+				read -r migrate_shared
+				if [[ $migrate_shared == "s" || $migrate_shared == "S" ]] ; then migrate_shared="" && break
+				elif [[ $migrate_shared == "c" || $migrate_shared == "C" || $migrate_shared == "" ]] ; then migrate_shared=1 && break
+				else eerror "Please type either \"c\" to continue or \"n\" to skip ... " ; fi
+			done
+			if [[ $migrate_shared ]] ; then
+				su -l ${GIT_USER} -s /bin/sh -c "
+					rm -rf ${DEST_DIR}/shared && \
+					mv ${LATEST_DEST}/shared ${DEST_DIR}/shared" \
+					|| die "failed to migrate shared data."
 
-                # Fix permissions
-                find "${DEST_DIR}/shared/" -type d -exec chmod 0700 {} \;
-            fi			
+				# Fix permissions
+				find "${DEST_DIR}/shared/" -type d -exec chmod 0700 {} \;
+			fi			
 
 			einfon "Migrate configuration, (C)ontinue or (s)kip? "
 			while true
@@ -547,12 +553,12 @@ pkg_config() {
 		${BUNDLE} exec rake gitlab:assets:compile RAILS_ENV=${RAILS_ENV} NODE_ENV=production NODE_OPTIONS=\"--max-old-space-size=4096\"" \
 			|| die "failed to run yarn install and gitlab:assets:compile"
 
-    einfo "Compile GetText PO files ..."
-    su -l ${GIT_USER} -s /bin/sh -c "
-        export LANG=en_US.UTF-8; export LC_ALL=en_US.UTF-8
-        cd ${DEST_DIR}
-        ${BUNDLE} exec rake gettext:compile RAILS_ENV=${RAILS_ENV}" \
-            || die "failed to compile GetText PO files"
+	einfo "Compile GetText PO files ..."
+	su -l ${GIT_USER} -s /bin/sh -c "
+		export LANG=en_US.UTF-8; export LC_ALL=en_US.UTF-8
+		cd ${DEST_DIR}
+		${BUNDLE} exec rake gettext:compile RAILS_ENV=${RAILS_ENV}" \
+			|| die "failed to compile GetText PO files"
 
 	## (Re-)Link gitlab-shell-secret into gitlab-shell
 	if test -L "${GITLAB_SHELL}/.gitlab_shell_secret"
@@ -569,7 +575,10 @@ pkg_config() {
 
 pkg_postrm() {
 	local temp="/var/tmp/${PN}-${SLOT}"
-	einfo "Removing temporary files from \"$temp\" ..."
-	rm -r "$temp"
+	if [ -e "${temp}/MINOR-UPGRADE" ]; then
+		rm "${temp}/MINOR-UPGRADE"
+	else
+		einfo "Removing temporary files from \"$temp\" ..."
+		rm -r "$temp"
+	fi
 }
-
