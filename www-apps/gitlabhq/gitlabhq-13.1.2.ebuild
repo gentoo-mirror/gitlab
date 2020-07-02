@@ -10,7 +10,7 @@ EAPI="5"
 #   it should be done, but GitLab has too many dependencies that it will be too
 #   difficult to maintain them via ebuilds.
 
-USE_RUBY="ruby25 ruby26"
+USE_RUBY="ruby26"
 
 EGIT_REPO_URI="https://gitlab.com/gitlab-org/gitlab-foss.git"
 EGIT_COMMIT="v${PV}"
