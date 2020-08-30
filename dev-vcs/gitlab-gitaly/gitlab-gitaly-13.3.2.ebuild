@@ -19,7 +19,7 @@ KEYWORDS="~amd64 ~x86 ~arm"
 RESTRICT="network-sandbox"
 DEPEND=">=dev-lang/go-1.10.0
 		dev-libs/icu
-		dev-ruby/bundler
+		>=dev-ruby/bundler-1.17.3
 		dev-util/cmake
 		${RUBY_DEPS}"
 RDEPEND="${DEPEND}"
@@ -32,6 +32,7 @@ src_prepare()
 	sed -s 's#^dir = "/home/git/gitlab-shell"#dir = "/var/lib/gitlab-shell"#' -i "config.toml.example" || die
 	sed -s 's#^bin_dir = "/home/git/gitaly"#bin_dir = "/usr/bin"#' -i "config.toml.example" || die
 	sed -s 's#$GITALY_BIN_DIR#/usr/bin#' -i "ruby/git-hooks/gitlab-shell-hook" || die
+	sed -s 's#^secret_file = "/home/git/gitlab-shell/#secret_file = "/var/lib/gitlab-shell/#' -i "config.toml.example" || die
 
 	# See https://gitlab.com/gitlab-org/gitaly/issues/493
 	sed -s 's#LDFLAGS#GO_LDFLAGS#g' -i Makefile || die
