@@ -36,6 +36,7 @@ pkg_setup() {
 	REPO_DIR="${HOME}/repositories"
 	AUTH_FILE="${HOME}/.ssh/authorized_keys"
 	KEY_DIR=$(dirname "${AUTH_FILE}")
+	GITLAB_URL="/opt/gitlabhq/tmp/sockets/gitlab-workhorse.socket"
 
 	enewgroup ${GIT_GROUP}
 	enewuser ${GIT_USER} -1 -1 "${HOME}" ${GIT_GROUP}
@@ -52,6 +53,7 @@ each_ruby_prepare() {
 		-e "s|\(user:\).*|\1 ${GIT_USER}|" \
 		-e "s|\(repos_path:\).*|\1 \"${REPO_DIR}\"|" \
 		-e "s|\(auth_file:\).*|\1 \"${AUTH_FILE}\"|" \
+		-e "s|\(gitlab_url:\).*|\1 \"http+unix://$(echo ${GITLAB_URL} | sed -s 's#/#%2F#g')\"|" \
 		config.yml || die "failed to filter config.yml"
 }
 
