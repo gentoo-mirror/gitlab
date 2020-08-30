@@ -19,6 +19,7 @@ KEYWORDS="~amd64 ~x86 ~arm"
 RESTRICT="network-sandbox"
 DEPEND="$(ruby_implementations_depend)
 	dev-vcs/git
+	dev-ruby/bundler
 	virtual/ssh
 	dev-db/redis"
 RDEPEND="${DEPEND}"
