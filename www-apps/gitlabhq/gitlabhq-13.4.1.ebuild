@@ -25,7 +25,7 @@ LICENSE="MIT"
 RESTRICT="splitdebug network-sandbox"
 SLOT=$(get_version_component_range 1-2)
 KEYWORDS="~amd64 ~x86"
-IUSE="memcached mysql +postgres +unicorn kerberos"
+IUSE="favicon memcached mysql +postgres +unicorn kerberos"
 
 ## Gems dependencies:
 #   charlock_holmes		dev-libs/icu
@@ -43,31 +43,32 @@ GEMS_DEPEND="
 	dev-libs/libxslt
 	dev-util/ragel
 	dev-libs/yajl
-	net-libs/nodejs
-	postgres? ( dev-db/postgresql )
+	>=net-libs/nodejs-12
+	postgres? ( >=dev-db/postgresql-11 )
 	mysql? ( virtual/mysql )
 	memcached? ( net-misc/memcached )
 	net-libs/http-parser"
 DEPEND="${GEMS_DEPEND}
-	>=dev-lang/ruby-2.5[ssl]
-	>=dev-vcs/git-2.22.0
-	>=dev-vcs/gitlab-shell-13.3.0
-	>=dev-vcs/gitlab-gitaly-13.1.1
-	>=www-servers/gitlab-workhorse-8.35.0
+	>=dev-lang/ruby-2.6[ssl]
+	>=dev-vcs/git-2.25.0[pcre,pcre-jit]
+	>=dev-vcs/gitlab-shell-13.7.0
+	>=dev-vcs/gitlab-gitaly-13.4.1
+	>=www-servers/gitlab-workhorse-8.46.0
 	app-eselect/eselect-gitlabhq
 	net-misc/curl
 	virtual/ssh
 	>=sys-apps/yarn-1.15.0
-	>=net-libs/nodejs-8.10.0
 	dev-libs/re2
 	<=sys-apps/gawk-4.9999"
 RDEPEND="${DEPEND}
-	>=dev-db/redis-2.8.0
+	>=dev-db/redis-5.0
 	virtual/mta
-	kerberos? ( app-crypt/mit-krb5 )"
+	kerberos? ( app-crypt/mit-krb5 )
+	favicon? ( media-gfx/graphicsmagick )"
 ruby_add_bdepend "
 	virtual/rubygems
-	>=dev-ruby/bundler-1.17.3"
+	>=dev-ruby/bundler-1.17.3
+	<dev-ruby/bundler-2"
 
 RUBY_PATCHES=(
 	"${PN}-${SLOT}-fix-checks-gentoo.patch"
@@ -90,7 +91,7 @@ BUNDLE="ruby /usr/bin/bundle"
 
 pkg_setup() {
 	enewgroup ${GIT_GROUP}
-	enewuser ${GIT_USER} -1 -1 ${DEST_DIR} "${GIT_GROUP}"
+	enewuser ${GIT_USER} -1 -1 ${DEST_DIR} "${GIT_GROUP} redis"
 }
 
 all_ruby_unpack() {
@@ -334,6 +335,14 @@ pkg_postinst() {
 		elog "    To get it work you must use this ugly workaround:"
 		elog "        psql -U postgres -d gitlab"
 		elog "        CREATE CAST (integer AS text) WITH INOUT AS IMPLICIT;"
+		elog
+		elog "    GitLab needs two PostgreSQL extensions: pg_trgm and btree_gist."
+		elog "    To check the 'List of installed extensions' run:"
+		elog "        psql -U postgres -d gitlab -c \"\dx\""
+		elog "    To create the extensions if they are missing do:"
+		elog "        psql -U postgres -d gitlab"
+		elog "        CREATE EXTENSION IF NOT EXISTS pg_trgm;"
+		elog "        CREATE EXTENSION IF NOT EXISTS btree_gist;"
 		elog
 	fi
 	elog "  6. Execute the following command to finalize your setup:"
