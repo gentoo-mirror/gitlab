@@ -16,7 +16,8 @@ SLOT="0"
 KEYWORDS="~amd64 ~x86 ~arm"
 RESTRICT="network-sandbox"
 
-DEPEND=">=dev-lang/go-1.10.0"
+DEPEND=">=dev-lang/go-1.13.5
+		media-libs/exiftool"
 RDEPEND="${DEPEND}"
 
 src_install()
