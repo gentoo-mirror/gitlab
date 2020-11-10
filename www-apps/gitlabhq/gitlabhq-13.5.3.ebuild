@@ -84,7 +84,6 @@ CONF_DIR="/etc/${PN}-${SLOT}"
 GIT_REPOS="${GIT_HOME}/repositories"
 GIT_SATELLITES="${GIT_HOME}/gitlab-satellites"
 GITLAB_SHELL="/var/lib/gitlab-shell"
-GITLAB_SHELL_HOOKS="${GITLAB_SHELL}/hooks"
 
 RAILS_ENV=${RAILS_ENV:-production}
 BUNDLE="ruby /usr/bin/bundle"
@@ -100,13 +99,9 @@ all_ruby_unpack() {
 
 each_ruby_prepare() {
 
-	# fix path to repo and gitlab-shell hooks
-	test -d "${GITLAB_SHELL_HOOKS}" || die "Gitlab Shell hooks directory not found: \"${GITLAB_SHELL_HOOKS}. Have you properly installed dev-vcs/gitlab-shell"?
-
 	sed -i \
 		-e "s|\(\s*path:\s\)/.*/gitlab-shell/|\1 ${GITLAB_SHELL}/|" \
 		-e "s|\(\s*repos_path:\s\)/.*|\1 ${GIT_REPOS}/|" \
-		-e "s|\(\s*hooks_path:\s\)/.*|\1 ${GITLAB_SHELL_HOOKS}/|" \
 		-e "s|\(\s*path:\s\)/.*/gitlab-satellites/|\1 ${GIT_SATELLITES}/|" \
 		-e "s|\(\s*GITLAB_SHELL:\s*\)|\1\n\tpath: \"${GITLAB_SHELL}\"|" \
 		-e "s|# socket_path: tmp/sockets/private/gitaly\.socket|socket_path: tmp/sockets/gitaly.socket|" \
