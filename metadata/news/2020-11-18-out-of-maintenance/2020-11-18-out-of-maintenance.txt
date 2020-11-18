@@ -1,0 +1,16 @@
+Title: This overlay is out of maintainership
+Author: Daniel Morlock <daniel.morlock@awesome-it.de>
+Posted: 2020-11-18
+Revision: 1
+News-Item-Format: 2.0
+Display-If-Installed: www-apps/gitlabhq::gitlab
+
+The Gitlab ebuild, including its dependencies, is no more maintained.
+As a alternative, we recommend the official installation methods described
+at gitlab.org. Unfortunately, there is no alternative at the moment. If you 
+are interested in maintainership, please let us know by opening a new issue at 
+https://gitlab.awesome-it.de/overlays/gitlab. We are willing to provide the
+required infrastructure as needed.
+
+Thanks for your understanding,
+Daniel.
