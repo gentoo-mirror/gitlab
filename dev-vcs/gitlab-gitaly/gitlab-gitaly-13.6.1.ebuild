@@ -16,15 +16,13 @@ HOMEPAGE="https://gitlab.com/gitlab-org/gitaly"
 LICENSE="MIT"
 SLOT="0"
 KEYWORDS="~amd64 ~x86 ~arm"
-IUSE="+gitaly_git"
 
 RESTRICT="network-sandbox"
 DEPEND=">=dev-lang/go-1.13.0
 		dev-libs/icu
 		>=dev-ruby/bundler-2:2
 		dev-util/cmake
-		!gitaly_git? ( >=dev-vcs/git-2.29.0[pcre,pcre-jit] )
-		gitaly_git? ( dev-vcs/gitlab-gitaly[gitaly_git] )
+		>=dev-vcs/git-2.29.0[pcre,pcre-jit]
 		${RUBY_DEPS}"
 RDEPEND="${DEPEND}"
 
@@ -46,13 +44,6 @@ src_prepare()
 	pushd ruby
 	bundle config build.nokogumbo --with-ldflags='-Wl,--undefined'
 	popd
-}
-
-src_compile() {
-	default_src_compile
-	if use gitaly_git ; then
-		emake git
-	fi
 }
 
 find_files()
@@ -79,9 +70,6 @@ src_install()
 	dobin "praefect"
 
 	insinto "/var/lib/gitlab-gitaly"
-	if use gitaly_git ; then
-		doins -r "_build/git/bin"
-	fi
 	doins -r "ruby"
 
 	fperms 0755 /var/lib/gitlab-gitaly/ruby/git-hooks/gitlab-shell-hook
