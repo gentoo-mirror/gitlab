@@ -21,7 +21,7 @@ IUSE="+gitaly_git"
 RESTRICT="network-sandbox"
 DEPEND=">=dev-lang/go-1.13.0
 		dev-libs/icu
-		>=dev-ruby/bundler-1.17.3:0
+		>=dev-ruby/bundler-2:2
 		dev-util/cmake
 		${RUBY_DEPS}"
 RDEPEND="${DEPEND}"

@@ -68,8 +68,7 @@ RDEPEND="${DEPEND}
 	favicon? ( media-gfx/graphicsmagick )"
 ruby_add_bdepend "
 	virtual/rubygems
-	>=dev-ruby/bundler-1.17.3
-	<dev-ruby/bundler-2"
+	>=dev-ruby/bundler-2:2"
 
 RUBY_PATCHES=(
 	"${PN}-${SLOT}-fix-checks-gentoo.patch"
