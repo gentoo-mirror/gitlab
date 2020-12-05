@@ -1,0 +1,98 @@
+Title: www-apps/gitlabhq-13.6.1 upgrade
+Author: Horst Prote <prote@fmi.uni-stuttgart.de>
+Posted: 2020-12-05
+Revision: 1
+News-Item-Format: 2.0
+Display-If-Installed: www-apps/gitlabhq
+
+NOTE! The upgrade to www-apps/gitlabhq-13.6.1 and its dependencies needs
+some preparation and precautions as it requires ruby-2.7 and git-2.29,
+two packages that - at this writung - are still masked by keyword. Also
+some USE flags we will need are still masked in the base respectively
+the hardened profile. Finally bundler-2 is used now.
+
+So here is how I did the upgrade on my GitLab Host:
+1. Prepare for ruby27
+---------------------
+Change the RUBY_TARGETS variabel in /etc/portage/make.conf to:
+
+    RUBY_TARGETS="ruby26 ruby27"
+
+We have to keep ruby26 here as long as the old GitLab server (in my case
+gitlabhq-13.5.3) is running. Now repeated execution of
+
+    emerge -p1 dev-lang/ruby:2.7
+
+will tell you about all the unsatisfied USE flag constraints.
+I collected them in /etc/portage/package.accept_keywords/ruby27:
+
+    =dev-lang/ruby-2.7.2 ~amd64
+    =app-eselect/eselect-ruby-20191222 ~amd64
+    =dev-ruby/minitest-5.13.0 ~amd64
+    =dev-ruby/net-telnet-0.2.0 ~amd64
+    =dev-ruby/power_assert-1.1.7 ~amd64
+    =dev-ruby/rake-13.0.1 ~amd64
+    =dev-ruby/xmlrpc-0.3.0 ~amd64
+    =dev-ruby/did_you_mean-1.4.0 ~amd64
+    =dev-ruby/rdoc-6.2.0 ~amd64
+    =dev-ruby/kpeg-1.1.0-r1 ~amd64
+    =virtual/rubygems-16 ~amd64
+    =dev-ruby/rubygems-3.1.2 ~amd64
+
+YMMV. A special case is the bundler-2 where we have to unmask
+the ruby_targets_ruby27 USE flag by adding
+
+    =dev-ruby/bundler-2.1.4 -ruby_targets_ruby27
+
+to /etc/portage/profile/package.use.mask (note the '-' here; its a
+kind of double negation).
+
+When all constraints are met
+
+    emerge -1 dev-lang/ruby:2.7
+
+
+2. Prepare for git-2.29
+-----------------------
+Unmask ist by adding
+
+    =dev-vcs/git-2.29.2 ~amd64
+
+to e.g. /etc/portage/package.accept_keywords/gitlabhq
+Here we have to unmask the pcre-jit USE flag. Like above add
+
+    =dev-vcs/git-2.29.2 -pcre-jit
+
+to /etc/portage/profile/package.use.mask
+
+
+3. Update @world
+----------------
+Switch the ruby profile:
+
+    eselect ruby set ruby27
+
+and then update @world as usual. This will install git-2.29.2 and
+gitlabhq-13.6.1 with its dependencies. I recommend to do a backup
+of your GitLab Repos etc. now. I simply do
+
+    su - git
+    cd /opt/gitlabhq/
+    bundle exec rake gitlab:backup:create RAILS_ENV=production
+
+Then stop the current gitlab and do the
+
+    emerge --config "=www-apps/gitlabhq-13.6.1"
+
+and switch to the new gitlab:
+
+    eselect gitlabhq gitlabhq-13.6
+
+
+4. Cleanup
+----------
+If you like you could now in /etc/portage/make.conf change to
+
+    RUBY_TARGETS="ruby27"
+
+rebuild the affected packages and then remove ruby26.
