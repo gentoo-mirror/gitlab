@@ -47,28 +47,28 @@ the ruby_targets_ruby27 USE flag by adding
 to /etc/portage/profile/package.use.mask (note the '-' here; its a
 kind of double negation).
 
-When all constraints are met
+When all constraints are met run
 
     emerge -1 dev-lang/ruby:2.7
 
 
 2. Prepare for git-2.29
 -----------------------
-Unmask ist by adding
+Unmask it by adding
 
     =dev-vcs/git-2.29.2 ~amd64
 
-to e.g. /etc/portage/package.accept_keywords/gitlabhq
+to e.g. the /etc/portage/package.accept_keywords/gitlabhq file.
 Here we have to unmask the pcre-jit USE flag. Like above add
 
     =dev-vcs/git-2.29.2 -pcre-jit
 
-to /etc/portage/profile/package.use.mask
+to the /etc/portage/profile/package.use.mask file.
 
 
 3. Update @world
 ----------------
-Switch the ruby profile:
+Switch the ruby profile
 
     eselect ruby set ruby27
 
@@ -84,7 +84,7 @@ Then stop the current gitlab and do the
 
     emerge --config "=www-apps/gitlabhq-13.6.1"
 
-and switch to the new gitlab:
+and switch to the new gitlab by
 
     eselect gitlabhq gitlabhq-13.6
 
