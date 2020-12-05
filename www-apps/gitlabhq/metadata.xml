@@ -2,8 +2,8 @@
 <!DOCTYPE pkgmetadata SYSTEM "http://www.gentoo.org/dtd/metadata.dtd">
 <pkgmetadata>
   <upstream>
-  	<remote-id type="github">gitlabhq/gitlabhq</remote-id>
-  	<bugs-to>https://gitlab.com/gitlab-org/gitlab-ce/issues</bugs-to>
+  	<remote-id type="github">gitlab-org/gitlab-foss</remote-id>
+  	<bugs-to>https://gitlab.com/gitlab-org/gitlab-foss/-/issues</bugs-to>
   </upstream>
   <use>
     <flag name="favicon">For the Custom Favicon to work, GraphicsMagick needs to be installed.</flag>

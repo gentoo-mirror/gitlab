@@ -10,7 +10,7 @@ EAPI="5"
 #   it should be done, but GitLab has too many dependencies that it will be too
 #   difficult to maintain them via ebuilds.
 
-USE_RUBY="ruby26"
+USE_RUBY="ruby27"
 
 EGIT_REPO_URI="https://gitlab.com/gitlab-org/gitlab-foss.git"
 EGIT_COMMIT="v${PV}"
@@ -25,7 +25,7 @@ LICENSE="MIT"
 RESTRICT="splitdebug network-sandbox"
 SLOT=$(get_version_component_range 1-2)
 KEYWORDS="~amd64 ~x86"
-IUSE="favicon memcached mysql +postgres +unicorn kerberos"
+IUSE="favicon kerberos memcached mysql +postgres +unicorn"
 
 ## Gems dependencies:
 #   charlock_holmes		dev-libs/icu
@@ -49,11 +49,11 @@ GEMS_DEPEND="
 	memcached? ( net-misc/memcached )
 	net-libs/http-parser"
 DEPEND="${GEMS_DEPEND}
-	>=dev-lang/ruby-2.6[ssl]
-	>=dev-vcs/git-2.25.0[pcre,pcre-jit]
-	>=dev-vcs/gitlab-shell-13.11.0
-	>=dev-vcs/gitlab-gitaly-13.5.3
-	>=www-servers/gitlab-workhorse-8.51.0
+	>=dev-lang/ruby-2.7[ssl]
+	>=dev-vcs/gitlab-shell-13.13.0
+	>=dev-vcs/gitlab-gitaly-13.6.1
+	>=www-servers/gitlab-workhorse-8.56.0
+	>=dev-vcs/git-2.29.0[pcre,pcre-jit]
 	app-eselect/eselect-gitlabhq
 	net-misc/curl
 	virtual/ssh
@@ -67,8 +67,7 @@ RDEPEND="${DEPEND}
 	favicon? ( media-gfx/graphicsmagick )"
 ruby_add_bdepend "
 	virtual/rubygems
-	>=dev-ruby/bundler-1.17.3
-	<dev-ruby/bundler-2"
+	>=dev-ruby/bundler-2:2"
 
 RUBY_PATCHES=(
 	"${PN}-${SLOT}-fix-checks-gentoo.patch"
@@ -116,7 +115,7 @@ each_ruby_prepare() {
 		|| die "failed to filter database.yml.postgresql"
 
 	# remove needless files
-	rm .foreman .gitignore Procfile
+	rm .foreman .gitignore
 	use unicorn || rm config/unicorn.rb.example
 	use postgres || rm config/database.yml.postgresql
 
@@ -359,8 +358,8 @@ pkg_postinst() {
 	else
 		elog  ""
 		einfo "Important: Cannot find a linux kernel configuration, so cannot check for PaX support."
-		einfo "			  If CONFIG_PAX is set, you should disable mprotect for ruby since FFI may trigger"
-		einfo "			  mprotect errors."
+		einfo "           If CONFIG_PAX is set, you should disable mprotect for ruby since FFI may trigger"
+		einfo "           mprotect errors."
 	fi
 }
 

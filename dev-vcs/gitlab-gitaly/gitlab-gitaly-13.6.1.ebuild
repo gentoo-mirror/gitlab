@@ -7,7 +7,7 @@ EAPI="5"
 EGIT_REPO_URI="https://gitlab.com/gitlab-org/gitaly.git"
 EGIT_COMMIT="v${PV}"
 
-USE_RUBY="ruby25 ruby26"
+USE_RUBY="ruby27"
 
 inherit eutils git-r3 user ruby-single
 
@@ -16,11 +16,13 @@ HOMEPAGE="https://gitlab.com/gitlab-org/gitaly"
 LICENSE="MIT"
 SLOT="0"
 KEYWORDS="~amd64 ~x86 ~arm"
+
 RESTRICT="network-sandbox"
-DEPEND=">=dev-lang/go-1.10.0
+DEPEND=">=dev-lang/go-1.13.9
 		dev-libs/icu
-		>=dev-ruby/bundler-1.17.3
+		>=dev-ruby/bundler-2:2
 		dev-util/cmake
+		>=dev-vcs/git-2.29.0[pcre,pcre-jit]
 		${RUBY_DEPS}"
 RDEPEND="${DEPEND}"
 

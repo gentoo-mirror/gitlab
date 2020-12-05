@@ -121,7 +121,7 @@ each_ruby_prepare() {
 		|| die "failed to filter database.yml.postgresql"
 
 	# remove needless files
-	rm .foreman .gitignore Procfile
+	rm .foreman .gitignore
 	use unicorn || rm config/unicorn.rb.example
 	use postgres || rm config/database.yml.postgresql
 
