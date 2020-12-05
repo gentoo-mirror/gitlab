@@ -18,7 +18,7 @@ SLOT="0"
 KEYWORDS="~amd64 ~x86 ~arm"
 
 RESTRICT="network-sandbox"
-DEPEND=">=dev-lang/go-1.13.0
+DEPEND=">=dev-lang/go-1.13.9
 		dev-libs/icu
 		>=dev-ruby/bundler-2:2
 		dev-util/cmake

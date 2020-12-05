@@ -51,9 +51,9 @@ GEMS_DEPEND="
 DEPEND="${GEMS_DEPEND}
 	>=dev-lang/ruby-2.6[ssl]
 	>=dev-vcs/git-2.25.0[pcre,pcre-jit]
-	>=dev-vcs/gitlab-shell-13.6.0
-	>=dev-vcs/gitlab-gitaly-13.3.2
-	>=www-servers/gitlab-workhorse-8.39.0
+	>=dev-vcs/gitlab-shell-13.11.0
+	>=dev-vcs/gitlab-gitaly-13.5.3
+	>=www-servers/gitlab-workhorse-8.51.0
 	app-eselect/eselect-gitlabhq
 	net-misc/curl
 	virtual/ssh
@@ -84,7 +84,6 @@ CONF_DIR="/etc/${PN}-${SLOT}"
 GIT_REPOS="${GIT_HOME}/repositories"
 GIT_SATELLITES="${GIT_HOME}/gitlab-satellites"
 GITLAB_SHELL="/var/lib/gitlab-shell"
-GITLAB_SHELL_HOOKS="${GITLAB_SHELL}/hooks"
 
 RAILS_ENV=${RAILS_ENV:-production}
 BUNDLE="ruby /usr/bin/bundle"
@@ -100,13 +99,9 @@ all_ruby_unpack() {
 
 each_ruby_prepare() {
 
-	# fix path to repo and gitlab-shell hooks
-	test -d "${GITLAB_SHELL_HOOKS}" || die "Gitlab Shell hooks directory not found: \"${GITLAB_SHELL_HOOKS}. Have you properly installed dev-vcs/gitlab-shell"?
-
 	sed -i \
 		-e "s|\(\s*path:\s\)/.*/gitlab-shell/|\1 ${GITLAB_SHELL}/|" \
 		-e "s|\(\s*repos_path:\s\)/.*|\1 ${GIT_REPOS}/|" \
-		-e "s|\(\s*hooks_path:\s\)/.*|\1 ${GITLAB_SHELL_HOOKS}/|" \
 		-e "s|\(\s*path:\s\)/.*/gitlab-satellites/|\1 ${GIT_SATELLITES}/|" \
 		-e "s|\(\s*GITLAB_SHELL:\s*\)|\1\n\tpath: \"${GITLAB_SHELL}\"|" \
 		-e "s|# socket_path: tmp/sockets/private/gitaly\.socket|socket_path: tmp/sockets/gitaly.socket|" \
@@ -121,7 +116,7 @@ each_ruby_prepare() {
 		|| die "failed to filter database.yml.postgresql"
 
 	# remove needless files
-	rm .foreman .gitignore Procfile
+	rm .foreman .gitignore
 	use unicorn || rm config/unicorn.rb.example
 	use postgres || rm config/database.yml.postgresql
 
