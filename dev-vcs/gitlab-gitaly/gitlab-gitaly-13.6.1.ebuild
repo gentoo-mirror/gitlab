@@ -95,3 +95,14 @@ src_install()
 	insinto "/etc/gitaly"
 	newins "config.toml.example" "config.toml"
 }
+
+pkg_postinst()
+{
+	if use gitaly_git; then
+		elog  ""
+		einfo "Note: With gitaly_git USE flag enabled the included git was installed to"
+		einfo "      /var/lib/gitlab-gitaly/bin/. In order to use it one has to set the"
+		einfo "      git \"bin_path\" variable in \"/etc/gitaly/config.toml\" and in"
+		einfo "      /etc/gitlabhq-${PV}/gitlab.yml to /var/lib/gitlab-gitaly/bin/git"
+	fi
+}
