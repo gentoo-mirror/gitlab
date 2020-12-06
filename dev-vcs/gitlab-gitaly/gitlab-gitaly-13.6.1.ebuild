@@ -102,9 +102,9 @@ pkg_postinst()
 		einfo "Note: With gitaly_git USE flag enabled the included git was installed to"
 		einfo "      /var/lib/gitlab-gitaly/bin/. In order to use it one has to set the"
 		einfo "      git \"bin_path\" variable in \"/etc/gitaly/config.toml\" and in"
-		einfo "      /etc/gitlabhq-${PV}/gitlab.yml to /var/lib/gitlab-gitaly/bin/git"
+		einfo "      \"/etc/gitlabhq-13.6/gitlab.yml\" to \"/var/lib/gitlab-gitaly/bin/git\""
 		einfo "      You also have to set the environment variable"
-		einfo "        GIT_EXEC_PATH=\"/var/lib/gitlab-gitaly/bin/git\""
+		einfo "        GIT_EXEC_PATH=/var/lib/gitlab-gitaly/bin/git"
 		einfo "      for the gitaly service."
 	fi
 }
