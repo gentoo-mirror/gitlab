@@ -16,7 +16,7 @@ HOMEPAGE="https://gitlab.com/gitlab-org/gitaly"
 LICENSE="MIT"
 SLOT="0"
 KEYWORDS="~amd64 ~x86 ~arm"
-IUSE="+gitaly_git"
+IUSE="gitaly_git"
 
 RESTRICT="network-sandbox"
 DEPEND=">=dev-lang/go-1.13.9

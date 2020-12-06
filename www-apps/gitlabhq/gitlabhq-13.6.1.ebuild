@@ -25,7 +25,7 @@ LICENSE="MIT"
 RESTRICT="splitdebug network-sandbox"
 SLOT=$(get_version_component_range 1-2)
 KEYWORDS="~amd64 ~x86"
-IUSE="favicon +gitaly_git kerberos memcached mysql +postgres +unicorn"
+IUSE="favicon gitaly_git kerberos memcached mysql +postgres +unicorn"
 
 ## Gems dependencies:
 #   charlock_holmes		dev-libs/icu
