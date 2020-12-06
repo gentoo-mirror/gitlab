@@ -16,13 +16,15 @@ HOMEPAGE="https://gitlab.com/gitlab-org/gitaly"
 LICENSE="MIT"
 SLOT="0"
 KEYWORDS="~amd64 ~x86 ~arm"
+IUSE="+gitaly_git"
 
 RESTRICT="network-sandbox"
 DEPEND=">=dev-lang/go-1.13.9
 		dev-libs/icu
 		>=dev-ruby/bundler-2:2
 		dev-util/cmake
-		>=dev-vcs/git-2.29.0[pcre,pcre-jit]
+		!gitaly_git? ( >=dev-vcs/git-2.29.0[pcre,pcre-jit] )
+		gitaly_git? ( dev-vcs/gitlab-gitaly[gitaly_git] )
 		${RUBY_DEPS}"
 RDEPEND="${DEPEND}"
 
@@ -69,6 +71,9 @@ src_install()
 	dobin "gitaly-wrapper"
 	dobin "praefect"
 
+	if use gitaly_git ; then
+		emake git GIT_PREFIX=${D}/var/lib/gitlab-gitaly
+	fi
 	insinto "/var/lib/gitlab-gitaly"
 	doins -r "ruby"
 

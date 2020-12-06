@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE pkgmetadata SYSTEM "http://www.gentoo.org/dtd/metadata.dtd">
+<pkgmetadata>
+  <upstream>
+   <remote-id type="github">gitlab-org/gitlab-gitaly</remote-id>
+   <bugs-to>https://gitlab.com/gitlab-org/gitaly/-/issues</bugs-to>
+  </upstream>
+  <use>
+    <flag name="gitaly_git">Use the Git version provided by Gitaly.</flag>
+  </use>
+</pkgmetadata>
