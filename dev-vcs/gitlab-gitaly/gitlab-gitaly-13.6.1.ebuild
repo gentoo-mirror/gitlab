@@ -24,7 +24,6 @@ DEPEND=">=dev-lang/go-1.13.9
 		>=dev-ruby/bundler-2:2
 		dev-util/cmake
 		!gitaly_git? ( >=dev-vcs/git-2.29.0[pcre,pcre-jit] )
-		gitaly_git? ( dev-vcs/gitlab-gitaly[gitaly_git] )
 		${RUBY_DEPS}"
 RDEPEND="${DEPEND}"
 
