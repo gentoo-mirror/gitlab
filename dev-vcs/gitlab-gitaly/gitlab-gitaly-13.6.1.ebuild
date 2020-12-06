@@ -72,7 +72,7 @@ src_install()
 	dobin "praefect"
 
 	if use gitaly_git ; then
-		emake git GIT_PREFIX=${D}/var/lib/gitlab-gitaly
+		emake git GIT_PREFIX=${D}/usr/local
 	fi
 	insinto "/var/lib/gitlab-gitaly"
 	doins -r "ruby"
