@@ -72,7 +72,7 @@ src_install()
 	dobin "praefect"
 
 	if use gitaly_git ; then
-		emake git GIT_PREFIX=${D}/usr/local
+		emake git GIT_PREFIX=${D}/var/lib/gitlab-gitaly
 	fi
 	insinto "/var/lib/gitlab-gitaly"
 	doins -r "ruby"
@@ -104,5 +104,8 @@ pkg_postinst()
 		einfo "      /var/lib/gitlab-gitaly/bin/. In order to use it one has to set the"
 		einfo "      git \"bin_path\" variable in \"/etc/gitaly/config.toml\" and in"
 		einfo "      /etc/gitlabhq-${PV}/gitlab.yml to /var/lib/gitlab-gitaly/bin/git"
+		einfo "      You also have to set the environment variable"
+		einfo "        GIT_EXEC_PATH=\"/var/lib/gitlab-gitaly/bin/git\""
+		einfo "      for the gitaly service."
 	fi
 }
