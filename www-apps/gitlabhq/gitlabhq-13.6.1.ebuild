@@ -55,7 +55,6 @@ DEPEND="${GEMS_DEPEND}
 	>=www-servers/gitlab-workhorse-8.56.0
 	!gitaly_git? ( >=dev-vcs/git-2.29.0[pcre,pcre-jit] )
 	gitaly_git? ( dev-vcs/gitlab-gitaly[gitaly_git] )
-	>=dev-vcs/git-2.29.0[pcre,pcre-jit]
 	app-eselect/eselect-gitlabhq
 	net-misc/curl
 	virtual/ssh
