@@ -25,6 +25,15 @@ DOC_CONTENTS="Register the runner as root using\\n
 \\t# gitlab-runner register\\n
 This will save the config in /etc/gitlab-runner/config.toml"
 
+src_unpack() {
+	mkdir ${S}
+}
+
+src_prepare() {
+	default
+	cp ${DISTDIR}/${A} ${S}/ || die
+}
+
 src_install() {
 	einstalldocs
 
