@@ -70,16 +70,6 @@ src_install()
 	dobin "gitaly-wrapper"
 	dobin "praefect"
 
-	if use gitaly_git ; then
-		emake git GIT_PREFIX=${D}/var/lib/gitlab-gitaly
-		# We need a wrapper script to insert the --exec-path option:
-		mv /var/lib/gitlab-gitaly/bin/git /var/lib/gitlab-gitaly/bin/gitaly-git
-		cat <<-EOF > /var/lib/gitlab-gitaly/bin/git
-			#!/bin/sh
-			exec /var/lib/gitlab-gitaly/bin/gitaly-git --exec-path=/var/lib/gitlab-gitaly/libexec/git-core "$@"
-		EOF
-		fperms 0755 /var/lib/gitlab-gitaly/bin/git
-	fi
 	insinto "/var/lib/gitlab-gitaly"
 	doins -r "ruby"
 
@@ -97,6 +87,19 @@ src_install()
 	for bin in $(find_files "/var/lib/gitlab-gitaly/ruby/vendor/bundle/ruby/*/bin") ; do
 		fperms 0755 $bin
 	done
+
+	if use gitaly_git ; then
+		emake git GIT_USE_PREBUILT_BINARIES=1
+		# We need a wrapper script to insert the --exec-path option:
+		mv ${S}/_build/git/bin/git ${S}/_build/git/bin/gitaly-git
+		cat <<-EOF > ${S}/_build/git/bin/git
+			#!/bin/bash
+			MYDIR="\$(dirname "\$(realpath "\$BASH_SOURCE")")"
+			exec \${MYDIR}/gitaly-git --exec-path=\${MYDIR}/libexec/git-core "\$@"
+		EOF
+		chmod 0755 ${S}/_build/git/bin/git
+		mv ${S}/_build/git/* ${D}/var/lib/gitlab-gitaly/
+	fi
 
 	insinto "/etc/gitaly"
 	newins "config.toml.example" "config.toml"
