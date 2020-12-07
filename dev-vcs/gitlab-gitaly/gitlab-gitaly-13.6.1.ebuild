@@ -89,16 +89,7 @@ src_install()
 	done
 
 	if use gitaly_git ; then
-		emake git GIT_USE_PREBUILT_BINARIES=1
-		# We need a wrapper script to insert the --exec-path option:
-		mv ${S}/_build/git/bin/git ${S}/_build/git/bin/gitaly-git
-		cat <<-EOF > ${S}/_build/git/bin/git
-			#!/bin/bash
-			MYDIR="\$(dirname "\$(realpath "\$BASH_SOURCE")")"
-			exec \${MYDIR}/gitaly-git --exec-path=\${MYDIR}/libexec/git-core "\$@"
-		EOF
-		chmod 0755 ${S}/_build/git/bin/git
-		mv ${S}/_build/git/* ${D}/var/lib/gitlab-gitaly/
+		emake git DESTDIR="${D}" GIT_PREFIX="/var/lib/gitlab-gitaly"
 	fi
 
 	insinto "/etc/gitaly"
