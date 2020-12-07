@@ -5,11 +5,11 @@ EAPI=7
 
 inherit golang-build golang-vcs-snapshot user readme.gentoo-r1 systemd tmpfiles user
 
-EGO_PN="gitlab.com/gitlab-org/gitlab-runner"
+AWS="gitlab-runner-downloads.s3.amazonaws.com"
 
 DESCRIPTION="GitLab Runner"
 HOMEPAGE="https://gitlab.com/gitlab-org/gitlab-runner"
-SRC_URI="https://${EGO_PN}/repository/v${PV}/archive.tar.bz2 -> ${P}.tar.bz2"
+SRC_URI="https://${AWS}/v${PV}/binaries/gitlab-runner-linux-${ARCH} -> gitlab-runner"
 
 LICENSE="MIT"
 SLOT="0"
@@ -23,11 +23,7 @@ RESTRICT="mirror strip"
 
 DOC_CONTENTS="Register the runner as root using\\n
 \\t# gitlab-runner register\\n
-Configure the runner in /etc/gitlab-runner/config.toml"
-
-src_unpack() {
-	golang-vcs-snapshot_src_unpack
-}
+This will save the config in /etc/gitlab-runner/config.toml"
 
 src_install() {
 	einstalldocs
@@ -45,8 +41,6 @@ src_install() {
 	diropts -oroot -ggitlab-runner -m0750
 	insinto /etc/gitlab-runner
 	keepdir /etc/gitlab-runner /var/lib/gitlab-runner
-
-	doins "${S}/src/${EGO_PN}/config.toml.example"
 }
 
 pkg_postinst() {
