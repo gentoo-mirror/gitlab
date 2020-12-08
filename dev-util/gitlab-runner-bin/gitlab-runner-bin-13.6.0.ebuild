@@ -9,7 +9,7 @@ AWS="gitlab-runner-downloads.s3.amazonaws.com"
 
 DESCRIPTION="GitLab Runner"
 HOMEPAGE="https://gitlab.com/gitlab-org/gitlab-runner"
-SRC_URI="https://${AWS}/v${PV}/binaries/gitlab-runner-linux-${ARCH} -> gitlab-runner"
+SRC_URI="https://${AWS}/v${PV}/binaries/gitlab-runner-linux-${ARCH} -> gitlab-runner-${PV}"
 
 LICENSE="MIT"
 SLOT="0"
