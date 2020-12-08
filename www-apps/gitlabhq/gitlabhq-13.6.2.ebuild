@@ -18,8 +18,8 @@ EGIT_CHECKOUT_DIR="${WORKDIR}/all"
 
 inherit eutils ruby-ng versionator user linux-info systemd git-r3
 
-DESCRIPTION="GitLab is a free project and repository management application"
-HOMEPAGE="https://about.gitlab.com/gitlab-ci/"
+DESCRIPTION="GitLab is a complete DevOps platform"
+HOMEPAGE="https://gitlab.com/gitlab-org/gitlab-foss"
 
 LICENSE="MIT"
 RESTRICT="splitdebug network-sandbox"

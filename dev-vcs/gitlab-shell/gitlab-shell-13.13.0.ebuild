@@ -11,7 +11,7 @@ USE_RUBY="ruby26 ruby27"
 
 inherit eutils ruby-ng user git-r3
 
-DESCRIPTION="GitLab Shell is a free SSH access and repository management application"
+DESCRIPTION="SSH access for GitLab"
 HOMEPAGE="https://github.com/gitlabhq/gitlab-shell"
 LICENSE="MIT"
 SLOT="0"
