@@ -1,0 +1,11 @@
+Title: Package gitlab-runner-bin added
+Author: Horst Prote <prote@fmi.uni-stuttgart.de>
+Posted: 2020-12-08
+Revision: 1
+News-Item-Format: 2.0
+
+I have just added the gitlab-runner-bin package that simply installs
+the gitlab-runner binary from upstream.
+
+Note that the flow and the nest overlay offers gitlab-runner source
+packets, the both even support docker.

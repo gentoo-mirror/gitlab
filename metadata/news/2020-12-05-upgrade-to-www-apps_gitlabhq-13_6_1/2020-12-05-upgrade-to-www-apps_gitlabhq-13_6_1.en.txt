@@ -1,7 +1,7 @@
 Title: www-apps/gitlabhq-13.6.1 upgrade
 Author: Horst Prote <prote@fmi.uni-stuttgart.de>
 Posted: 2020-12-05
-Revision: 1
+Revision: 2
 News-Item-Format: 2.0
 Display-If-Installed: www-apps/gitlabhq
 
@@ -11,7 +11,8 @@ two packages that - at this writung - are still masked by keyword. Also
 some USE flags we will need are still masked in the base respectively
 the hardened profile. Finally bundler-2 is used now.
 
-So here is how I did the upgrade on my GitLab Host:
+So, here is how I did the upgrade on my GitLab Host:
+
 1. Prepare for ruby27
 ---------------------
 Change the RUBY_TARGETS variabel in /etc/portage/make.conf to:
@@ -54,16 +55,23 @@ When all constraints are met run
 
 2. Prepare for git-2.29
 -----------------------
-Unmask it by adding
+Here you have two alternatives now.
+A. Update the Gentoo git to version >=2.29
+   Unmask it by adding
 
-    =dev-vcs/git-2.29.2 ~amd64
+       =dev-vcs/git-2.29.2 ~amd64
 
-to e.g. the /etc/portage/package.accept_keywords/gitlabhq file.
-Here we have to unmask the pcre-jit USE flag. Like above add
+   to e.g. the /etc/portage/package.accept_keywords/gitlabhq file.
+   Here we have to unmask the pcre-jit USE flag. Like above add
 
-    =dev-vcs/git-2.29.2 -pcre-jit
+       =dev-vcs/git-2.29.2 -pcre-jit
 
-to the /etc/portage/profile/package.use.mask file.
+   to the /etc/portage/profile/package.use.mask file.
+B. Use the git version gitlab-gitaly comes with
+   Activate the gitaly_git USE flag for gitlabhq and gitlab-gitaly
+   and rebuild both packages. For gitlabhq the USE flag only
+   changes the git dependency. The gitlab-gitaly git will be
+   installed to /var/lib/gitlab-gitaly/[bin|libexec|share].
 
 
 3. Update @world
