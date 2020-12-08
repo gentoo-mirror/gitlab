@@ -3,7 +3,7 @@
 
 EAPI=7
 
-inherit golang-build golang-vcs-snapshot user readme.gentoo-r1 systemd tmpfiles user
+inherit user readme.gentoo-r1 systemd tmpfiles user
 
 AWS="gitlab-runner-downloads.s3.amazonaws.com"
 
