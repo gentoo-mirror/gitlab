@@ -31,7 +31,7 @@ src_unpack() {
 
 src_prepare() {
 	default
-	cp ${DISTDIR}/${A} ${S}/ || die
+	cp ${DISTDIR}/${A} ${S}/gitlab-runner || die
 }
 
 src_install() {
