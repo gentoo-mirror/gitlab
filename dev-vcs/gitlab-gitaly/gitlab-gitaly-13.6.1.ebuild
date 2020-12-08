@@ -16,13 +16,14 @@ HOMEPAGE="https://gitlab.com/gitlab-org/gitaly"
 LICENSE="MIT"
 SLOT="0"
 KEYWORDS="~amd64 ~x86 ~arm"
+IUSE="gitaly_git"
 
 RESTRICT="network-sandbox"
 DEPEND=">=dev-lang/go-1.13.9
 		dev-libs/icu
 		>=dev-ruby/bundler-2:2
 		dev-util/cmake
-		>=dev-vcs/git-2.29.0[pcre,pcre-jit]
+		!gitaly_git? ( >=dev-vcs/git-2.29.0[pcre,pcre-jit] )
 		${RUBY_DEPS}"
 RDEPEND="${DEPEND}"
 
@@ -87,6 +88,21 @@ src_install()
 		fperms 0755 $bin
 	done
 
+	if use gitaly_git ; then
+		emake git DESTDIR="${D}" GIT_PREFIX="/var/lib/gitlab-gitaly"
+	fi
+
 	insinto "/etc/gitaly"
 	newins "config.toml.example" "config.toml"
+}
+
+pkg_postinst()
+{
+	if use gitaly_git; then
+		elog  ""
+		einfo "Note: With gitaly_git USE flag enabled the included git was installed to"
+		einfo "      /var/lib/gitlab-gitaly/bin/. In order to use it one has to set the"
+		einfo "      git \"bin_path\" variable in \"/etc/gitaly/config.toml\" and in"
+		einfo "      \"/etc/gitlabhq-13.6/gitlab.yml\" to \"/var/lib/gitlab-gitaly/bin/git\""
+	fi
 }

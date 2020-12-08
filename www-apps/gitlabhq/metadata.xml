@@ -7,6 +7,7 @@
   </upstream>
   <use>
     <flag name="favicon">For the Custom Favicon to work, GraphicsMagick needs to be installed.</flag>
+    <flag name="gitaly_git">Use the Git version provided by Gitaly.</flag>
     <flag name="unicorn">Enables support for the unicorn HTTP server for Rack application</flag>
   </use>
 </pkgmetadata>
