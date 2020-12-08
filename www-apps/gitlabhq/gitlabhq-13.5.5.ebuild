@@ -184,7 +184,7 @@ each_ruby_install() {
 	# Note that we cannot install the config to /etc and symlink
 	# it to ${dest} since require_relative in config/application.rb
 	# seems to get confused by symlinks. So let's install the config
-	# to ${dest} and create a smylink to /etc/gitlabhq-<VERSION>
+	# to ${dest} and create a smylink to /etc/${P}
 	dosym "${dest}/config" "${conf}"
 
 	insinto "${dest}/.ssh"
@@ -359,8 +359,8 @@ pkg_postinst() {
 	else
 		elog  ""
 		einfo "Important: Cannot find a linux kernel configuration, so cannot check for PaX support."
-		einfo "			  If CONFIG_PAX is set, you should disable mprotect for ruby since FFI may trigger"
-		einfo "			  mprotect errors."
+		einfo "           If CONFIG_PAX is set, you should disable mprotect for ruby since FFI may trigger"
+		einfo "           mprotect errors."
 	fi
 }
 
@@ -379,7 +379,7 @@ pkg_config() {
 	if [[ $do_upgrade ]] ; then
 
 		LATEST_DEST=$(test -n "${LATEST_DEST}" && echo ${LATEST_DEST} || \
-			find /opt -maxdepth 1 -iname 'gitlabhq-*' -and -type d -and -not -iname "gitlabhq-${SLOT}" | \
+			find /opt -maxdepth 1 -iname "${PN}"'-*' -and -type d | \
 			sort -rV | head -n1)
 
 		if [[ -z "${LATEST_DEST}" || ! -d "${LATEST_DEST}" ]] ; then
