@@ -17,3 +17,10 @@ the "emerge --config" of gitlabhq. Without a slotted gitaly
 the "emerge -u gitlabhq" had at this point already merged the
 new gitaly version which sometimes failed to run the backup
 command.
+
+---
+(1) As the gitaly service file is installed by the gitlabhq ebuild
+    there already were two service files on slot changing upgrades:
+      gitlabhq-<previuos slot>-gitaly.service
+      gitlabhq-<new slot>-gitaly.service
+    but both would run the same, the new version of gitaly.
