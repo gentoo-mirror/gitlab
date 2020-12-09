@@ -131,7 +131,9 @@ each_ruby_prepare() {
 	# Update pathes for unicorn
 	if use unicorn; then
 		sed -i \
-			-e "s#/home/git/gitlab#${DEST_DIR}#" \
+			-e "s|/home/git/gitlab|${DEST_DIR}|" \
+			-e "s|^stderr_path|#stderr_path|" \
+			-e "s|^stdout_path|#stdout_path|" \
 			config/unicorn.rb.example \
 			|| die "failed to modify unicorn.rb.example"
 	fi
