@@ -1,6 +1,6 @@
 Title: www-apps/gitlabhq-13.6.1 upgrade
 Author: Horst Prote <prote@fmi.uni-stuttgart.de>
-Posted: 2020-12-05
+Posted: 2020-12-08
 Revision: 2
 News-Item-Format: 2.0
 Display-If-Installed: www-apps/gitlabhq

@@ -73,7 +73,7 @@ src_install()
 	find ruby/vendor -iname 'Makefile' -delete
 	# Other cleanup candidates: a.out *.bin
 
-	into "${DEST_DIR}" # Will install the binary to /usr/bin. Don't specify the "bin" folder!
+	into "${DEST_DIR}" # Will install binaries to ${DEST_DIR}/bin. Don't specify the "bin"!
 	newbin "gitaly" "gitlab-gitaly"
 	dobin "gitaly-ssh"
 	dobin "gitaly-hooks"
