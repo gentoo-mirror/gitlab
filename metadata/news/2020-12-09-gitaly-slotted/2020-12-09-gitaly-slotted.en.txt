@@ -1,0 +1,19 @@
+Title: Gitaly is slotted now
+Author: Horst Prote <prote@fmi.uni-stuttgart.de>
+Posted: 2020-12-09
+Revision: 1
+News-Item-Format: 2.0
+Display-If-Installed: dev-vcs/gitlab-gitaly
+
+The gitlab-gitaly package is now slotted as the gitlabhq itself.
+
+On slot changing upgrades of gitlaghq one now can run the old
+gitlabhq-<previuos slot>-gitaly.service (1) and do the
+
+  bundle exec rake gitlab:backup:create RAILS_ENV=production
+
+backup (as recommended before upgrading gitlabhq) just before
+the "emerge --config" of gitlabhq. Without a slotted gitaly
+the "emerge -u gitlabhq" had at this point already merged the
+new gitaly version which sometimes failed to run the backup
+command.

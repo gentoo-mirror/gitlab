@@ -18,8 +18,8 @@ src_unpack() {
 	# need ${S} anyhow for src_install
 	mkdir ${S}
 	sed -e "s/@VERSION@/${PV}/" \
-	    "${FILESDIR}/gitlabhq.eselect-${PVR}" \
-	    > "${S}/gitlabhq.eselect" || die
+		"${FILESDIR}/gitlabhq.eselect-${PVR}" \
+		> "${S}/gitlabhq.eselect" || die
 }
 
 src_install() {
