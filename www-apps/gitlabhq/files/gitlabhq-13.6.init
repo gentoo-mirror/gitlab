@@ -11,6 +11,9 @@ description="GitLab 13.6 on Unicorns"
 : ${gitlab_log:="/var/log/gitlabhq-13.6"}
 : ${gitlab_env:=""}
 
+: ${gitaly_home:="/var/lib/gitlab-gitaly-13.6"}
+: ${gitaly_config:="/etc/gitlab-gitaly-13.6"}
+
 : ${unicorn_pidfile:="${gitlab_home}/tmp/pids/unicorn.pid"}
 : ${unicorn_log:="${gitlab_log}/unicorn.log"}
 : ${unicorn_socket:="${gitlab_home}/tmp/sockets/gitlab.socket"}
@@ -32,8 +35,8 @@ description="GitLab 13.6 on Unicorns"
 : ${workhorse_command:="/usr/bin/gitlab-workhorse"}
 : ${workhorse_command_args="-listenUmask 0 -listenNetwork unix -listenAddr ${workhorse_socket} -authBackend http://127.0.0.1:8080 -documentRoot ${gitlab_home}/public -authSocket ${unicorn_socket}"}
 
-: ${gitaly_command:=/usr/bin/gitlab-gitaly}
-: ${gitaly_command_args:="/etc/gitaly/config.toml"}
+: ${gitaly_command:="${gitaly_home}/bin/gitlab-gitaly"}
+: ${gitaly_command_args:="${gitaly_config}//config.toml"}
 : ${gitaly_pidfile:="${gitlab_home}/tmp/pids/gitaly.pid"}
 : ${gitaly_log:="${gitlab_log}/gitaly.log"}
 : ${gitaly_socket:="${gitlab_home}/tmp/sockets/gitaly.socket"}
