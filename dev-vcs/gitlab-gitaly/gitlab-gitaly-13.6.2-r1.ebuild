@@ -85,7 +85,8 @@ src_install()
 	doins -r "ruby"
 
 	# Make binaries executable
-	local rubyV=$(ruby_rbconfig_value 'ruby_version')
+	local rubyV=$(sed -e "s/\(.\)\(.\)/\1\.\2\.0/" <<< "${USE_RUBY##*ruby}")
+	# Note: For USE_RUBY="ruby26 ruby27" we will get "2.7.0" here. That shoul be ok.
 	exeinto "${DEST_DIR}/ruby/git-hooks/"
 	doexe ruby/git-hooks/gitlab-shell-hook
 	exeinto "${DEST_DIR}/ruby/bin"
@@ -97,7 +98,7 @@ src_install()
 		emake git DESTDIR="${D}" GIT_PREFIX="${DEST_DIR}"
 	fi
 
-	insinto "/etc/gitaly"
+	insinto "${CONF_DIR}"
 	newins "config.toml.example" "config.toml"
 }
 
@@ -108,6 +109,6 @@ pkg_postinst()
 		einfo "Note: With gitaly_git USE flag enabled the included git was installed to"
 		einfo "      ${DEST_DIR}/bin/. In order to use it one has to set the"
 		einfo "      git \"bin_path\" variable in \"${CONF_DIR}/config.toml\" and in"
-		einfo "      \"/etc/gitlabhq-${SLOT}/gitlab.yml\" to \"${DEST_DIR}/bin/git\""
+		einfo "      \"/etc/gitlabhq/gitlab.yml\" to \"${DEST_DIR}/bin/git\""
 	fi
 }
