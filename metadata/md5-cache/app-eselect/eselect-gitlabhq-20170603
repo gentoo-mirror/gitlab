@@ -5,4 +5,4 @@ KEYWORDS=~amd64 ~x86
 LICENSE=GPL-2
 RDEPEND=>=app-admin/eselect-1.0.2
 SLOT=0
-_md5_=89fe8d7bfe8fab17041e37ecb14918cc
+_md5_=3523f4e7213de61b72d0d3015dabe55b

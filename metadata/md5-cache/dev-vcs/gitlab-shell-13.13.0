@@ -1,6 +1,6 @@
 DEFINED_PHASES=compile configure install postinst prepare setup test unpack
 DEPEND=ruby_targets_ruby26? ( dev-lang/ruby:2.6 ) ruby_targets_ruby27? ( dev-lang/ruby:2.7 ) dev-vcs/git dev-ruby/bundler virtual/ssh dev-db/redis ruby_targets_ruby26? ( dev-lang/ruby:2.6 ) ruby_targets_ruby27? ( dev-lang/ruby:2.7 ) >=dev-vcs/git-1.8.2.1[curl]
-DESCRIPTION=GitLab Shell is a free SSH access and repository management application
+DESCRIPTION=SSH access for GitLab
 EAPI=5
 HOMEPAGE=https://github.com/gitlabhq/gitlab-shell
 IUSE=ruby_targets_ruby26 ruby_targets_ruby27
@@ -12,4 +12,4 @@ REQUIRED_USE=|| ( ruby_targets_ruby26 ruby_targets_ruby27 )
 RESTRICT=network-sandbox
 SLOT=0
 _eclasses_=desktop	7fd20552ce4cc97e8acb132a499a7dd8	edos2unix	33e347e171066657f91f8b0c72ec8773	epatch	e8f1ec13660dc2f44b32775765d85e42	estack	686eaab303305a908fd57b2fd7617800	eutils	2d5b3f4b315094768576b6799e4f926e	git-r3	3e7ec3d6619213460c85e2aa48398441	l10n	8cdd85e169b835d518bc2fd59f780d8e	ltprune	4f3f2db5ce3ccbeeacdf3f94954043aa	multilib	d410501a125f99ffb560b0c523cd3d1e	preserve-libs	ef207dc62baddfddfd39a164d9797648	ruby-ng	676004cfb6cdf3dedf1c778d56346624	ruby-utils	927b40774937983813d360c726615e54	toolchain-funcs	605c126bed8d87e4378d5ff1645330cb	user	b0a0d4ca9e3f79c38f8f4143b8d5a2d8	user-info	a2abd4e2f4c3b9b06d64bf1329359a02	vcs-clean	2a0f74a496fa2b1552c4f3398258b7bf	wrapper	4251d4c84c25f59094fd557e0063a974
-_md5_=4243fa32014d9e3896b79fd84685f60d
+_md5_=e2fcea3e5d547405e0ed7f54af6ec06e
