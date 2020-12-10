@@ -25,7 +25,9 @@ LICENSE="MIT"
 RESTRICT="splitdebug network-sandbox"
 SLOT=$(get_version_component_range 1-2)
 KEYWORDS="~amd64 ~x86"
-IUSE="favicon gitaly_git kerberos memcached mysql +postgres +unicorn"
+IUSE="aws favicon gitaly_git kerberos memcached mysql +postgres +unicorn"
+# USE flags that affect the --without option below
+WITHOUflags="aws memcached mysql postgres unicorn kerberos"
 
 ## Gems dependencies:
 #   charlock_holmes		dev-libs/icu
@@ -220,7 +222,7 @@ each_ruby_install() {
 	cd "${D}/${dest}"
 
 	local without="development test thin"
-	local flag; for flag in memcached mysql postgres unicorn kerberos; do
+	local flag; for flag in ${WITHOUTflags}; do
 		without+="$(use $flag || echo ' '$flag)"
 	done
 	local bundle_args="--deployment ${without:+--without ${without}}"

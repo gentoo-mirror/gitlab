@@ -6,8 +6,9 @@
   	<bugs-to>https://gitlab.com/gitlab-org/gitlab-foss/-/issues</bugs-to>
   </upstream>
   <use>
-    <flag name="favicon">For the Custom Favicon to work, GraphicsMagick needs to be installed.</flag>
-    <flag name="gitaly_git">Use the Git version provided by Gitaly.</flag>
+    <flag name="aws">Enable Amazon Web Services (AWS) Support</flag>
+    <flag name="favicon">For the Custom Favicon to work, GraphicsMagick needs to be installed</flag>
+    <flag name="gitaly_git">Use the Git version provided by Gitaly</flag>
     <flag name="unicorn">Enables support for the unicorn HTTP server for Rack application</flag>
   </use>
 </pkgmetadata>
