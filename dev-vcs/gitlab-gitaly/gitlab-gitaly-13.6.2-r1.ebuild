@@ -40,6 +40,7 @@ src_prepare()
 	sed -i \
 		-e "s|^socket_path = .*|socket_path = \"${GITLAB_SOCKETS}/gitaly.socket\"|" \
 		-e "s|^path = .*|path = \"${GIT_REPOS}\"|" \
+		-e "s|^# \[logging\]|\[logging\]|" \
 		-e "s|^# level = .*|level = \"warn\"|" \
 		-e "s|^dir = \"/home/git/gitaly/ruby\"|dir = \"${DEST_DIR}/ruby\"|" \
 		-e "s|^dir = \"/home/git/gitlab-shell\"|dir = \"${GITLAB_SHELL}\"|" \
