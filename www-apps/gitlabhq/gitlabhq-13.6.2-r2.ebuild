@@ -25,9 +25,14 @@ LICENSE="MIT"
 RESTRICT="splitdebug network-sandbox"
 SLOT=$(get_version_component_range 1-2)
 KEYWORDS="~amd64 ~x86"
-IUSE="aws favicon gitaly_git kerberos memcached mysql +postgres +unicorn"
+IUSE="favicon gitaly_git kerberos memcached mysql +postgres -puma +unicorn"
+REQUIRED_USE="
+	^^ ( puma unicorn )
+	^^ ( mysql postgres )"
 # USE flags that affect the --without option below
-WITHOUflags="aws memcached mysql postgres unicorn kerberos"
+# Current (2020-12-10) groups in Gemfile:
+# unicorn puma metrics development test coverage omnibus ed25519 kerberos
+WITHOUTflags="kerberos puma unicorn"
 
 ## Gems dependencies:
 #   charlock_holmes		dev-libs/icu
@@ -221,11 +226,12 @@ each_ruby_install() {
 
 	cd "${D}/${dest}"
 
-	local without="development test thin"
+	local without="development test coverage omnibus"
 	local flag; for flag in ${WITHOUTflags}; do
 		without+="$(use $flag || echo ' '$flag)"
 	done
-	local bundle_args="--deployment ${without:+--without ${without}}"
+	${BUNDLE} config set deployment 'true'
+	${BUNDLE} config set without "${without}"
 
 	einfo "Current ruby version is \"$(ruby --version)\""
 
@@ -237,8 +243,8 @@ each_ruby_install() {
 	# see https://github.com/brianmario/charlock_holmes/issues/32
 	${BUNDLE} config build.charlock_holmes --with-ldflags='-L. -Wl,-O1 -Wl,--as-needed -rdynamic -Wl,-export-dynamic -Wl,--no-undefined -lz -licuuc'
 
-	einfo "Running bundle install ${bundle_args} ..."
-	${BUNDLE} install ${bundle_args} || die "bundler failed"
+	einfo "Running bundle install ..."
+	${BUNDLE} install || die "bundler failed"
 
 	## Clean ##
 
@@ -250,8 +256,11 @@ each_ruby_install() {
 	# fix permissions
 	fowners -R ${GIT_USER}:${GIT_GROUP} "${dest}" "${conf}" "${temp}" "${logs}"
 	fperms o+Xr "${temp}" # Let nginx access the unicorn socket
-	# fix QA Security Notice: world writable file(s) vendor/bundle/ruby/2.3.0/gems/attr_required-1.0.0/*
-	fperms go-w -R vendor/bundle/ruby/*/gems/attr_required-*
+	# fix QA Security Notice: world writable file(s)
+	local wwfgems="attr_required gitlab-labkit nakayoshi_fork"
+	local gem; for gem in ${wwfgems}; do
+		fperms go-w -R ${dest}/${gemsdir}/gems/${gem}-*
+	done
 
 	## RC scripts ##
 	local rcscript=${PN}-${SLOT}.init
