@@ -18,14 +18,21 @@ EGIT_CHECKOUT_DIR="${WORKDIR}/all"
 
 inherit eutils ruby-ng versionator user linux-info systemd git-r3
 
-DESCRIPTION="GitLab is a free project and repository management application"
-HOMEPAGE="https://about.gitlab.com/gitlab-ci/"
+DESCRIPTION="GitLab is a complete DevOps platform"
+HOMEPAGE="https://gitlab.com/gitlab-org/gitlab-foss"
 
 LICENSE="MIT"
 RESTRICT="splitdebug network-sandbox"
 SLOT=$(get_version_component_range 1-2)
 KEYWORDS="~amd64 ~x86"
-IUSE="favicon gitaly_git kerberos memcached mysql +postgres +unicorn"
+IUSE="favicon gitaly_git kerberos memcached mysql +postgres -puma +unicorn"
+REQUIRED_USE="
+	^^ ( puma unicorn )
+	^^ ( mysql postgres )"
+# USE flags that affect the --without option below
+# Current (2020-12-10) groups in Gemfile:
+# unicorn puma metrics development test coverage omnibus ed25519 kerberos
+WITHOUTflags="kerberos puma unicorn"
 
 ## Gems dependencies:
 #   charlock_holmes		dev-libs/icu
@@ -51,7 +58,7 @@ GEMS_DEPEND="
 DEPEND="${GEMS_DEPEND}
 	>=dev-lang/ruby-2.7[ssl]
 	>=dev-vcs/gitlab-shell-13.13.0
-	>=dev-vcs/gitlab-gitaly-13.6.1
+	>=dev-vcs/gitlab-gitaly-13.6.1-r1
 	>=www-servers/gitlab-workhorse-8.56.0
 	!gitaly_git? ( >=dev-vcs/git-2.29.0[pcre,pcre-jit] )
 	gitaly_git? ( dev-vcs/gitlab-gitaly[gitaly_git] )
@@ -131,7 +138,9 @@ each_ruby_prepare() {
 	# Update pathes for unicorn
 	if use unicorn; then
 		sed -i \
-			-e "s#/home/git/gitlab#${DEST_DIR}#" \
+			-e "s|/home/git/gitlab|${DEST_DIR}|" \
+			-e "s|^stderr_path|#stderr_path|" \
+			-e "s|^stdout_path|#stdout_path|" \
 			config/unicorn.rb.example \
 			|| die "failed to modify unicorn.rb.example"
 	fi
@@ -184,7 +193,7 @@ each_ruby_install() {
 	# Note that we cannot install the config to /etc and symlink
 	# it to ${dest} since require_relative in config/application.rb
 	# seems to get confused by symlinks. So let's install the config
-	# to ${dest} and create a smylink to /etc/gitlabhq-<VERSION>
+	# to ${dest} and create a smylink to /etc/${P}
 	dosym "${dest}/config" "${conf}"
 
 	insinto "${dest}/.ssh"
@@ -217,11 +226,12 @@ each_ruby_install() {
 
 	cd "${D}/${dest}"
 
-	local without="development test thin"
-	local flag; for flag in memcached mysql postgres unicorn kerberos; do
+	local without="development test coverage omnibus"
+	local flag; for flag in ${WITHOUTflags}; do
 		without+="$(use $flag || echo ' '$flag)"
 	done
-	local bundle_args="--deployment ${without:+--without ${without}}"
+	${BUNDLE} config set deployment 'true'
+	${BUNDLE} config set without "${without}"
 
 	einfo "Current ruby version is \"$(ruby --version)\""
 
@@ -233,8 +243,8 @@ each_ruby_install() {
 	# see https://github.com/brianmario/charlock_holmes/issues/32
 	${BUNDLE} config build.charlock_holmes --with-ldflags='-L. -Wl,-O1 -Wl,--as-needed -rdynamic -Wl,-export-dynamic -Wl,--no-undefined -lz -licuuc'
 
-	einfo "Running bundle install ${bundle_args} ..."
-	${BUNDLE} install ${bundle_args} || die "bundler failed"
+	einfo "Running bundle install ..."
+	${BUNDLE} install || die "bundler failed"
 
 	## Clean ##
 
@@ -246,8 +256,11 @@ each_ruby_install() {
 	# fix permissions
 	fowners -R ${GIT_USER}:${GIT_GROUP} "${dest}" "${conf}" "${temp}" "${logs}"
 	fperms o+Xr "${temp}" # Let nginx access the unicorn socket
-	# fix QA Security Notice: world writable file(s) vendor/bundle/ruby/2.3.0/gems/attr_required-1.0.0/*
-	fperms go-w -R vendor/bundle/ruby/*/gems/attr_required-*
+	# fix QA Security Notice: world writable file(s)
+	local wwfgems="attr_required gitlab-labkit nakayoshi_fork"
+	local gem; for gem in ${wwfgems}; do
+		fperms go-w -R ${dest}/${gemsdir}/gems/${gem}-*
+	done
 
 	## RC scripts ##
 	local rcscript=${PN}-${SLOT}.init
@@ -379,7 +392,7 @@ pkg_config() {
 	if [[ $do_upgrade ]] ; then
 
 		LATEST_DEST=$(test -n "${LATEST_DEST}" && echo ${LATEST_DEST} || \
-			find /opt -maxdepth 1 -iname 'gitlabhq-*' -and -type d -and -not -iname "gitlabhq-${SLOT}" | \
+			find /opt -maxdepth 1 -iname "${PN}"'-*' -and -type d | \
 			sort -rV | head -n1)
 
 		if [[ -z "${LATEST_DEST}" || ! -d "${LATEST_DEST}" ]] ; then

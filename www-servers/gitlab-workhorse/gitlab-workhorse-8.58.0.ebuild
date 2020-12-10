@@ -10,7 +10,7 @@ EGIT_COMMIT="v${PV}"
 inherit eutils git-r3 user
 
 DESCRIPTION="Handles slow HTTP requests for GitLab"
-HOMEPAGE="https://about.gitlab.com/gitlab-workhorse/"
+HOMEPAGE="https://gitlab.com/gitlab-org/gitlab-workhorse"
 LICENSE="MIT"
 SLOT="0"
 KEYWORDS="~amd64 ~x86 ~arm"
