@@ -38,12 +38,13 @@ GITLAB_SOCKETS="/opt/gitlabhq/tmp/sockets"
 src_prepare()
 {
 	sed -i \
-		-e "s#^socket_path = .*#socket_path = \"${GITLAB_SOCKETS}/gitaly.socket\"#" \
-		-e "s#^path = .*#path = \"${GIT_REPOS}\"#" \
-		-e "s#^dir = \"/home/git/gitaly/ruby\"#dir = \"${DEST_DIR}/ruby\"#" \
-		-e "s#^dir = \"/home/git/gitlab-shell\"#dir = \"${GITLAB_SHELL}\"#" \
-		-e "s#^bin_dir = \"/home/git/gitaly\"#bin_dir = \"${DEST_DIR}/bin\"#" \
-		-e "s#^secret_file = \"/home/git/gitlab-shell/#secret_file = \"${GITLAB_SHELL}/#" \
+		-e "s|^socket_path = .*|socket_path = \"${GITLAB_SOCKETS}/gitaly.socket\"|" \
+		-e "s|^path = .*|path = \"${GIT_REPOS}\"|" \
+		-e "s|^# level = .*|level = \"warn\"|" \
+		-e "s|^dir = \"/home/git/gitaly/ruby\"|dir = \"${DEST_DIR}/ruby\"|" \
+		-e "s|^dir = \"/home/git/gitlab-shell\"|dir = \"${GITLAB_SHELL}\"|" \
+		-e "s|^bin_dir = \"/home/git/gitaly\"|bin_dir = \"${DEST_DIR}/bin\"|" \
+		-e "s|^secret_file = \"/home/git/gitlab-shell/|secret_file = \"${GITLAB_SHELL}/|" \
 		config.toml.example || die "failed to filter config.toml.example"
 
 	sed -s "s#\$GITALY_BIN_DIR#${DEST_DIR}/bin#" -i ruby/git-hooks/gitlab-shell-hook || die
