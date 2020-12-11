@@ -1,7 +1,7 @@
-acct-group/gitlab-runner 0: System group: gitlab-runner
+acct-group/gitlab 0: System group: gitlab
 acct-user/gitlab-runner 0: Dedicated user for gitlab-runner
 app-eselect/eselect-gitlabhq 20170603: Manages multiple gitlabhq versions
-dev-util/gitlab-runner-bin 13.6.0: GitLab Runner
+dev-util/gitlab-runner-bin 13.6.0-r1: GitLab Runner
 dev-vcs/gitlab-gitaly 13.4.7 13.5.5 13.6.2 13.6.2-r1: Gitaly is a Git RPC service for handling all the git calls made by GitLab.
 dev-vcs/gitlab-shell 13.7.0 13.11.0 13.13.0: SSH access for GitLab
 www-apps/gitlabhq 13.4.7 13.5.5 13.6.2-r2: GitLab is a complete DevOps platform
