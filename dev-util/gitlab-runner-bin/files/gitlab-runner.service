@@ -1,6 +1,6 @@
 [Unit]
 Description=GitLab Runner
-After=network.target
+After=syslog.target network.target
 ConditionFileIsExecutable=/usr/sbin/gitlab-runner
 
 [Service]

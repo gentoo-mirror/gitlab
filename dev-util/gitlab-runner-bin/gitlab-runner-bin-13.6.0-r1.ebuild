@@ -52,10 +52,12 @@ src_install() {
 	newconfd "${FILESDIR}"/gitlab-runner.confd gitlab-runner
 	newinitd "${FILESDIR}"/gitlab-runner.initd gitlab-runner
 	systemd_dounit "${FILESDIR}"/gitlab-runner.service
+	newtmpfiles "${FILESDIR}"/gitlab-runner.tmpfile gitlab-runner.conf
+
 	readme.gentoo_create_doc
 
-	insopts -oroot -ggitlab-runner -m0640
-	diropts -oroot -ggitlab-runner -m0750
+	insopts -o gitlab-runner -g gitlab-runner -m0600
+	diropts -o gitlab-runner -g gitlab-runner -m0750
 	insinto /etc/gitlab-runner
 	keepdir /etc/gitlab-runner /var/lib/gitlab-runner
 }
