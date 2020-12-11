@@ -56,8 +56,8 @@ src_install() {
 
 	readme.gentoo_create_doc
 
-	insopts -o gitlab-runner -g gitlab-runner -m0600
-	diropts -o gitlab-runner -g gitlab-runner -m0750
+	insopts -o gitlab-runner -g gitlab -m0600
+	diropts -o gitlab-runner -g gitlab -m0750
 	insinto /etc/gitlab-runner
 	keepdir /etc/gitlab-runner /var/lib/gitlab-runner
 }
