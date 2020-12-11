@@ -5,19 +5,29 @@ EAPI=7
 
 inherit user readme.gentoo-r1 systemd tmpfiles user
 
-AWS="gitlab-runner-downloads.s3.amazonaws.com"
-
 DESCRIPTION="GitLab Runner"
 HOMEPAGE="https://gitlab.com/gitlab-org/gitlab-runner"
-SRC_URI="https://${AWS}/v${PV}/binaries/gitlab-runner-linux-${ARCH} -> gitlab-runner-${PV}"
+
+# The following list of binaries is provided at the following URL
+# https://gitlab-runner-downloads.s3.amazonaws.com/v13.6.0/index.html
+SRC_HOST="gitlab-runner-downloads.s3.amazonaws.com"
+SRC_BASE="https://${SRC_HOST}/v${PV}/binaries/gitlab-runner-linux"
+SRC_URI="
+	x86?	( ${SRC_BASE}-386   -> gitlab-runner-${PV} )
+	amd64?	( ${SRC_BASE}-amd64 -> gitlab-runner-${PV} )
+	arm?	( ${SRC_BASE}-amd64 -> gitlab-runner-${PV} )
+"
 
 LICENSE="MIT"
 SLOT="0"
 KEYWORDS="~amd64 ~x86 ~arm ~arm64"
-IUSE=""
+IUSE="systemd"
 
 RDEPEND="acct-user/gitlab-runner"
-DEPEND="${RDEPEND}"
+DEPEND="
+	${RDEPEND}
+	systemd? ( sys-apps/systemd )
+"
 
 RESTRICT="mirror strip"
 
@@ -37,17 +47,17 @@ src_prepare() {
 src_install() {
 	einstalldocs
 
-	exeinto /usr/libexec/gitlab-runner
-	doexe gitlab-runner
-	dosym ../libexec/gitlab-runner/gitlab-runner /usr/bin/gitlab-runner
+	dosbin gitlab-runner
 
 	newconfd "${FILESDIR}"/gitlab-runner.confd gitlab-runner
 	newinitd "${FILESDIR}"/gitlab-runner.initd gitlab-runner
 	systemd_dounit "${FILESDIR}"/gitlab-runner.service
+	newtmpfiles "${FILESDIR}"/gitlab-runner.tmpfile gitlab-runner.conf
+
 	readme.gentoo_create_doc
 
-	insopts -oroot -ggitlab-runner -m0640
-	diropts -oroot -ggitlab-runner -m0750
+	insopts -o gitlab-runner -g gitlab -m0600
+	diropts -o gitlab-runner -g gitlab -m0750
 	insinto /etc/gitlab-runner
 	keepdir /etc/gitlab-runner /var/lib/gitlab-runner
 }
