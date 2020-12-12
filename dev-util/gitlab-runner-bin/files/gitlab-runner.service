@@ -1,7 +1,7 @@
 [Unit]
 Description=GitLab Runner
 After=syslog.target network.target
-ConditionFileIsExecutable=/usr/sbin/gitlab-runner
+ConditionFileIsExecutable=/usr/libexec/gitlab-runner/gitlab-runner
 
 [Service]
 #Environment="DAEMON_ARGS=--debug"
