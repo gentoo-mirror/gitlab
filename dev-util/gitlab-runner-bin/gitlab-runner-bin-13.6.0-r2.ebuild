@@ -47,7 +47,8 @@ src_prepare() {
 src_install() {
 	einstalldocs
 
-	dosbin gitlab-runner
+	exeinto /usr/libexec/gitlab-runner
+	doexe gitlab-runner
 
 	newconfd "${FILESDIR}"/gitlab-runner.confd gitlab-runner
 	newinitd "${FILESDIR}"/gitlab-runner.initd gitlab-runner
