@@ -135,7 +135,7 @@ src_install() {
 	ruby-ng_src_install
 
 	elog "Installing systemd unit files"
-	for file in "${FILESDIR}/${PN}-${SLOT}-"*.service "${FILESDIR}/${PN}-${SLOT}.target"
+	for file in "${FILESDIR}/${PN}-${SLOT}-"*.{service,target}
 	do
 		unit=$(basename $file)
 		sed -e "s#@GIT_HOME@#${GIT_HOME}#g" \
@@ -185,7 +185,7 @@ each_ruby_install() {
 	insinto "${dest}/.ssh"
 	newins "${FILESDIR}/config.ssh" config
 
-	echo "export RAILS_ENV=production" > "${D}/${dest}/.profile"
+	echo "export RAILS_ENV=${RAILS_ENV}" > "${D}/${dest}/.profile"
 
 	## Install all others ##
 
@@ -261,7 +261,8 @@ each_ruby_install() {
 }
 
 pkg_preinst() {
-	# if the tmp dir for our ${SLOT} exists set a flag file to keep it (see pkg_postrm())
+	# if the tmp dir for our ${SLOT} exists
+	# set a flag file to keep it (see pkg_postrm())
 	local temp="/var/tmp/${PN}-${SLOT}"
 	if [ -e "$temp" ]; then
 		einfo "Keeping temporary files from \"$temp\" ..."
@@ -289,14 +290,14 @@ pkg_postinst() {
 	elog
 	elog "  2. Copy ${CONF_DIR}/database.yml.* to ${CONF_DIR}/database.yml"
 	elog "     and edit this file in order to configure your database settings"
-	elog "     for \"production\" environment."
+	elog "     for \"${RAILS_ENV}\" environment."
 	elog
 	elog "  3. Copy ${CONF_DIR}/initializers/rack_attack.rb.example"
 	elog "     to ${CONF_DIR}/initializers/rack_attack.rb"
 	elog
 	elog "  4. Copy ${CONF_DIR}/resque.yml.example to ${CONF_DIR}/resque.yml"
 	elog "     and edit this file in order to configure your Redis settings"
-	elog "     for \"production\" environment."
+	elog "     for \"${RAILS_ENV}\" environment."
 	elog
 
 	if use unicorn; then
@@ -310,7 +311,7 @@ pkg_postinst() {
 		elog "        su postgres"
 		elog "        psql -c \"CREATE ROLE gitlab PASSWORD 'gitlab' \\"
 		elog "            NOSUPERUSER NOCREATEDB NOCREATEROLE INHERIT LOGIN;\""
-		elog "        createdb -E UTF-8 -O gitlab gitlab_production"
+		elog "        createdb -E UTF-8 -O gitlab gitlab_${RAILS_ENV}"
 		elog "    Note: You should change your password to something more random..."
 		elog
 		elog "    GitLab uses polymorphic associations which are not SQL-standard friendly."
@@ -331,7 +332,8 @@ pkg_postinst() {
 	elog "         emerge --config \"=${CATEGORY}/${PF}\""
 	elog "     Note: Do not forget to start Redis server."
 	elog
-	elog "To update an existing instance, run the following command and choose upgrading when prompted:"
+	elog "To update an existing instance,"
+	elog "run the following command and choose upgrading when prompted:"
 	elog "    emerge --config \"=${CATEGORY}/${PF}\""
 	elog
 	elog "Important: Do not remove the earlier version prior migration!"
@@ -339,27 +341,30 @@ pkg_postinst() {
 	if linux_config_exists; then
 		if linux_chkconfig_present PAX ; then
 			elog  ""
-			ewarn "Warning: PaX support is enabled, you must disable mprotect for ruby. Otherwise "
-			ewarn "FFI will trigger mprotect errors that are hard to trace. Please run: "
+			ewarn "Warning: PaX support is enabled!"
+			ewarn "You must disable mprotect for ruby. Otherwise FFI will"
+			ewarn "trigger mprotect errors that are hard to trace. Please run: "
 			ewarn "    paxctl -m ruby"
 		fi
 	else
 		elog  ""
-		einfo "Important: Cannot find a linux kernel configuration, so cannot check for PaX support."
-		einfo "           If CONFIG_PAX is set, you should disable mprotect for ruby since FFI may trigger"
-		einfo "           mprotect errors."
+		einfo "Important: Cannot find a linux kernel configuration!"
+		einfo "So cannot check for PaX support."
+		einfo "If CONFIG_PAX is set, you should disable mprotect for ruby"
+		einfo "since FFI may trigger mprotect errors."
 	fi
 }
 
 pkg_config_do_upgrade_migrate_uploads() {
 	einfo "Migrating uploads ..."
-	einfon "This will move your uploads from \"$LATEST_DEST\" to \"${DEST_DIR}\", (C)ontinue or (s)kip? "
+	einfo "This will move your uploads from \"$LATEST_DEST\" to \"${DEST_DIR}\"."
+	einfon "(C)ontinue or (s)kip? "
 	migrate_uploads=""
 	while true
 	do
 		read -r migrate_uploads
-		if [[ $migrate_uploads == "s" || $migrate_uploads == "S" ]] ; then migrate_uploads="" && break
-		elif [[ $migrate_uploads == "c" || $migrate_uploads == "C" || $migrate_uploads == "" ]] ; then migrate_uploads=1 && break
+		if [[ $migrate_uploads =~ ^(s|S)$ ]]    ; then migrate_uploads="" && break
+		elif [[ $migrate_uploads =~ ^(c|C|)$ ]] ; then migrate_uploads=1  && break
 		else eerror "Please type either \"c\" to continue or \"n\" to skip ... " ; fi
 	done
 	if [[ $migrate_uploads ]] ; then
@@ -375,13 +380,14 @@ pkg_config_do_upgrade_migrate_uploads() {
 
 pkg_config_do_upgrade_migrate_shared_data() {
 	einfo "Migrating shared data ..."
-	einfon "This will move your shared data from \"$LATEST_DEST\" to \"${DEST_DIR}\", (C)ontinue or (s)kip? "
+	einfo "This will move your shared data from \"$LATEST_DEST\" to \"${DEST_DIR}\"."
+	einfon "(C)ontinue or (s)kip? "
 	migrate_shared=""
 	while true
 	do
 		read -r migrate_shared
-		if [[ $migrate_shared == "s" || $migrate_shared == "S" ]] ; then migrate_shared="" && break
-		elif [[ $migrate_shared == "c" || $migrate_shared == "C" || $migrate_shared == "" ]] ; then migrate_shared=1 && break
+		if [[ $migrate_shared =~ ^(s|S)$ ]]    ; then migrate_shared="" && break
+		elif [[ $migrate_shared =~ ^(c|C|)$ ]] ; then migrate_shared=1  && break
 		else eerror "Please type either \"c\" to continue or \"n\" to skip ... " ; fi
 	done
 	if [[ $migrate_shared ]] ; then
@@ -400,8 +406,8 @@ pkg_config_do_upgrade_migrate_configuration() {
 	while true
 	do
 		read -r migrate_config
-		if [[ $migrate_config == "s" || $migrate_config == "S" ]] ; then migrate_config="" && break
-		elif [[ $migrate_config == "c" || $migrate_config == "C" || $migrate_config == "" ]] ; then migrate_config=1 && break
+		if [[ $migrate_config =~ ^(s|S)$ ]]    ; then migrate_config="" && break
+		elif [[ $migrate_config =~ ^(c|C|)$ ]] ; then migrate_config=1  && break
 		else eerror "Please type either \"c\" to continue or \"s\" to skip ... " ; fi
 	done
 	if [[ $migrate_config ]]
@@ -409,10 +415,13 @@ pkg_config_do_upgrade_migrate_configuration() {
 		for conf in database.yml gitlab.yml resque.yml unicorn.rb secrets.yml ; do
 			einfo "Migration config file \"$conf\" ..."
 			cp -p "${LATEST_DEST}/config/${conf}" "${DEST_DIR}/config/"
-			sed -s "s#$(basename $LATEST_DEST)#${PN}-${SLOT}#g" -i "${DEST_DIR}/config/$conf"
+			sed -i \
+			    -e "s|$(basename $LATEST_DEST)|${PN}-${SLOT}|g" \
+			    "${DEST_DIR}/config/$conf"
 
 			example="${DEST_DIR}/config/${conf}.example"
-			test -f "${example}" && cp -p "${example}" "${DEST_DIR}/config/._cfg0000_${conf}"
+			test -f "${example}" && \
+				cp -p "${example}" "${DEST_DIR}/config/._cfg0000_${conf}"
 		done
 
 		# if the user's console is not 80x24, it is better to manually run dispatch-conf
@@ -420,14 +429,19 @@ pkg_config_do_upgrade_migrate_configuration() {
 		while true
 		do
 			read -r merge_config
-			if [[ $merge_config == "q" || $merge_config == "Q" ]] ; then merge_config="" && break
-			elif [[ $merge_config == "c" || $merge_config == "C" || $merge_config == "" ]] ; then merge_config=1 && break
+			if [[ $merge_config =~ ^(q|Q)$ ]]    ; then merge_config="" && break
+			elif [[ $merge_config =~ ^(c|C|)$ ]] ; then merge_config=1  && break
 			else eerror "Please type either \"c\" to continue or \"q\" to quit ... " ; fi
 		done
 		if [[ $merge_config ]] ; then
-			CONFIG_PROTECT="${DEST_DIR}" dispatch-conf || die "failed to automatically migrate config, run \"CONFIG_PROTECT=${DEST_DIR} dispatch-conf\" by hand, re-run this routine and skip config migration to proceed."
+			local errmsg = "failed to automatically migrate config, run "
+			errmsg += "\"CONFIG_PROTECT=${DEST_DIR} dispatch-conf\" by hand, re-run "
+			errmsg += "this routine and skip config migration to proceed."
+			local mmsg = "Manually run \"CONFIG_PROTECT=${DEST_DIR} dispatch-conf\" "
+			mmsg += "and re-run this routine and skip config migration to proceed."
+			CONFIG_PROTECT="${DEST_DIR}" dispatch-conf || die "${errmsg}"
 		else
-			echo "Manually run \"CONFIG_PROTECT=${DEST_DIR} dispatch-conf\" and re-run this routine and skip config migration to proceed." 
+			echo "${mmsg}" 
 			return
 		fi
 	fi
@@ -439,7 +453,7 @@ pkg_config_do_upgrade_clean_up_old_gems() {
 		export LANG=en_US.UTF-8; export LC_ALL=en_US.UTF-8
 		cd ${DEST_DIR}
 		${BUNDLE} clean" \
-		|| die "failed to clean up old gems ..."
+			|| die "failed to clean up old gems ..."
 }
 
 pkg_config_do_upgrade_migrate_database() {
@@ -448,7 +462,7 @@ pkg_config_do_upgrade_migrate_database() {
 		export LANG=en_US.UTF-8; export LC_ALL=en_US.UTF-8
 		cd ${DEST_DIR}
 		${BUNDLE} exec rake db:migrate RAILS_ENV=${RAILS_ENV}" \
-		|| die "failed to migrate database."
+			|| die "failed to migrate database."
 }
 
 pkg_config_do_upgrade_clear_redis_cache() {
@@ -457,7 +471,7 @@ pkg_config_do_upgrade_clear_redis_cache() {
 		export LANG=en_US.UTF-8; export LC_ALL=en_US.UTF-8
 		cd ${DEST_DIR}
 		${BUNDLE} exec rake cache:clear RAILS_ENV=${RAILS_ENV}" \
-		|| die "failed to run cache:clear"
+			|| die "failed to run cache:clear"
 }
 
 pkg_config_do_upgrade_clean_up_assets() {
@@ -465,15 +479,16 @@ pkg_config_do_upgrade_clean_up_assets() {
 	su -l ${GIT_USER} -s /bin/sh -c "
 		export LANG=en_US.UTF-8; export LC_ALL=en_US.UTF-8
 		cd ${DEST_DIR}
-		${BUNDLE} exec rake gitlab:assets:clean RAILS_ENV=${RAILS_ENV} NODE_ENV=production" \
-		|| die "failed to run gitlab:assets:clean"
+		${BUNDLE} exec rake gitlab:assets:clean \
+			RAILS_ENV=${RAILS_ENV} NODE_ENV=${RAILS_ENV}" \
+			|| die "failed to run gitlab:assets:clean"
 }
 
 pkg_config_do_upgrade_configure_git() {
 	einfo "Configure Git to generate packfile bitmaps ..."
 	su -l ${GIT_USER} -s /bin/sh -c "
 		git config --global repack.writeBitmaps true" \
-		|| die "failed to configure Git"
+			|| die "failed to configure Git"
 }
 
 pkg_config_do_upgrade() {
@@ -494,14 +509,16 @@ pkg_config_do_upgrade() {
 		einfo "Found your latest Gitlab instance at \"${LATEST_DEST}\"."
 	fi
 
-	einfo "Please make sure that you've created a backup and stopped your running Gitlab instance: "
-	elog "\$ cd \"${LATEST_DEST}\" && sudo -u ${GIT_USER} ${BUNDLE} exec rake gitlab:backup:create RAILS_ENV=production"
+	einfo "Please make sure that you've created a backup"
+	einfo "and stopped your running Gitlab instance: "
+	elog "\$ cd \"${LATEST_DEST}\""
+	elog "\$ sudo -u ${GIT_USER} ${BUNDLE} exec rake gitlab:backup:create RAILS_ENV=${RAILS_ENV}"
 	elog "\$ /etc/init.d/${LATEST_DEST#*/opt/} stop"
 	elog ""
 
 	einfon "Proceeed? [Y|n] "
 	read -r proceed
-	if [[ $proceed != "y" && $proceed != "Y" && $proceed != "" ]]
+	if [[ !( $proceed =~ ^(y|Y|)$ ) ]]
 	then
 		einfo "Aborting migration"
 		return
@@ -538,13 +555,13 @@ pkg_config_initialize() {
 	if [ ! -r "${CONF_DIR}/database.yml" ] ; then
 		eerror "Copy \"${CONF_DIR}/database.yml.*\" to \"${CONF_DIR}/database.yml\""
 		eerror "and edit this file in order to configure your database settings for"
-		eerror "\"production\" environment."
+		eerror "\"${RAILS_ENV}\" environment."
 		die
 	fi
 	if [ ! -r "${CONF_DIR}/gitlab.yml" ]; then
 		eerror "Copy \"${CONF_DIR}/gitlab.yml.example\" to \"${CONF_DIR}/gitlab.yml\""
 		eerror "and edit this file in order to configure your GitLab settings"
-		eerror "for \"production\" environment."
+		eerror "for \"${RAILS_ENV}\" environment."
 		die
 	fi
 
@@ -564,7 +581,9 @@ pkg_config_compile_assets() {
 		echo \"Fixing https://gitlab.com/gitlab-org/gitlab-ce/issues/38275 ...\"
 		yarn add ajv@^4.0.0
 		yarn install --production=false --pure-lockfile --no-progress
-		${BUNDLE} exec rake gitlab:assets:compile RAILS_ENV=${RAILS_ENV} NODE_ENV=production NODE_OPTIONS=\"--max-old-space-size=4096\"" \
+		${BUNDLE} exec rake gitlab:assets:compile \
+			RAILS_ENV=${RAILS_ENV} NODE_ENV=${RAILS_ENV} \
+			NODE_OPTIONS=\"--max-old-space-size=4096\"" \
 			|| die "failed to run yarn install and gitlab:assets:compile"
 }
 
@@ -584,9 +603,9 @@ pkg_config() {
 	while true
 	do
 		read -r do_upgrade
-		if [[ $do_upgrade == "n" || $do_upgrade == "N" ]] ; then do_upgrade="" && break
-		elif [[ $do_upgrade == "y" || $do_upgrade == "Y" || $do_upgrade == "" ]] ; then do_upgrade=1 && break
-		else eerror "Please type either \"Y\" or \"N\" ... " ; fi
+		if [[ $do_upgrade =~ ^(n|N|)$ ]]  ; then do_upgrade="" && break
+		elif [[ $do_upgrade =~ ^(y|Y)$ ]] ; then do_upgrade=1  && break
+		else eerror "Please type either \"y\" or \"n\" ... " ; fi
 	done
 
 	if [[ $do_upgrade ]] ; then
@@ -610,8 +629,9 @@ pkg_config() {
 		ln -s "${DEST_DIR}/.gitlab_shell_secret" "${GITLAB_SHELL}/.gitlab_shell_secret"
 	fi
 
-	einfo "You might want to run the following in order to check your application status:"
-	einfo "# cd ${DEST_DIR} && sudo -u ${GIT_USER} ${BUNDLE} exec rake gitlab:check RAILS_ENV=production"
+	einfo "You might want to run this in order to check your application status:"
+	einfo "\$ cd ${DEST_DIR}"
+	einfo "\$ sudo -u ${GIT_USER} ${BUNDLE} exec rake gitlab:check RAILS_ENV=${RAILS_ENV}"
 	einfo ""
 	einfo "GitLab is prepared, now you should configure your web server."
 }
