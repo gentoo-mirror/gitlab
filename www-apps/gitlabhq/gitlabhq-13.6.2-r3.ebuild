@@ -238,7 +238,7 @@ each_ruby_install() {
 	fowners -R ${GIT_USER}:${GIT_GROUP} "${dest}" "${conf}" "${temp}" "${logs}"
 	fperms o+Xr "${temp}" # Let nginx access the unicorn socket
 	# fix QA Security Notice: world writable file(s)
-	local wwfgems="attr_required gitlab-labkit nakayoshi_fork"
+	local wwfgems="gitlab-labkit nakayoshi_fork"
 	local gem; for gem in ${wwfgems}; do
 		fperms go-w -R ${dest}/${gemsdir}/gems/${gem}-*
 	done

@@ -15,4 +15,4 @@ PartOf=gitlabhq-@SLOT@.target
 User=git
 Environment="GITALY_ARGS=/etc/gitlab-gitaly-@SLOT@/config.toml"
 WorkingDirectory=@DEST_DIR@
-ExecStart=@GIT_HOME@/gitlab-gitaly-@SLOT@/bin/gitlab-gitaly ${GITALY_ARGS}
+ExecStart=/var/lib/gitlab-gitaly-@SLOT@/bin/gitlab-gitaly ${GITALY_ARGS}
