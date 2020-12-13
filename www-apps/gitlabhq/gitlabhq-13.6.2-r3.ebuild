@@ -135,7 +135,7 @@ src_install() {
 	ruby-ng_src_install
 
 	elog "Installing systemd unit files"
-	for file in "${FILESDIR}/${PN}-${SLOT}-"*{.service,target}
+	for file in "${FILESDIR}/${PN}-${SLOT}"*.{service,target}
 	do
 		unit=$(basename $file)
 		sed -e "s#@GIT_HOME@#${GIT_HOME}#g" \
