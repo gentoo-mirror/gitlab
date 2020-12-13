@@ -171,9 +171,6 @@ each_ruby_install() {
 	dosym "${temp}" "${dest}/tmp"
 	dosym "${logs}" "${dest}/log"
 
-	## Link gitlab-shell into git home
-	dosym "${GITLAB_SHELL}" "${GIT_HOME}/gitlab-shell"
-
 	## Install configs ##
 
 	# Note that we cannot install the config to /etc and symlink
@@ -181,9 +178,6 @@ each_ruby_install() {
 	# seems to get confused by symlinks. So let's install the config
 	# to ${dest} and create a smylink to /etc/${P}
 	dosym "${dest}/config" "${conf}"
-
-	insinto "${dest}/.ssh"
-	newins "${FILESDIR}/config.ssh" config
 
 	echo "export RAILS_ENV=${RAILS_ENV}" > "${D}/${dest}/.profile"
 
