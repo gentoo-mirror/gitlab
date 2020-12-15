@@ -429,10 +429,10 @@ pkg_config_do_upgrade_migrate_configuration() {
 		done
 		if [[ $merge_config ]] ; then
 			local errmsg="failed to automatically migrate config, run "
-			errmsg += "\"CONFIG_PROTECT=${DEST_DIR} dispatch-conf\" by hand, re-run "
-			errmsg += "this routine and skip config migration to proceed."
+			errmsg+= "\"CONFIG_PROTECT=${DEST_DIR} dispatch-conf\" by hand, re-run "
+			errmsg+= "this routine and skip config migration to proceed."
 			local mmsg="Manually run \"CONFIG_PROTECT=${DEST_DIR} dispatch-conf\" "
-			mmsg += "and re-run this routine and skip config migration to proceed."
+			mmsg+= "and re-run this routine and skip config migration to proceed."
 			CONFIG_PROTECT="${DEST_DIR}" dispatch-conf || die "${errmsg}"
 		else
 			echo "${mmsg}" 

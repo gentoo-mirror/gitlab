@@ -110,10 +110,10 @@ each_ruby_prepare() {
 	# Note: Order of -e expressions is important here
 	sed -i \
 		-e "s|/sockets/private/|/sockets/|g" \
-		-e "s|/home/git/gitlab/tmp/|${DEST_DIR}/tmp/|g" \
 		-e "s|/home/git/gitlab-shell|${GITLAB_SHELL}|g" \
+		-e "s|/home/git/gitlab/|${DEST_DIR}/|g" \
 		-e "s|/home/git/gitaly|${GITLAB_GITALY}|g" \
-		-e "s|/home/git|${GITLAB_HOME}|g" \
+		-e "s|/home/git|${GIT_HOME}|g" \
 		config/gitlab.yml.example || die "failed to filter gitlab.yml.example"
 
 	# remove needless files
@@ -463,10 +463,10 @@ pkg_config_do_upgrade_migrate_configuration() {
 		done
 		if [[ $merge_config ]] ; then
 			local errmsg="failed to automatically migrate config, run "
-			errmsg += "\"CONFIG_PROTECT=${DEST_DIR} dispatch-conf\" by hand, re-run "
-			errmsg += "this routine and skip config migration to proceed."
+			errmsg+= "\"CONFIG_PROTECT=${DEST_DIR} dispatch-conf\" by hand, re-run "
+			errmsg+= "this routine and skip config migration to proceed."
 			local mmsg="Manually run \"CONFIG_PROTECT=${DEST_DIR} dispatch-conf\" "
-			mmsg += "and re-run this routine and skip config migration to proceed."
+			mmsg+= "and re-run this routine and skip config migration to proceed."
 			CONFIG_PROTECT="${DEST_DIR}" dispatch-conf || die "${errmsg}"
 		else
 			echo "${mmsg}" 
