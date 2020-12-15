@@ -136,8 +136,8 @@ each_ruby_prepare() {
 
 find_files()
 {
-	local f, t="${1}"
-	for f in $(find ${ED}${2} -type s${t}f) ; do
+	local f t="${1}"
+	for f in $(find ${ED}${2} -type ${t}) ; do
 		echo $f | sed "s#${ED}##"
 	done
 }
@@ -165,22 +165,6 @@ src_install() {
 	done
 
 	systemd_dotmpfilesd "${FILESDIR}/${PN}-${SLOT}-tmpfiles.conf"
-
-	# fix QA Security Notice: world writable file(s)
-	elog "Fixing permissions of world writable files"
-	local gemsdir="vendor/bundle/ruby/${ruby_vpath}/gems"
-	local wwfgems="gitlab-labkit nakayoshi_fork"
-	# If we are using wildcards, the shell fills them without prefixing ${ED}. Thus
-	# we would target a file list from the real system instead from the sandbox.
-	for gem in ${wwfgems}; do
-		for file in $(find_files "d,f" "${DEST_DIR}/${gemsdir}/${gem}-*") ; do
-			fperms go-w $file
-		done
-	done
-	# in the nakayoshi_fork gem all files are also executable
-	for file in $(find_files "f" "${DEST_DIR}/${gemsdir}/nakayoshi_fork-*") ; do
-		fperms a-x $file
-	done
 }
 
 each_ruby_install() {
@@ -253,8 +237,7 @@ each_ruby_install() {
 
 	## Clean ##
 
-	ruby_vpath=$(ruby_rbconfig_value 'ruby_version')
-	# the global variable ruby_vpath is used in src_install() too
+	local ruby_vpath=$(ruby_rbconfig_value 'ruby_version')
 
 	# remove gems cache
 	rm -Rf vendor/bundle/ruby/${ruby_vpath}/cache
@@ -262,6 +245,22 @@ each_ruby_install() {
 	# fix permissions
 	fowners -R ${GIT_USER}:${GIT_GROUP} "${DEST_DIR}" "${CONF_DIR}" "${temp}" "${logs}"
 	fperms o+Xr "${temp}" # Let nginx access the unicorn socket
+
+	# fix QA Security Notice: world writable file(s)
+	elog "Fixing permissions of world writable files"
+	local gemsdir="vendor/bundle/ruby/${ruby_vpath}/gems"
+	local wwfgems="gitlab-labkit nakayoshi_fork"
+	# If we are using wildcards, the shell fills them without prefixing ${ED}. Thus
+	# we would target a file list from the real system instead from the sandbox.
+	for gem in ${wwfgems}; do
+		for file in $(find_files "d,f" "${DEST_DIR}/${gemsdir}/${gem}-*") ; do
+			fperms go-w $file
+		done
+	done
+	# in the nakayoshi_fork gem all files are also executable
+	for file in $(find_files "f" "${DEST_DIR}/${gemsdir}/nakayoshi_fork-*") ; do
+		fperms a-x $file
+	done
 
 	## RC script ##
 	local rcscript=${PN}-${SLOT}.init
