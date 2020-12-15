@@ -47,7 +47,7 @@ all_ruby_unpack() {
 each_ruby_prepare() {
 	einfo $(pwd)
 	cp config.yml.example config.yml
-	local gitlab_url_encoded = $(echo "${GITLAB_URL}" | sed -s 's|/|%2F|g')
+	local gitlab_url_encoded=$(echo "${GITLAB_URL}" | sed -s 's|/|%2F|g')
 	sed -i \
 		-e "s|\(user:\).*|\1 ${GIT_USER}|" \
 		-e "s|\(gitlab_url:\).*|\1 \"http+unix://${gitlab_url_encoded}\"|" \

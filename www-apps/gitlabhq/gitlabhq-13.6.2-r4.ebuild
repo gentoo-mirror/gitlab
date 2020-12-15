@@ -462,10 +462,10 @@ pkg_config_do_upgrade_migrate_configuration() {
 			else eerror "Please type either \"c\" to continue or \"q\" to quit ... " ; fi
 		done
 		if [[ $merge_config ]] ; then
-			local errmsg = "failed to automatically migrate config, run "
+			local errmsg="failed to automatically migrate config, run "
 			errmsg += "\"CONFIG_PROTECT=${DEST_DIR} dispatch-conf\" by hand, re-run "
 			errmsg += "this routine and skip config migration to proceed."
-			local mmsg = "Manually run \"CONFIG_PROTECT=${DEST_DIR} dispatch-conf\" "
+			local mmsg="Manually run \"CONFIG_PROTECT=${DEST_DIR} dispatch-conf\" "
 			mmsg += "and re-run this routine and skip config migration to proceed."
 			CONFIG_PROTECT="${DEST_DIR}" dispatch-conf || die "${errmsg}"
 		else
@@ -537,7 +537,7 @@ pkg_config_do_upgrade() {
 		einfo "Found your latest Gitlab instance at \"${LATEST_DEST}\"."
 	fi
 
-	local backup_rake_cmd = "rake gitlab:backup:create RAILS_ENV=${RAILS_ENV}"
+	local backup_rake_cmd="rake gitlab:backup:create RAILS_ENV=${RAILS_ENV}"
 	einfo "Please make sure that you've created a backup"
 	einfo "and stopped your running Gitlab instance: "
 	elog "\$ cd \"${LATEST_DEST}\""

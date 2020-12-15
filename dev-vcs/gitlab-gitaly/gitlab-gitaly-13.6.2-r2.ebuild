@@ -18,7 +18,7 @@ SLOT="$(get_version_component_range 1-2)"
 KEYWORDS="~amd64 ~x86 ~arm"
 IUSE="gitaly_git"
 
-RESTRICT="network-sandbox"
+RESTRICT="network-sandbox strip"
 DEPEND="
 	>=dev-lang/go-1.13.9
 	dev-libs/icu
@@ -38,10 +38,12 @@ GIT_REPOS="${GIT_HOME}/repositories"
 GITLAB_SHELL="${BASE_DIR}/gitlab-shell"
 GITLAB_SOCKETS="${BASE_DIR}/gitlabhq-${SLOT}/tmp/sockets"
 
+BUNDLE="ruby /usr/bin/bundle"
+
 src_prepare() {
 	# Update paths for gitlab
 	# Note: Order of -e expressions is important here
-	local git_home_urlenc = $(echo "${GIT_HOME}/" | sed -e "s|/|%2F|g")
+	local git_home_urlenc=$(echo "${GIT_HOME}/" | sed -e "s|/|%2F|g")
 	sed -i \
 		-e "s|/sockets/private/|/sockets/|g" \
 		-e "s|^bin_dir = \"/home/git/gitaly\"|bin_dir = \"${DEST_DIR}/bin\"|" \
@@ -56,7 +58,13 @@ src_prepare() {
 	sed -s "s#\$GITALY_BIN_DIR#${DEST_DIR}/bin#" -i ruby/git-hooks/gitlab-shell-hook || die
 
 	# See https://gitlab.com/gitlab-org/gitaly/issues/493
-	sed -s 's#LDFLAGS#GO_LDFLAGS#g' -i Makefile || die
+	sed -s 's|LDFLAGS|GO_LDFLAGS|g' -i Makefile || die
+	sed -s 's|^BUNDLE_FLAGS|#BUNDLE_FLAGS|' -i Makefile || die
+
+	local without="development test"
+	${BUNDLE} config set deployment 'true'
+	${BUNDLE} config set without "${without}"
+	${BUNDLE} config build.nokogiri --use-system-libraries
 }
 
 src_install() {
