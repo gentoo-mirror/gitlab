@@ -134,7 +134,17 @@ each_ruby_prepare() {
 	fi
 }
 
+find_files()
+{
+	local f, t="${1}"
+	for f in $(find ${ED}${2} -type s${t}f) ; do
+		echo $f | sed "s#${ED}##"
+	done
+}
+
 src_install() {
+	local gem file
+
 	# DO NOT REMOVE - without this, the package won't install
 	ruby-ng_src_install
 
@@ -156,15 +166,20 @@ src_install() {
 
 	systemd_dotmpfilesd "${FILESDIR}/${PN}-${SLOT}-tmpfiles.conf"
 
-	# fix permissions
-	elog "Fixing permissions of world writable files"
-	fowners -R ${GIT_USER}:${GIT_GROUP} "${DEST_DIR}" "${CONF_DIR}" "${temp}" "${logs}"
-	fperms o+Xr "${temp}" # Let nginx access the unicorn socket
 	# fix QA Security Notice: world writable file(s)
-	local gemsdir=vendor/bundle/ruby/$(ruby_rbconfig_value 'ruby_version')
+	elog "Fixing permissions of world writable files"
+	local gemsdir="vendor/bundle/ruby/${ruby_vpath}/gems"
 	local wwfgems="gitlab-labkit nakayoshi_fork"
-	local gem; for gem in ${wwfgems}; do
-		fperms go-w -R ${DEST_DIR}/${gemsdir}/gems/${gem}-*
+	# If we are using wildcards, the shell fills them without prefixing ${ED}. Thus
+	# we would target a file list from the real system instead from the sandbox.
+	for gem in ${wwfgems}; do
+		for file in $(find_files "d,f" "${DEST_DIR}/${gemsdir}/${gem}-*") ; do
+			fperms go-w $file
+		done
+	done
+	# in the nakayoshi_fork gem all files are also executable
+	for file in $(find_files "f" "${DEST_DIR}/${gemsdir}/nakayoshi_fork-*") ; do
+		fperms a-x $file
 	done
 }
 
@@ -238,10 +253,15 @@ each_ruby_install() {
 
 	## Clean ##
 
-	local gemsdir=vendor/bundle/ruby/$(ruby_rbconfig_value 'ruby_version')
+	ruby_vpath=$(ruby_rbconfig_value 'ruby_version')
+	# the global variable ruby_vpath is used in src_install() too
 
 	# remove gems cache
-	rm -Rf ${gemsdir}/cache
+	rm -Rf vendor/bundle/ruby/${ruby_vpath}/cache
+
+	# fix permissions
+	fowners -R ${GIT_USER}:${GIT_GROUP} "${DEST_DIR}" "${CONF_DIR}" "${temp}" "${logs}"
+	fperms o+Xr "${temp}" # Let nginx access the unicorn socket
 
 	## RC script ##
 	local rcscript=${PN}-${SLOT}.init
@@ -410,6 +430,7 @@ pkg_config_do_upgrade_migrate_shared_data() {
 }
 
 pkg_config_do_upgrade_migrate_configuration() {
+	local conf
 	einfon "Migrate configuration, (C)ontinue or (s)kip? "
 	while true
 	do

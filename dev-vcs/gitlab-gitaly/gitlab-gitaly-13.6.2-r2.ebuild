@@ -59,12 +59,6 @@ src_prepare() {
 	sed -s 's#LDFLAGS#GO_LDFLAGS#g' -i Makefile || die
 }
 
-find_files() {
-	for f in $(find ${ED}${1} -type f) ; do
-		echo $f | sed "s#${ED}##"
-	done
-}
-
 src_install() {
 	# Cleanup unneeded temp/object/source files
 	find ruby/vendor -name '*.[choa]' -delete
