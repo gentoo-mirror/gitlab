@@ -155,6 +155,17 @@ src_install() {
 	done
 
 	systemd_dotmpfilesd "${FILESDIR}/${PN}-${SLOT}-tmpfiles.conf"
+
+	# fix permissions
+	elog "Fixing permissions of world writable files"
+	fowners -R ${GIT_USER}:${GIT_GROUP} "${DEST_DIR}" "${CONF_DIR}" "${temp}" "${logs}"
+	fperms o+Xr "${temp}" # Let nginx access the unicorn socket
+	# fix QA Security Notice: world writable file(s)
+	local gemsdir=vendor/bundle/ruby/$(ruby_rbconfig_value 'ruby_version')
+	local wwfgems="gitlab-labkit nakayoshi_fork"
+	local gem; for gem in ${wwfgems}; do
+		fperms go-w -R ${DEST_DIR}/${gemsdir}/gems/${gem}-*
+	done
 }
 
 each_ruby_install() {
@@ -232,15 +243,6 @@ each_ruby_install() {
 	# remove gems cache
 	rm -Rf ${gemsdir}/cache
 
-	# fix permissions
-	fowners -R ${GIT_USER}:${GIT_GROUP} "${DEST_DIR}" "${CONF_DIR}" "${temp}" "${logs}"
-	fperms o+Xr "${temp}" # Let nginx access the unicorn socket
-	# fix QA Security Notice: world writable file(s)
-	local wwfgems="gitlab-labkit nakayoshi_fork"
-	local gem; for gem in ${wwfgems}; do
-		fperms go-w -R ${DEST_DIR}/${gemsdir}/gems/${gem}-*
-	done
-
 	## RC script ##
 	local rcscript=${PN}-${SLOT}.init
 
@@ -255,7 +257,6 @@ each_ruby_install() {
 		-e "s|@GITLAB_GITALY@|${GITLAB_GITALY}|g" \
 		-e "s|@GITALY_CONF@|${GITALY_CONF}|g" \
 		-e "s|@GITLAB_BIN@|${GITLAB_BIN}|g" \
-		-e "s|@@|${}|g" \
 		"${T}/${rcscript}" \
 		|| die "failed to filter ${rcscript}"
 
