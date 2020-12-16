@@ -43,13 +43,13 @@ BUNDLE="ruby /usr/bin/bundle"
 src_prepare() {
 	# Update paths for gitlab
 	# Note: Order of -e expressions is important here
-	local git_home_urlenc=$(echo "${GIT_HOME}/" | sed -e "s|/|%2F|g")
+	local gitlabhq_urlenc=$(echo "${BASE_DIR}/gitlabhq" | sed -e "s|/|%2F|g")
 	sed -i \
 		-e "s|^bin_dir = \"/home/git/gitaly\"|bin_dir = \"${DEST_DIR}/bin\"|" \
 		-e "s|/home/git/gitaly|${DEST_DIR}|g" \
 		-e "s|/home/git/gitlab-shell|${GITLAB_SHELL}|g" \
 		-e "s|/home/git/gitlab/log|${BASE_DIR}/gitlabhq/log|g" \
-		-e "s|http+unix://%2Fhome%2Fgit%2F|http+unix://${git_home_urlenc}|" \
+		-e "s|http+unix://%2Fhome%2Fgit%2F|http+unix://${gitlabhq_urlenc}|" \
 		-e "s|/home/git/gitlab/tmp/sockets/private|${GITLAB_SOCKETS}|g" \
 		-e "s|/home/git/|${GIT_HOME}/|g" \
 		-e "s|^# \[logging\]|\[logging\]|" \
