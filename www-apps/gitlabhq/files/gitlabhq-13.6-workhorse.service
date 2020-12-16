@@ -17,4 +17,4 @@ PartOf=gitlabhq-@SLOT@.target
 User=git
 WorkingDirectory=@DEST_DIR@
 SyslogIdentifier=gitlab-workhorse
-ExecStart=$GITLAB_BIN@/gitlab-workhorse -listenUmask 0 -listenNetwork unix -listenAddr @TMP_DIR@/sockets/gitlab-workhorse.socket -authBackend http://127.0.0.1:8080 -authSocket @TMP_DIR@/sockets/gitlab.socket -secretPath @DEST_DIR@/.gitlab_workhorse_secret -documentRoot @DEST_DIR@/public
+ExecStart=@GITLAB_BIN@/gitlab-workhorse -listenUmask 0 -listenNetwork unix -listenAddr @TMP_DIR@/sockets/gitlab-workhorse.socket -authBackend http://127.0.0.1:8080 -authSocket @TMP_DIR@/sockets/gitlab.socket -secretPath @DEST_DIR@/.gitlab_workhorse_secret -documentRoot @DEST_DIR@/public
