@@ -134,12 +134,24 @@ each_ruby_prepare() {
 	fi
 }
 
-find_files()
-{
+find_files() {
 	local f t="${1}"
 	for f in $(find ${ED}${2} -type ${t}) ; do
 		echo $f | sed "s#${ED}##"
 	done
+}
+
+continue_or_skip() {
+	local answer=""
+	while true
+	do
+		read -r answer
+		if   [[ $answer =~ ^(s|S)$ ]] ; then answer="" && break
+		elif [[ $answer =~ ^(c|C)$ ]] ; then answer=1  && break
+		else echo "Please type either \"c\" to continue or \"s\" to skip ... " >&2
+		fi
+	done
+	echo $answer
 }
 
 src_install() {
@@ -158,7 +170,7 @@ src_install() {
 		    -e "s#@CONF_DIR@#${DEST_DIR}/config#g" \
 		    -e "s#@LOG_DIR@#${DEST_DIR}/log#g" \
 		    -e "s#@TMP_DIR@#${DEST_DIR}/tmp#g" \
-		    -e "s#@GITLAB_BIN@#${GITLAB_BIN}/tmp#g" \
+		    -e "s#@GITLAB_BIN@#${GITLAB_BIN}#g" \
 		    -e "s#@SLOT@#${SLOT}#g" \
 			"${file}" > "${T}/${unit}" || die "Failed to configure: $unit"
 		systemd_dounit "${T}/${unit}" 
@@ -386,14 +398,7 @@ pkg_config_do_upgrade_migrate_uploads() {
 	einfo "Migrating uploads ..."
 	einfo "This will move your uploads from \"$LATEST_DEST\" to \"${DEST_DIR}\"."
 	einfon "(C)ontinue or (s)kip? "
-	migrate_uploads=""
-	while true
-	do
-		read -r migrate_uploads
-		if [[ $migrate_uploads =~ ^(s|S)$ ]]    ; then migrate_uploads="" && break
-		elif [[ $migrate_uploads =~ ^(c|C|)$ ]] ; then migrate_uploads=1  && break
-		else eerror "Please type either \"c\" to continue or \"n\" to skip ... " ; fi
-	done
+	local migrate_uploads=$(continue_or_skip)
 	if [[ $migrate_uploads ]] ; then
 		su -l ${GIT_USER} -s /bin/sh -c "
 			rm -rf ${DEST_DIR}/public/uploads && \
@@ -409,14 +414,7 @@ pkg_config_do_upgrade_migrate_shared_data() {
 	einfo "Migrating shared data ..."
 	einfo "This will move your shared data from \"$LATEST_DEST\" to \"${DEST_DIR}\"."
 	einfon "(C)ontinue or (s)kip? "
-	migrate_shared=""
-	while true
-	do
-		read -r migrate_shared
-		if [[ $migrate_shared =~ ^(s|S)$ ]]    ; then migrate_shared="" && break
-		elif [[ $migrate_shared =~ ^(c|C|)$ ]] ; then migrate_shared=1  && break
-		else eerror "Please type either \"c\" to continue or \"n\" to skip ... " ; fi
-	done
+	local migrate_shared=$(continue_or_skip)
 	if [[ $migrate_shared ]] ; then
 		su -l ${GIT_USER} -s /bin/sh -c "
 			rm -rf ${DEST_DIR}/shared && \
@@ -431,13 +429,7 @@ pkg_config_do_upgrade_migrate_shared_data() {
 pkg_config_do_upgrade_migrate_configuration() {
 	local conf
 	einfon "Migrate configuration, (C)ontinue or (s)kip? "
-	while true
-	do
-		read -r migrate_config
-		if [[ $migrate_config =~ ^(s|S)$ ]]    ; then migrate_config="" && break
-		elif [[ $migrate_config =~ ^(c|C|)$ ]] ; then migrate_config=1  && break
-		else eerror "Please type either \"c\" to continue or \"s\" to skip ... " ; fi
-	done
+	local migrate_config=$(continue_or_skip)
 	if [[ $migrate_config ]]
 	then
 		for conf in database.yml gitlab.yml resque.yml unicorn.rb secrets.yml ; do
@@ -463,14 +455,14 @@ pkg_config_do_upgrade_migrate_configuration() {
 		done
 		if [[ $merge_config ]] ; then
 			local errmsg="failed to automatically migrate config, run "
-			errmsg+= "\"CONFIG_PROTECT=${DEST_DIR} dispatch-conf\" by hand, re-run "
-			errmsg+= "this routine and skip config migration to proceed."
+			errmsg+="\"CONFIG_PROTECT=${DEST_DIR} dispatch-conf\" by hand, re-run "
+			errmsg+="this routine and skip config migration to proceed."
 			local mmsg="Manually run \"CONFIG_PROTECT=${DEST_DIR} dispatch-conf\" "
-			mmsg+= "and re-run this routine and skip config migration to proceed."
+			mmsg+="and re-run this routine and skip config migration to proceed."
 			CONFIG_PROTECT="${DEST_DIR}" dispatch-conf || die "${errmsg}"
 		else
 			echo "${mmsg}" 
-			return
+			return 1
 		fi
 	fi
 }
@@ -542,15 +534,17 @@ pkg_config_do_upgrade() {
 	einfo "and stopped your running Gitlab instance: "
 	elog "\$ cd \"${LATEST_DEST}\""
 	elog "\$ sudo -u ${GIT_USER} ${BUNDLE} exec ${backup_rake_cmd}"
+	elog "\$ systemctl stop ${PN}.target"
+	elog "or"
 	elog "\$ /etc/init.d/${LATEST_DEST#*/opt/} stop"
 	elog ""
 
-	einfon "Proceeed? [Y|n] "
+	einfon "Proceed? [Y|n] "
 	read -r proceed
 	if [[ !( $proceed =~ ^(y|Y|)$ ) ]]
 	then
 		einfo "Aborting migration"
-		return
+		return 1
 	fi
 
 	if [[ ${LATEST_DEST} != ${DEST_DIR} ]] ;
@@ -562,6 +556,8 @@ pkg_config_do_upgrade() {
 		pkg_config_do_upgrade_migrate_shared_data
 
 		pkg_config_do_upgrade_migrate_configuration
+		local ret=$?
+		if [ $ret -ne 0 ]; then return $ret; fi
 
 	fi
 
@@ -625,10 +621,101 @@ pkg_config_compile_po_files() {
 			|| die "failed to compile GetText PO files"
 }
 
+pkg_config_do_fhs() {
+	# do the FHS migration
+	LATEST_DEST="/opt/gitlabhq-13.6"
+
+	if [[ -z "${LATEST_DEST}" || ! -d "${LATEST_DEST}" ]] ; then
+		einfo "The automatic migration to FHS compliant installation paths"
+		einfo "is supported for slot 13.6 gitlabhq versions only. If this is"
+		einfo "not an upgrade from www-apps/gitlabhq-13.6.2-r2 to -r4 please"
+		einfo "try the manual migration as described in the news."
+		return 1
+	else
+		einfo "Found your latest Gitlab instance at \"${LATEST_DEST}\"."
+	fi
+
+	local backup_rake_cmd="rake gitlab:backup:create RAILS_ENV=${RAILS_ENV}"
+	einfo "Please make sure that you've created a backup"
+	einfo "and stopped your running Gitlab instance: "
+	elog "\$ cd \"${LATEST_DEST}\""
+	elog "\$ sudo -u ${GIT_USER} ${BUNDLE} exec ${backup_rake_cmd}"
+	elog "\$ systemctl stop ${PN}.target"
+	elog "or"
+	elog "\$ /etc/init.d/${LATEST_DEST#*/opt/} stop"
+	elog ""
+
+	einfo "First we will move the contents of /home/git to ${GIT_HOME}"
+	einfon "(C)ontinue or (s)kip? "
+	local proceed=$(continue_or_skip)
+	if [[ $proceed ]] ; then
+		# remove .gitconfig and .ssh/ created by pkg_postinst() here and the
+		# gitlab-shell ebuild respectively because of the new empty git HOME
+		rm -rf ${GIT_HOME}/.ssh ${GIT_HOME}/.gitconfig
+		# remove the unneded gitlab -> /opt/gitlab/gitlabhq link
+		rm -f /home/git/gitlab
+		mv /home/git/.[a-zA-Z]* /home/git/* ${GIT_HOME} || \
+			die "Failed to move git HOME content"
+		rmdir /home/git || die
+	fi
+
+	einfo "Next we will fix the command path in ${GIT_HOME}/.ssh/authorized_keys"
+	einfon "(C)ontinue or (s)kip? "
+	proceed=$(continue_or_skip)
+	if [[ $proceed ]] ; then
+		sed -i -e "s|/var/lib/gitlab-shell|/opt/gitlab/gitlab-shell|" \
+			${GIT_HOME}/.ssh/authorized_keys || die "Fixing authorized_keys failed"
+	fi
+
+	einfo "Now we will move the .gitlab_shell_secret to ${DEST_DIR} and"
+	einfo "link to it in the new gitlab-shell dir."
+	einfon "(C)ontinue or (s)kip? "
+	proceed=$(continue_or_skip)
+	if [[ $proceed ]] ; then
+		mv /opt/gitlabhq-13.6/.gitlab_shell_secret ${DEST_DIR} || \
+			die "Failed to move the .gitlab_shell_secret file"
+		ln -s ${DEST_DIR}/.gitlab_shell_secret ${GITLAB_SHELL}/.gitlab_shell_secret || \
+			die "Failed to link the .gitlab_shell_secret file"
+	fi
+
+	einfo "Finally we migrate the data from \"$LATEST_DEST\":"
+	einfon "(C)ontinue or (s)kip? "
+	proceed=$(continue_or_skip)
+	if [[ $proceed ]] ; then
+		pkg_config_do_upgrade_migrate_uploads
+		pkg_config_do_upgrade_migrate_shared_data
+		pkg_config_do_upgrade_migrate_configuration
+	fi
+
+	einfo ""
+	einfo "You have to adopt the config of your webserver to the new paths."
+	einfo "For nginx e. g. that would at least be the new workhorse socket:"
+	einfo "    unix:/opt/gitlab/gitlabhq/tmp/sockets/gitlab-workhorse.socket"
+	einfo ""
+	einfo "Note that the /opt/gitlab/gitlabhq symlink will be created by"
+	einfo "    eselect gitlabhq gitlabhq-13.6"
+	einfo ""
+}
+
 pkg_config() {
-	# Ask user whether this is the first installation
-	einfon "Do you want to upgrade an existing installation? [Y|n] "
-	do_upgrade=""
+	einfo "Do you want to migrate to the new FHS compliant (see News)"
+	einfon "installation paths? [Y|n] "
+	local do_fhs="" ret=0
+	while true
+	do
+		read -r do_fhs
+		if [[ $do_fhs =~ ^(n|N|)$ ]]  ; then do_fhs="" && break
+		elif [[ $do_fhs =~ ^(y|Y)$ ]] ; then do_fhs=1  && break
+		else eerror "Please type either \"y\" or \"n\" ... " ; fi
+	done
+
+	if [[ $do_fhs ]] ; then
+		pkg_config_do_fhs
+		if [ $ret -ne 0 ]; then return; fi
+	fi
+
+	einfon "Is this an upgrade to a new slot? [Y|n] "
+	local do_upgrade=""
 	while true
 	do
 		read -r do_upgrade
@@ -638,13 +725,28 @@ pkg_config() {
 	done
 
 	if [[ $do_upgrade ]] ; then
-
-		pkg_config_do_upgrade
-
+		ewarn "WARNING: It's not recommended to run this \"emerge --config\""
+		ewarn "for upgrading to a new slot of \"${CATEGORY}/${PN}\"!"
+		ewarn "This is untested and probably will fail."
+		einfon "Proceed anyway? [Y|n] "
+		read -r proceed
+		if [[ $proceed =~ ^(y|Y)$ ]]
+		then
+			einfo "You've been warned!"
+			sleep 5
+			pkg_config_do_upgrade
+			if [ $ret -ne 0 ]; then return; fi
+		else
+			einfo "Aborting migration"
+			return
+		fi
 	else
-
-		pkg_config_initialize
-
+		einfon "Is this a new installation? [Y|n] "
+		read -r proceed
+		if [[ $proceed =~ ^(y|Y)$ ]]
+		then
+			pkg_config_initialize
+		fi
 	fi
 
 	pkg_config_compile_assets
@@ -665,7 +767,7 @@ pkg_config() {
 	einfo "GitLab is prepared, now you should configure your web server."
 }
 
-pkg_postrm() {
+pkg_postrm() { # see pkg_preinst()
 	local temp="/var/tmp/${PN}-${SLOT}"
 	if [ -e "${temp}/MINOR-UPGRADE" ]; then
 		rm "${temp}/MINOR-UPGRADE"

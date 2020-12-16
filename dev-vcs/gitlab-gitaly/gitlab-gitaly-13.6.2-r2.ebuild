@@ -48,6 +48,7 @@ src_prepare() {
 		-e "s|^bin_dir = \"/home/git/gitaly\"|bin_dir = \"${DEST_DIR}/bin\"|" \
 		-e "s|/home/git/gitaly|${DEST_DIR}|g" \
 		-e "s|/home/git/gitlab-shell|${GITLAB_SHELL}|g" \
+		-e "s|/home/git/gitlab/log|${BASE_DIR}/gitlabhq/log|g" \
 		-e "s|http+unix://%2Fhome%2Fgit%2F|http+unix://${git_home_urlenc}|" \
 		-e "s|/home/git/gitlab/tmp/sockets/private|${GITLAB_SOCKETS}|g" \
 		-e "s|/home/git/|${GIT_HOME}/|g" \
