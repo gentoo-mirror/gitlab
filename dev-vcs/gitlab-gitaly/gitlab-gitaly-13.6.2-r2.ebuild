@@ -112,4 +112,5 @@ pkg_postinst() {
 		einfo "      git \"bin_path\" variable in \"${CONF_DIR}/config.toml\" and in"
 		einfo "      \"/etc/gitlabhq/gitlab.yml\" to \"${DEST_DIR}/bin/git\""
 	fi
+	einfo "Use `eselect ${PN}` to select the gitaly slot."
 }
