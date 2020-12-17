@@ -692,14 +692,14 @@ pkg_config_do_fhs() {
 	einfo "For nginx e. g. that would at least be the new workhorse socket:"
 	einfo "    unix:/opt/gitlab/gitlabhq/tmp/sockets/gitlab-workhorse.socket"
 	einfo ""
-	einfo "Note that the /opt/gitlab/gitlabhq symlink will be created by"
+	einfo "Note that you still have to create the /opt/gitlab/gitlabhq symlink by"
 	einfo "    eselect gitlabhq gitlabhq-13.6"
 	einfo ""
 }
 
 pkg_config() {
-	einfo "Do you want to migrate to the new FHS compliant (see News)"
-	einfon "installation paths? [Y|n] "
+	einfo "Do you want to migrate to the new FHS compliant installation paths?"
+	einfon "(Enter \"n\" if this is a new installation.) [Y|n] "
 	local do_fhs="" ret=0
 	while true
 	do
@@ -725,8 +725,8 @@ pkg_config() {
 	done
 
 	if [[ $do_upgrade ]] ; then
-		ewarn "WARNING: It's not recommended to run this \"emerge --config\""
-		ewarn "for upgrading to a new slot of \"${CATEGORY}/${PN}\"!"
+		ewarn "WARNING: It's not recommended to run the \"emerge --config\""
+		ewarn "of this \"${CATEGORY}/${PN}\" version for a new slot upgrade!"
 		ewarn "This is untested and probably will fail."
 		einfon "Proceed anyway? [Y|n] "
 		read -r proceed
@@ -741,11 +741,13 @@ pkg_config() {
 			return
 		fi
 	else
-		einfon "Is this a new installation? [Y|n] "
-		read -r proceed
-		if [[ $proceed =~ ^(y|Y)$ ]]
-		then
-			pkg_config_initialize
+		if [[ ! $do_fhs ]] ; then
+			einfon "Is this a new installation? [Y|n] "
+			read -r proceed
+			if [[ $proceed =~ ^(y|Y)$ ]]
+			then
+				pkg_config_initialize
+			fi
 		fi
 	fi
 
