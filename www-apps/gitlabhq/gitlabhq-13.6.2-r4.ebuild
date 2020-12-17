@@ -629,7 +629,8 @@ pkg_config_do_fhs() {
 		einfo "The automatic migration to FHS compliant installation paths"
 		einfo "is supported for slot 13.6 gitlabhq versions only. If this is"
 		einfo "not an upgrade from www-apps/gitlabhq-13.6.2-r2 to -r4 please"
-		einfo "try the manual migration as described in the news."
+		einfo "try a manual migration. Reading the ebuild code and the news"
+		einfo "\"FHS compliant directory structure\" will tell you what to do."
 		return 1
 	else
 		einfo "Found your latest Gitlab instance at \"${LATEST_DEST}\"."
