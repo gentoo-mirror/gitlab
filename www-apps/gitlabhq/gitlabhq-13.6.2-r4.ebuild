@@ -90,7 +90,7 @@ GIT_HOME="/var/lib/gitlab"
 BASE_DIR="/opt/gitlab"
 DEST_DIR="${BASE_DIR}/${PN}-${SLOT}"
 CONF_DIR="/etc/${PN}-${SLOT}"
-GITLAB_BIN="${BASE_DIR}/bin" # the workhorse binaries go here
+WORKHORSE_BIN="${BASE_DIR}/gitlab-workhorse/bin"
 
 GIT_REPOS="${GIT_HOME}/repositories"
 GITLAB_SHELL="${BASE_DIR}/gitlab-shell"
@@ -170,7 +170,7 @@ src_install() {
 		    -e "s#@CONF_DIR@#${DEST_DIR}/config#g" \
 		    -e "s#@LOG_DIR@#${DEST_DIR}/log#g" \
 		    -e "s#@TMP_DIR@#${DEST_DIR}/tmp#g" \
-		    -e "s#@GITLAB_BIN@#${GITLAB_BIN}#g" \
+		    -e "s#@WORKHORSE_BIN@#${WORKHORSE_BIN}#g" \
 		    -e "s#@SLOT@#${SLOT}#g" \
 			"${file}" > "${T}/${unit}" || die "Failed to configure: $unit"
 		systemd_dounit "${T}/${unit}" 
@@ -287,7 +287,7 @@ each_ruby_install() {
 		-e "s|@LOG_DIR@|${logs}|g" \
 		-e "s|@GITLAB_GITALY@|${GITLAB_GITALY}|g" \
 		-e "s|@GITALY_CONF@|${GITALY_CONF}|g" \
-		-e "s|@GITLAB_BIN@|${GITLAB_BIN}|g" \
+		-e "s|@WORKHORSE_BIN@|${WORKHORSE_BIN}|g" \
 		"${T}/${rcscript}" \
 		|| die "failed to filter ${rcscript}"
 
