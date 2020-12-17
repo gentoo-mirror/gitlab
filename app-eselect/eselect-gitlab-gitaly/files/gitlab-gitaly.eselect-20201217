@@ -44,9 +44,9 @@ describe_show() {
 
 do_show() {
     write_list_start "Current gitlab-gitaly symlink:"
-    if [[ -L ${EROOT}/opt/gitlab-gitaly ]]; then
-        local gitlab-gitaly=$(canonicalise "${EROOT}/opt/gitlab/gitlab-gitaly")
-        write_kv_list_entry "${gitlab-gitaly%/}" ""
+    if [[ -L ${EROOT}/opt/gitlab/gitlab-gitaly ]]; then
+        local gitaly=$(canonicalise "${EROOT}/opt/gitlab/gitlab-gitaly")
+        write_kv_list_entry "${gitaly%/}" ""
     else
         write_kv_list_entry "(unset)" ""
     fi
