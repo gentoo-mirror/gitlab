@@ -19,8 +19,6 @@ find_targets() {
 remove_symlink() {
     rm "${EROOT}/opt/gitlab/gitlab-gitaly" || \
         die "failed to remove /opt/gitlab/gitlab-gitaly symlink"
-    # openrc:
-    rm -f "${EROOT}/etc/init.d/gitlab-gitaly"
 }
 
 # set the gitlab-gitaly symlinks
@@ -32,25 +30,11 @@ set_symlink() {
         target=${targets[target-1]}
     fi
 
-    [[ -z ${target} || ! -f ${EROOT}/opt/gitlab/${target}/VERSION ]] \
+    [[ -z ${target} || ! -f ${EROOT}/opt/gitlab/${target} ]] \
         && die -q "Target \"$1\" doesn't appear to be valid!"
-
-    local version=$(cat ${EROOT}/opt/gitlab/${target}/VERSION)
-
-    # check if any config files are not merged
-    local unmerged=$(find ${EROOT}/opt/gitlab/${target}/config -name '._cfg*')
-    if [ -n "$unmerged" ]; then
-        die -q "${target} has still unmerged config files, run:\n" \
-               "  CONFIG_PROTECT=${EROOT}/opt/gitlab/${target}/config dispatch-conf"
-    fi
 
     ln -s "${target}" "${EROOT}/opt/gitlab/gitlab-gitaly" || \
         die -q "Failed to create /opt/gitlab/gitlab-gitaly symlink!"
-
-    # Optional openrc symlink:
-    if [ -x "${EROOT}/etc/init.d/${target}" ]; then
-        ln -s "${target}" "${EROOT}/etc/init.d/gitlab-gitaly"
-    fi
 }
 
 ### show action ###
