@@ -668,7 +668,8 @@ pkg_config_do_fhs() {
 	fi
 
 	einfo "Now we will move the .gitlab_shell_secret to ${DEST_DIR} and"
-	einfo "link to it in the new gitlab-shell dir."
+	einfo "link to it in the new gitlab-shell dir. We will also create"
+	einfo "the ${BASE_DIR}/${PN} symlink to the current slot."
 	einfon "(C)ontinue or (s)kip? "
 	proceed=$(continue_or_skip)
 	if [[ $proceed ]] ; then
@@ -676,6 +677,8 @@ pkg_config_do_fhs() {
 			die "Failed to move the .gitlab_shell_secret file"
 		ln -s ${DEST_DIR}/.gitlab_shell_secret ${GITLAB_SHELL}/.gitlab_shell_secret || \
 			die "Failed to link the .gitlab_shell_secret file"
+		ln -s ${DEST_DIR} ${BASE_DIR}/${PN}  || \
+			die "Failed to create the ${BASE_DIR}/${PN} symlink"
 	fi
 
 	einfo "Finally we migrate the data from \"$LATEST_DEST\":"
@@ -690,10 +693,7 @@ pkg_config_do_fhs() {
 	einfo ""
 	einfo "You have to adopt the config of your webserver to the new paths."
 	einfo "For nginx e. g. that would at least be the new workhorse socket:"
-	einfo "    unix:/opt/gitlab/gitlabhq/tmp/sockets/gitlab-workhorse.socket"
-	einfo ""
-	einfo "Note that you still have to create the /opt/gitlab/gitlabhq symlink by"
-	einfo "    eselect gitlabhq gitlabhq-13.6"
+	einfo "    unix:${BASE_DIR}/${PN}/tmp/sockets/gitlab-workhorse.socket"
 	einfo ""
 }
 

@@ -10,8 +10,7 @@ VERSION="@VERSION@"
 find_targets() {
     local f
     for f in "${EROOT}"/opt/gitlab/gitlab-gitaly-[[:digit:]]*; do
-        # ignore 'unmerged' installs
-        [[ -f ${f}/VERSION ]] && basename "${f}"
+        basename "${f}"
     done
 }
 
@@ -30,7 +29,7 @@ set_symlink() {
         target=${targets[target-1]}
     fi
 
-    [[ -z ${target} || ! -f ${EROOT}/opt/gitlab/${target} ]] \
+    [[ -z ${target} || ! -d ${EROOT}/opt/gitlab/${target} ]] \
         && die -q "Target \"$1\" doesn't appear to be valid!"
 
     ln -s "${target}" "${EROOT}/opt/gitlab/gitlab-gitaly" || \
