@@ -89,6 +89,16 @@ The Migration
    path changes.
    Don't forget to adopt the nginx config!
 
+   You have to adopt the config of your webserver to the new paths.
+   For nginx e. g. that would at least be the new workhorse socket:
+       unix:/opt/gitlab/gitlabhq/tmp/sockets/gitlab-workhorse.socket
+  
+   There will be some leftover directories that we didn't remove
+   in case you have non-GitLab files there:
+       /home/git/
+       /var/lib/git/
+       /var/lib/gitlab-shell/
+
 6. Check the eselect symlinks
 
     eselect gitlabhq show
