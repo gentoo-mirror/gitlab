@@ -12,7 +12,7 @@ description="GitLab git repository management"
 : ${gitlab_pids:="@DEST_DIR@/tmp/pids"}
 : ${gitlab_sockets:="@DEST_DIR@/tmp/sockets"}
 : ${gitlab_log:="@LOG_DIR@"}
-: ${gitlab_env:=""}
+: ${gitlab_env:="PATH=/opt/gitlab/gitlab-workhorse/bin/:$PATH"}
 
 : ${gitaly_home:="@GITLAB_GITALY@"}
 : ${gitaly_config:="@GITALY_CONF@"}
