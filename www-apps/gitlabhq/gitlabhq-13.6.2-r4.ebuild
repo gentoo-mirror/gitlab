@@ -696,6 +696,12 @@ pkg_config_do_fhs() {
 	einfo "For nginx e. g. that would at least be the new workhorse socket:"
 	einfo "    unix:${BASE_DIR}/${PN}/tmp/sockets/gitlab-workhorse.socket"
 	einfo ""
+	einfo "There will be some leftover directories that we didn't remove"
+	einfo "in case you have non-GitLab files there:"
+	einfo "    /home/git/"
+	einfo "    /var/lib/git/"
+	einfo "    /var/lib/gitlab-shell/"
+	einfo ""
 }
 
 pkg_config() {
