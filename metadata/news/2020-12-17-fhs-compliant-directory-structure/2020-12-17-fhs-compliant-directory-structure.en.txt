@@ -1,0 +1,120 @@
+Title: FHS compliant directory structure
+Author: Horst Prote <prote@fmi.uni-stuttgart.de>
+Posted: 2020-12-17
+Revision: 1
+News-Item-Format: 2.0
+Display-If-Installed: www-apps/gitlabhq
+
+A new and more FHS (1) compliant directory structure was introduced with
+these ebuild revisions
+    www-servers/gitlab-workhorse-8.58.0-r1
+    dev-vcs/gitlab-shell-13.13.0-r1
+    dev-vcs/gitlab-gitaly-13.6.2-r2
+    www-apps/gitlabhq-13.6.2-r4
+
+NOTE: Only the above ebuild revisions will support the migration to the
+      new directory structure! Future ebuilds, when upgrading a already
+      installed package, will presume the new directory structure.
+
+
+What will the Migration change?
+-------------------------------
+1. The HOME of the git user will be set to /var/lib/gitlab/.
+
+2. The paths will be changed after this mapping:
+   /home/git                 -> /var/lib/gitlab
+   /var/lib/git/gitaly       -> /opt/gitlab/gitlab-gitaly[-13.6]
+   /var/lib/git/gitlab-shell -> /opt/gitlab/gitlab-shell
+   /usr/bin/gitlab-*         -> /opt/gitlab/<package>/bin
+   (the binaries of workhorse, gitaly, gitlab-shell respectively)
+
+The principle is
+- all static software to /opt/gitlab/<package name>/
+- all changing program generated data to /var/lib/gitlab/
+
+
+Preparations & Precautions:
+---------------------------
+The migration requires that you start with this installed versions:
+    www-servers/gitlab-workhorse-8.58.0
+    dev-vcs/gitlab-shell-13.13.0
+    dev-vcs/gitlab-gitaly-13.6.2-r1
+    www-apps/gitlabhq-13.6.2-r2
+
+Make sure that you've created a recent backup of your GitLab instance!
+Don't forget to backup all the config settings of the packages, too!
+Especially
+    /opt/gitlabhq/.gitlab_shell_secret
+    /opt/gitlabhq/.gitlab_workhorse_secret
+    /home/git/.ssh/authorized_keys
+    ... (all the important files I forgot to mention here)
+
+If your /home/git/ contains files that don't belong to GitLab you
+should move them to another location before the migration as the
+www-apps/gitlabhq-13.6.2-r4 ebuild will move the whole /home/git/
+content to the new HOME of the git user.
+
+
+The Migration
+-------------
+1. Set USE flag for the new acct-user/git package
+
+    echo "acct-user/git gitlab" >> /etc/portage/package.use/<your file>
+
+   The new acct-user/git package in the gitlab overlay overloads the
+   acct-user/git from the gentoo tree. It just adds the "gitlab" USE
+   flag which sets the git HOME to /var/lib/gitlab/.
+
+2. Keyword for the new app-eselect/eselect-gitlab-gitaly package
+
+    echo "app-eselect/eselect-gitlab-gitaly" >> \
+         /etc/portage/package.accept_keywords/<your file>
+
+3. Stop the running GitLab
+
+    systemctl stop gitlabhq.target
+   or
+    /etc/init.d/gitlabhq-13.6 stop
+
+4. Install the new gitlabhq and its dependencies
+
+    emerge -uDav www-apps/gitlabhq
+
+5. Configure the new gitlabhq
+
+    emerge --config "=www-apps/gitlabhq-13.6.2-r4"
+
+   Follow the instructions.
+   When doing the dispatch-conf be carefull not to miss one of the
+   path changes.
+   Don't forget to adopt the nginx config!
+
+   You have to adopt the config of your webserver to the new paths.
+   For nginx e. g. that would at least be the new workhorse socket:
+       unix:/opt/gitlab/gitlabhq/tmp/sockets/gitlab-workhorse.socket
+  
+   There will be some leftover directories that we didn't remove
+   in case you have non-GitLab files there:
+       /home/git/
+       /var/lib/git/
+       /var/lib/gitlab-shell/
+
+6. Check the eselect symlinks
+
+    eselect gitlabhq show
+   (should be OK as the "emerge --config" sets the link)
+
+    eselect gitlab-gitaly show
+   (if this is "(unset)" set it)
+
+7. Do you have a backup service or init script?
+   Don't forget to adopt it to the new paths, then!
+
+8. Start GitLab
+
+    systemctl start gitlabhq.target
+   or
+    /etc/init.d/gitlabhq-13.6 start
+
+---
+(1) see https://devmanual.gentoo.org/general-concepts/filesystem/
