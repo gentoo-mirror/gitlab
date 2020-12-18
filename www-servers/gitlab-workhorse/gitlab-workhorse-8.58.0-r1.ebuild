@@ -22,8 +22,7 @@ RDEPEND="${DEPEND}"
 
 src_install()
 {
+	local exe all_exe=$(grep "EXE_ALL *:= *" Makefile)
 	into "/opt/gitlab/gitlab-workhorse"
-	dobin "gitlab-workhorse"
-	dobin "gitlab-zip-cat"
-	dobin "gitlab-zip-metadata"
+	dobin ${all_exe#EXE_ALL *:= *} 
 }
