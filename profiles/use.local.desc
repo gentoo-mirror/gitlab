@@ -2,6 +2,8 @@
 # Please add your descriptions to your package's metadata.xml ONLY.
 # * generated automatically using pmaint *
 
+acct-user/git:gitea - Set home directory for gitlab hosting via www-apps/gitlabhq.
+acct-user/git:gitolite - Set home directory for git hosting via dev-vcs/gitolite or dev-vcs/gitolite-gentoo.
 dev-vcs/gitlab-gitaly:gitaly_git - Use the Git version provided by Gitaly.
 www-apps/gitlabhq:favicon - For the Custom Favicon to work, GraphicsMagick needs to be installed
 www-apps/gitlabhq:gitaly_git - Use the Git version provided by Gitaly
