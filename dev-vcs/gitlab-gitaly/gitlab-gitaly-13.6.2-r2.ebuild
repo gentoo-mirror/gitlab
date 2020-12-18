@@ -76,17 +76,12 @@ src_install() {
 	# Other cleanup candidates: a.out *.bin
 
 	into "${DEST_DIR}" # Will install binaries to ${DEST_DIR}/bin. Don't specify the "bin"!
-	newbin "gitaly" "gitlab-gitaly"
-	dobin "gitaly-ssh"
-	dobin "gitaly-hooks"
-	dobin "gitaly-debug"
-	dobin "gitaly-wrapper"
-	dobin "praefect"
+	dobin _build/bin/*
 
 	insinto "${DEST_DIR}"
 	doins -r "ruby"
 
-	# Make binaries executable
+	# Make binaries in ruby/ executable
 	local rubyV=$(sed -e "s/\(.\)\(.\)/\1\.\2\.0/" <<< "${USE_RUBY##*ruby}")
 	# Note: For USE_RUBY="ruby26 ruby27" we will get "2.7.0" here. That should be ok.
 	exeinto "${DEST_DIR}/ruby/git-hooks/"
