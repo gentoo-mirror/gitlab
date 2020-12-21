@@ -1,0 +1,15 @@
+DEFINED_PHASES=compile configure install postinst prepare setup test unpack
+DEPEND=ruby_targets_ruby26? ( dev-lang/ruby:2.6 ) ruby_targets_ruby27? ( dev-lang/ruby:2.7 ) acct-user/git[gitlab] acct-group/git dev-vcs/git dev-ruby/bundler virtual/ssh dev-db/redis ruby_targets_ruby26? ( dev-lang/ruby:2.6 ) ruby_targets_ruby27? ( dev-lang/ruby:2.7 ) >=dev-vcs/git-1.8.2.1[curl]
+DESCRIPTION=SSH access for GitLab
+EAPI=5
+HOMEPAGE=https://github.com/gitlabhq/gitlab-shell
+IUSE=ruby_targets_ruby26 ruby_targets_ruby27
+KEYWORDS=~amd64 ~x86 ~arm
+LICENSE=MIT
+PROPERTIES=live
+RDEPEND=ruby_targets_ruby26? ( dev-lang/ruby:2.6 ) ruby_targets_ruby27? ( dev-lang/ruby:2.7 ) acct-user/git[gitlab] acct-group/git dev-vcs/git dev-ruby/bundler virtual/ssh dev-db/redis ruby_targets_ruby26? ( dev-lang/ruby:2.6 ) ruby_targets_ruby27? ( dev-lang/ruby:2.7 )
+REQUIRED_USE=|| ( ruby_targets_ruby26 ruby_targets_ruby27 )
+RESTRICT=network-sandbox
+SLOT=0
+_eclasses_=desktop	8f9bfcc33705104f56748d9dedb3177a	edos2unix	33e347e171066657f91f8b0c72ec8773	epatch	0a83d4ccf28a70ddf61e7073c96e515a	estack	d780995dc525ff7e6a2c4c043ffec242	eutils	69bd92aa099f708425db9f1f01d61213	git-r3	3e7ec3d6619213460c85e2aa48398441	l10n	8cdd85e169b835d518bc2fd59f780d8e	ltprune	4f3f2db5ce3ccbeeacdf3f94954043aa	multilib	d410501a125f99ffb560b0c523cd3d1e	preserve-libs	ef207dc62baddfddfd39a164d9797648	ruby-ng	d4dbb4c6c526fcb43401ce82bd01c953	ruby-utils	927b40774937983813d360c726615e54	toolchain-funcs	605c126bed8d87e4378d5ff1645330cb	user	b0a0d4ca9e3f79c38f8f4143b8d5a2d8	user-info	a2abd4e2f4c3b9b06d64bf1329359a02	vcs-clean	2a0f74a496fa2b1552c4f3398258b7bf	wrapper	4251d4c84c25f59094fd557e0063a974
+_md5_=086410175a7bc3a6bc809eeb157a15bd
