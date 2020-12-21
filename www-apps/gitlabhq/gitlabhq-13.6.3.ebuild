@@ -472,11 +472,11 @@ pkg_config_do_upgrade_migrate_shared_data() {
 }
 
 pkg_config_do_upgrade_migrate_configuration() {
-	local configs_to_migrate="database.yml gitlab.yml resque.yml secrets.yml\
-		smtp_settings.rb"
+	local configs_to_migrate="database.yml gitlab.yml resque.yml secrets.yml"
+	local initializers_to_migrate="smtp_settings.rb"
 	use puma    && configs_to_migrate=+" puma.rb"
 	use unicorn && configs_to_migrate=+" unicorn.rb"
-	local conf
+	local conf example
 	einfon "Migrate configuration, (C)ontinue or (s)kip? "
 	local migrate_config=$(continue_or_skip)
 	if [[ $migrate_config ]]
@@ -491,6 +491,18 @@ pkg_config_do_upgrade_migrate_configuration() {
 			example="${DEST_DIR}/config/${conf}.example"
 			test -f "${example}" && \
 				cp -p "${example}" "${DEST_DIR}/config/._cfg0000_${conf}"
+		done
+		for conf in $initializers_to_migrate ; do
+			einfo "Migration config file \"initializers/$conf\" ..."
+			cp -p "${LATEST_DEST}/config/initializers/${conf}" \
+				"${DEST_DIR}/config/initializers/"
+			sed -i \
+			    -e "s|$(basename $LATEST_DEST)|${PN}-${SLOT}|g" \
+			    "${DEST_DIR}/config/initializers/$conf"
+
+			example="${DEST_DIR}/config/initializers/${conf}.sample"
+			test -f "${example}" && \
+				cp -p "${example}" "${DEST_DIR}/config/initializers/._cfg0000_${conf}"
 		done
 
 		# if the user's console is not 80x24, it is better to manually run dispatch-conf

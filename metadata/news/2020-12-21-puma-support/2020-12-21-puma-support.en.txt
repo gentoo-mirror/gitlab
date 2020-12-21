@@ -1,6 +1,6 @@
 Title: Puma support
 Author: Horst Prote <prote@fmi.uni-stuttgart.de>
-Posted: 2020-12-
+Posted: 2020-12-21
 Revision: 1
 News-Item-Format: 2.0
 Display-If-Installed: www-apps/gitlabhq
@@ -11,5 +11,5 @@ if you want to use puma.
 
 Note: Currently the default for the puma and unicorn USE flags is
           -puma +unicorn
-      In the next 13.7 slot this will chamge to
+      In the next 13.7 slot this will change to
           +puma -unicorn
