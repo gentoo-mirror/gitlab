@@ -198,6 +198,9 @@ src_install() {
 		    -e "s#@TMP_DIR@#${DEST_DIR}/tmp#g" \
 		    -e "s#@WORKHORSE_BIN@#${WORKHORSE_BIN}#g" \
 		    -e "s#@SLOT@#${SLOT}#g" \
+			-e "s#@WEBSERVER@#${webserver}#g" \
+			-e "s#@WEBSERVER_BIN@#${webserver_bin}#g" \
+			-e "s#@WEBSERVER_NAME@#${webserver_name}#g" \
 			"${file}" > "${T}/${unit}" || die "Failed to configure: $unit"
 		systemd_dounit "${T}/${unit}" 
 	done

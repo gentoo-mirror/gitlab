@@ -7,9 +7,9 @@
 
 [Unit]
 Description=Gitlab Workhorse handles slow HTTP requests for Gitlab.
-Requires=gitlabhq-@SLOT@-unicorn.service
-Wants=gitlabhq-@SLOT@-unicorn.service
-After=gitlabhq-@SLOT@-unicorn.service
+Requires=gitlabhq-@SLOT@-@WEBSERVER@.service
+Wants=gitlabhq-@SLOT@-@WEBSERVER@.service
+After=gitlabhq-@SLOT@-@WEBSERVER@.service
 PartOf=gitlabhq-@SLOT@.target
 
 [Service]

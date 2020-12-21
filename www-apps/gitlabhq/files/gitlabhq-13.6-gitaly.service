@@ -7,8 +7,8 @@
 
 [Unit]
 Description=Gitlab Gitaly handles Gitlab RPC calls.
-Wants=gitlabhq-@SLOT@-unicorn.service
-After=gitlabhq-@SLOT@-unicorn.service
+Wants=gitlabhq-@SLOT@-@WEBSERVER@.service
+After=gitlabhq-@SLOT@-@WEBSERVER@.service
 PartOf=gitlabhq-@SLOT@.target
 
 [Service]
