@@ -188,6 +188,7 @@ src_install() {
 		-e "s#@WEBSERVER_NAME@#${webserver_name}#g" \
 		"${FILESDIR}/${PN}-${SLOT}"-webserver.service_model \
 		> $webserver_unit || die "Failed to configure: $webserver_unit"
+	systemd_dounit "${T}/${webserver_unit}" 
 
 	for file in "${FILESDIR}/${PN}-${SLOT}"*.{service,target}
 	do
