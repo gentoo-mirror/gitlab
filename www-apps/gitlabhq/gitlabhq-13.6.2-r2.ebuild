@@ -151,8 +151,8 @@ src_install() {
 	ruby-ng_src_install
 
 	elog "Installing systemd unit files"
-	for file in "${FILESDIR}/${PN}-${SLOT}-"*.service "${FILESDIR}/${PN}-${SLOT}.target"; do
-		unit=$(basename $file)
+	for file in "${FILESDIR}/${P}-"*.service "${FILESDIR}/${P}.target"; do
+		unit=$(basename $file); unit=${unit/13.6.2/${SLOT}}
 		sed -e "s#@DEST_DIR@#${DEST_DIR}#g" \
 		    -e "s#@CONF_DIR@#${DEST_DIR}/config#" \
 		    -e "s#@LOG_DIR@#${DEST_DIR}/log#" \
@@ -265,7 +265,7 @@ each_ruby_install() {
 	## RC scripts ##
 	local rcscript=${PN}-${SLOT}.init
 
-	cp "${FILESDIR}/${rcscript}" "${T}" || die
+	cp "${FILESDIR}/${P}.init" "${T}/${rcscript}" || die
 	sed -i \
 		-e "s|@GIT_USER@|${GIT_USER}|" \
 		-e "s|@GIT_GROUP@|${GIT_USER}|" \

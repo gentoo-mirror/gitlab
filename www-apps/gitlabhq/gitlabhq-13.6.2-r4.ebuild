@@ -155,28 +155,72 @@ continue_or_skip() {
 }
 
 src_install() {
-	local gem file
-
 	# DO NOT REMOVE - without this, the package won't install
 	ruby-ng_src_install
 
+	local file webserver webserver_bin webserver_name
+	if use puma; then
+		webserver="puma"
+		webserver_bin="puma"
+		webserver_name="Puma"
+		webserver_unit="${T}/${PN}-${SLOT}-puma.service"
+	elif use unicorn; then
+		webserver="unicorn"
+		webserver_bin="unicorn_rails"
+		webserver_name="Unicorn"
+		webserver_unit="${T}/${PN}-${SLOT}-unicorn.service"
+	fi
+
 	elog "Installing systemd unit files"
+	sed -e "s#@DEST_DIR@#${DEST_DIR}#g" \
+		-e "s#@CONF_DIR@#${DEST_DIR}/config#g" \
+		-e "s#@TMP_DIR@#${DEST_DIR}/tmp#g" \
+		-e "s#@SLOT@#${SLOT}#g" \
+		-e "s#@WEBSERVER@#${webserver}#g" \
+		-e "s#@WEBSERVER_BIN@#${webserver_bin}#g" \
+		-e "s#@WEBSERVER_NAME@#${webserver_name}#g" \
+		"${FILESDIR}/${PN}-${SLOT}"-webserver.service_model \
+		> $webserver_unit || die "Failed to configure: $webserver_unit"
+
 	for file in "${FILESDIR}/${PN}-${SLOT}"*.{service,target}
 	do
 		unit=$(basename $file)
-		sed -e "s#@GIT_HOME@#${GIT_HOME}#g" \
-		    -e "s#@BASE_DIR@#${BASE_DIR}#g" \
-		    -e "s#@DEST_DIR@#${DEST_DIR}#g" \
-		    -e "s#@CONF_DIR@#${DEST_DIR}/config#g" \
-		    -e "s#@LOG_DIR@#${DEST_DIR}/log#g" \
-		    -e "s#@TMP_DIR@#${DEST_DIR}/tmp#g" \
-		    -e "s#@WORKHORSE_BIN@#${WORKHORSE_BIN}#g" \
-		    -e "s#@SLOT@#${SLOT}#g" \
+		sed -e "s#@BASE_DIR@#${BASE_DIR}#g" \
+			-e "s#@DEST_DIR@#${DEST_DIR}#g" \
+			-e "s#@CONF_DIR@#${DEST_DIR}/config#g" \
+			-e "s#@TMP_DIR@#${DEST_DIR}/tmp#g" \
+			-e "s#@WORKHORSE_BIN@#${WORKHORSE_BIN}#g" \
+			-e "s#@SLOT@#${SLOT}#g" \
+			-e "s#@WEBSERVER@#${webserver}#g" \
+			-e "s#@WEBSERVER_BIN@#${webserver_bin}#g" \
+			-e "s#@WEBSERVER_NAME@#${webserver_name}#g" \
 			"${file}" > "${T}/${unit}" || die "Failed to configure: $unit"
-		systemd_dounit "${T}/${unit}" 
+		systemd_dounit "${T}/${unit}"
 	done
 
 	systemd_dotmpfilesd "${FILESDIR}/${PN}-${SLOT}-tmpfiles.conf"
+
+	## RC script ##
+	local rcscript=${PN}-${SLOT}.init
+
+	cp "${FILESDIR}/${rcscript}" "${T}" || die
+	sed -i \
+		-e "s|@RAILS_ENV@|${RAILS_ENV}|g" \
+		-e "s|@GIT_USER@|${GIT_USER}|g" \
+		-e "s|@GIT_GROUP@|${GIT_GROUP}|g" \
+		-e "s|@SLOT@|${SLOT}|g" \
+		-e "s|@DEST_DIR@|${DEST_DIR}|g" \
+		-e "s|@LOG_DIR@|${logs}|g" \
+		-e "s|@GITLAB_GITALY@|${GITLAB_GITALY}|g" \
+		-e "s|@GITALY_CONF@|${GITALY_CONF}|g" \
+		-e "s|@WORKHORSE_BIN@|${WORKHORSE_BIN}|g" \
+		-e "s#@WEBSERVER@#${webserver}#g" \
+		-e "s#@WEBSERVER_BIN@#${webserver_bin}#g" \
+		-e "s#@WEBSERVER_NAME@#${webserver_name}#g" \
+		"${T}/${rcscript}" \
+		|| die "failed to filter ${rcscript}"
+
+	newinitd "${T}/${rcscript}" "${PN}-${SLOT}"
 }
 
 each_ruby_install() {
@@ -256,7 +300,7 @@ each_ruby_install() {
 
 	# fix permissions
 	fowners -R ${GIT_USER}:${GIT_GROUP} "${DEST_DIR}" "${CONF_DIR}" "${temp}" "${logs}"
-	fperms o+Xr "${temp}" # Let nginx access the unicorn socket
+	fperms o+Xr "${temp}" # Let nginx access the puma/unicorn socket
 
 	# fix QA Security Notice: world writable file(s)
 	elog "Fixing permissions of world writable files"
@@ -273,25 +317,6 @@ each_ruby_install() {
 	for file in $(find_files "f" "${DEST_DIR}/${gemsdir}/nakayoshi_fork-*") ; do
 		fperms a-x $file
 	done
-
-	## RC script ##
-	local rcscript=${PN}-${SLOT}.init
-
-	cp "${FILESDIR}/${rcscript}" "${T}" || die
-	sed -i \
-		-e "s|@RAILS_ENV@|${RAILS_ENV}|g" \
-		-e "s|@GIT_USER@|${GIT_USER}|g" \
-		-e "s|@GIT_GROUP@|${GIT_GROUP}|g" \
-		-e "s|@SLOT@|${SLOT}|g" \
-		-e "s|@DEST_DIR@|${DEST_DIR}|g" \
-		-e "s|@LOG_DIR@|${logs}|g" \
-		-e "s|@GITLAB_GITALY@|${GITLAB_GITALY}|g" \
-		-e "s|@GITALY_CONF@|${GITALY_CONF}|g" \
-		-e "s|@WORKHORSE_BIN@|${WORKHORSE_BIN}|g" \
-		"${T}/${rcscript}" \
-		|| die "failed to filter ${rcscript}"
-
-	newinitd "${T}/${rcscript}" "${PN}-${SLOT}"
 }
 
 pkg_preinst() {
@@ -346,25 +371,25 @@ pkg_postinst() {
 
 	elog "  5. If this is a new installation, create a database for your GitLab instance."
 	if use postgres; then
-		elog "    If you have local PostgreSQL running, just copy&run:"
-		elog "        su postgres"
-		elog "        psql -c \"CREATE ROLE gitlab PASSWORD 'gitlab' \\"
-		elog "            NOSUPERUSER NOCREATEDB NOCREATEROLE INHERIT LOGIN;\""
-		elog "        createdb -E UTF-8 -O gitlab gitlab_${RAILS_ENV}"
-		elog "    Note: You should change your password to something more random..."
+		elog "     If you have local PostgreSQL running, just copy&run:"
+		elog "         su postgres"
+		elog "         psql -c \"CREATE ROLE gitlab PASSWORD 'gitlab' \\"
+		elog "             NOSUPERUSER NOCREATEDB NOCREATEROLE INHERIT LOGIN;\""
+		elog "         createdb -E UTF-8 -O gitlab gitlab_${RAILS_ENV}"
+		elog "     Note: You should change your password to something more random..."
 		elog
-		elog "    GitLab uses polymorphic associations which are not SQL-standard friendly."
-		elog "    To get it work you must use this ugly workaround:"
-		elog "        psql -U postgres -d gitlab"
-		elog "        CREATE CAST (integer AS text) WITH INOUT AS IMPLICIT;"
+		elog "     GitLab uses polymorphic associations which are not SQL-standard friendly."
+		elog "     To get it work you must use this ugly workaround:"
+		elog "         psql -U postgres -d gitlab"
+		elog "         CREATE CAST (integer AS text) WITH INOUT AS IMPLICIT;"
 		elog
-		elog "    GitLab needs two PostgreSQL extensions: pg_trgm and btree_gist."
-		elog "    To check the 'List of installed extensions' run:"
-		elog "        psql -U postgres -d gitlab -c \"\dx\""
-		elog "    To create the extensions if they are missing do:"
-		elog "        psql -U postgres -d gitlab"
-		elog "        CREATE EXTENSION IF NOT EXISTS pg_trgm;"
-		elog "        CREATE EXTENSION IF NOT EXISTS btree_gist;"
+		elog "     GitLab needs two PostgreSQL extensions: pg_trgm and btree_gist."
+		elog "     To check the 'List of installed extensions' run:"
+		elog "         psql -U postgres -d gitlab -c \"\dx\""
+		elog "     To create the extensions if they are missing do:"
+		elog "         psql -U postgres -d gitlab"
+		elog "         CREATE EXTENSION IF NOT EXISTS pg_trgm;"
+		elog "         CREATE EXTENSION IF NOT EXISTS btree_gist;"
 		elog
 	fi
 	elog "  6. Execute the following command to finalize your setup:"

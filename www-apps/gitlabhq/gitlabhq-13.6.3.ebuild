@@ -165,7 +165,7 @@ src_install() {
 	# DO NOT REMOVE - without this, the package won't install
 	ruby-ng_src_install
 
-	local gem file webserver webserver_bin webserver_name
+	local file webserver webserver_bin webserver_name
 	if use puma; then
 		webserver="puma"
 		webserver_bin="puma"
@@ -312,7 +312,7 @@ each_ruby_install() {
 	# fix QA Security Notice: world writable file(s)
 	elog "Fixing permissions of world writable files"
 	local gemsdir="vendor/bundle/ruby/${ruby_vpath}/gems"
-	local wwfgems="gitlab-labkit nakayoshi_fork"
+	local gem wwfgems="gitlab-labkit nakayoshi_fork"
 	# If we are using wildcards, the shell fills them without prefixing ${ED}. Thus
 	# we would target a file list from the real system instead from the sandbox.
 	for gem in ${wwfgems}; do
