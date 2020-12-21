@@ -1,0 +1,15 @@
+Title: Puma support
+Author: Horst Prote <prote@fmi.uni-stuttgart.de>
+Posted: 2020-12-
+Revision: 1
+News-Item-Format: 2.0
+Display-If-Installed: www-apps/gitlabhq
+
+With version 13.6.3 the ebuild supports the puma webserver (a unicorn
+alternative). Switch the unicorn USE flag off and the puma USE flag on
+if you want to use puma.
+
+Note: Currently the default for the puma and unicorn USE flags is
+          -puma +unicorn
+      In the next 13.7 slot this will chamge to
+          +puma -unicorn

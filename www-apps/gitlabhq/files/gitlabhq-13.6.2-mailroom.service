@@ -7,9 +7,9 @@
 
 [Unit]
 Description=Gitlab mailroom Worker
-Requires=gitlabhq-@SLOT@-@WEBSERVER@.service
-Wants=gitlabhq-@SLOT@-@WEBSERVER@.service
-After=gitlabhq-@SLOT@-@WEBSERVER@.service
+Requires=gitlabhq-@SLOT@-unicorn.service
+Wants=gitlabhq-@SLOT@-unicorn.service
+After=gitlabhq-@SLOT@-unicorn.service
 PartOf=gitlabhq-@SLOT@.target
 
 [Service]

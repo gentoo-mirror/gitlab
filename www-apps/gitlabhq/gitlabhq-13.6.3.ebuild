@@ -56,9 +56,11 @@ GEMS_DEPEND="
 	mysql? ( virtual/mysql )
 	net-libs/http-parser"
 DEPEND="${GEMS_DEPEND}
+	acct-user/git[gitlab]
+	acct-group/git
 	>=dev-lang/ruby-2.7[ssl]
 	>=dev-vcs/gitlab-shell-13.13.0
-	>=dev-vcs/gitlab-gitaly-13.6.1-r1
+	=dev-vcs/gitlab-gitaly-${PV}
 	>=www-servers/gitlab-workhorse-8.56.0
 	!gitaly_git? ( >=dev-vcs/git-2.29.0[pcre,pcre-jit] )
 	gitaly_git? ( dev-vcs/gitlab-gitaly[gitaly_git] )
@@ -84,33 +86,34 @@ RUBY_PATCHES=(
 
 GIT_USER="git"
 GIT_GROUP="git"
-GIT_HOME="/var/lib/git"
-DEST_DIR="/opt/${PN}-${SLOT}"
+GIT_HOME="/var/lib/gitlab"
+BASE_DIR="/opt/gitlab"
+DEST_DIR="${BASE_DIR}/${PN}-${SLOT}"
 CONF_DIR="/etc/${PN}-${SLOT}"
+WORKHORSE_BIN="${BASE_DIR}/gitlab-workhorse/bin"
 
 GIT_REPOS="${GIT_HOME}/repositories"
-GITLAB_SHELL="/var/lib/gitlab-shell"
-GITLAB_GITALY="/var/lib/gitlab-gitaly-${SLOT}"
+GITLAB_SHELL="${BASE_DIR}/gitlab-shell"
+GITLAB_GITALY="${BASE_DIR}/gitlab-gitaly-${SLOT}"
+GITALY_CONF="/etc/gitlab-gitaly-${SLOT}"
 
 RAILS_ENV=${RAILS_ENV:-production}
+NODE_ENV=${RAILS_ENV:-production}
 BUNDLE="ruby /usr/bin/bundle"
-
-pkg_setup() {
-	enewgroup ${GIT_GROUP}
-	enewuser ${GIT_USER} -1 -1 ${DEST_DIR} "${GIT_GROUP} redis"
-}
 
 all_ruby_unpack() {
 	git-r3_src_unpack
 }
 
 each_ruby_prepare() {
-	# modify gitlab settings
+	# Update paths for gitlab
+	# Note: Order of -e expressions is important here
 	sed -i \
-		-e "s|/home/git/gitlab-shell|${GITLAB_SHELL}|" \
-		-e "s|/home/git/gitaly|${GITLAB_GITALY}|" \
-		-e "s|/home/git|${GITLAB_HOME}|" \
-		-e "s|/tmp/sockets/private/gitaly.socket|/tmp/sockets/gitaly.socket|" \
+		-e "s|/sockets/private/|/sockets/|g" \
+		-e "s|/home/git/gitlab-shell|${GITLAB_SHELL}|g" \
+		-e "s|/home/git/gitlab/|${DEST_DIR}/|g" \
+		-e "s|/home/git/gitaly|${GITLAB_GITALY}|g" \
+		-e "s|/home/git|${GIT_HOME}|g" \
 		config/gitlab.yml.example || die "failed to filter gitlab.yml.example"
 
 	# remove needless files
@@ -119,41 +122,128 @@ each_ruby_prepare() {
 	use puma     || rm config/puma*
 	use unicorn  || rm config/unicorn.rb.example*
 
-	# Update pathes for unicorn
+	# Update paths for puma
+	if use puma; then
+		sed -i \
+			-e "s|/home/git/gitlab/tmp/|${DEST_DIR}/tmp/|g" \
+			-e "s|/home/git/gitlab|${DEST_DIR}|g" \
+			config/puma.rb.example \
+			|| die "failed to modify puma.rb.example"
+	fi
+
+	# Update paths for unicorn
 	if use unicorn; then
 		sed -i \
-			-e "s|/home/git/gitlab|${DEST_DIR}|" \
-			-e "s|^stderr_path|#stderr_path|" \
-			-e "s|^stdout_path|#stdout_path|" \
+			-e "s|/home/git/gitlab/tmp/|${DEST_DIR}/tmp/|g" \
+			-e "s|/home/git/gitlab|${DEST_DIR}|g" \
 			config/unicorn.rb.example \
 			|| die "failed to modify unicorn.rb.example"
 	fi
+}
+
+find_files() {
+	local f t="${1}"
+	for f in $(find ${ED}${2} -type ${t}) ; do
+		echo $f | sed "s#${ED}##"
+	done
+}
+
+continue_or_skip() {
+	local answer=""
+	while true
+	do
+		read -r answer
+		if   [[ $answer =~ ^(s|S)$ ]] ; then answer="" && break
+		elif [[ $answer =~ ^(c|C)$ ]] ; then answer=1  && break
+		else echo "Please type either \"c\" to continue or \"s\" to skip ... " >&2
+		fi
+	done
+	echo $answer
 }
 
 src_install() {
 	# DO NOT REMOVE - without this, the package won't install
 	ruby-ng_src_install
 
+	local file webserver webserver_bin webserver_name
+	if use puma; then
+		webserver="puma"
+		webserver_bin="puma"
+		webserver_name="Puma"
+		webserver_unit="${PN}-${SLOT}-puma.service"
+		webserver_c="C"
+		webserver_e="e"
+		webserver_d="d"
+	elif use unicorn; then
+		webserver="unicorn"
+		webserver_bin="unicorn_rails"
+		webserver_name="Unicorn"
+		webserver_unit="${PN}-${SLOT}-unicorn.service"
+		webserver_c="c"
+		webserver_e="E"
+		webserver_d="D"
+	fi
+
 	elog "Installing systemd unit files"
+	sed -e "s#@DEST_DIR@#${DEST_DIR}#g" \
+		-e "s#@CONF_DIR@#${DEST_DIR}/config#g" \
+		-e "s#@TMP_DIR@#${DEST_DIR}/tmp#g" \
+		-e "s#@SLOT@#${SLOT}#g" \
+		-e "s#@WEBSERVER@#${webserver}#g" \
+		-e "s#@WEBSERVER_BIN@#${webserver_bin}#g" \
+		-e "s#@WEBSERVER_NAME@#${webserver_name}#g" \
+		-e "s#@WEBSERVER_C@#${webserver_c}#g" \
+		-e "s#@WEBSERVER_E@#${webserver_e}#g" \
+		-e "s#@WEBSERVER_D@#${webserver_d}#g" \
+		"${FILESDIR}/${PN}-${SLOT}"-webserver.service_model \
+		> "${T}/${webserver_unit}" || die "Failed to configure: $webserver_unit"
+	systemd_dounit "${T}/${webserver_unit}" 
+
 	for file in "${FILESDIR}/${PN}-${SLOT}"*.{service,target}
 	do
 		unit=$(basename $file)
-		sed -e "s#@GIT_HOME@#${GIT_HOME}#g" \
+		sed -e "s#@BASE_DIR@#${BASE_DIR}#g" \
 		    -e "s#@DEST_DIR@#${DEST_DIR}#g" \
-		    -e "s#@CONF_DIR@#${DEST_DIR}/config#" \
-		    -e "s#@LOG_DIR@#${DEST_DIR}/log#" \
+		    -e "s#@CONF_DIR@#${DEST_DIR}/config#g" \
 		    -e "s#@TMP_DIR@#${DEST_DIR}/tmp#g" \
+		    -e "s#@WORKHORSE_BIN@#${WORKHORSE_BIN}#g" \
 		    -e "s#@SLOT@#${SLOT}#g" \
+			-e "s#@WEBSERVER@#${webserver}#g" \
+			-e "s#@WEBSERVER_BIN@#${webserver_bin}#g" \
+			-e "s#@WEBSERVER_NAME@#${webserver_name}#g" \
 			"${file}" > "${T}/${unit}" || die "Failed to configure: $unit"
 		systemd_dounit "${T}/${unit}" 
 	done
 
 	systemd_dotmpfilesd "${FILESDIR}/${PN}-${SLOT}-tmpfiles.conf"
+
+	## RC script ##
+	local rcscript=${PN}-${SLOT}.init
+
+	cp "${FILESDIR}/${rcscript}" "${T}" || die
+	sed -i \
+		-e "s|@RAILS_ENV@|${RAILS_ENV}|g" \
+		-e "s|@GIT_USER@|${GIT_USER}|g" \
+		-e "s|@GIT_GROUP@|${GIT_GROUP}|g" \
+		-e "s|@SLOT@|${SLOT}|g" \
+		-e "s|@DEST_DIR@|${DEST_DIR}|g" \
+		-e "s|@LOG_DIR@|${logs}|g" \
+		-e "s|@GITLAB_GITALY@|${GITLAB_GITALY}|g" \
+		-e "s|@GITALY_CONF@|${GITALY_CONF}|g" \
+		-e "s|@WORKHORSE_BIN@|${WORKHORSE_BIN}|g" \
+		-e "s#@WEBSERVER@#${webserver}#g" \
+		-e "s#@WEBSERVER_BIN@#${webserver_bin}#g" \
+		-e "s#@WEBSERVER_NAME@#${webserver_name}#g" \
+		-e "s#@WEBSERVER_C@#${webserver_c}#g" \
+		-e "s#@WEBSERVER_E@#${webserver_e}#g" \
+		-e "s#@WEBSERVER_D@#${webserver_d}#g" \
+		"${T}/${rcscript}" \
+		|| die "failed to filter ${rcscript}"
+
+	newinitd "${T}/${rcscript}" "${PN}-${SLOT}"
 }
 
 each_ruby_install() {
-	local dest="${DEST_DIR}"
-	local conf="/etc/${PN}-${SLOT}"
 	local temp="/var/tmp/${PN}-${SLOT}"
 	local logs="/var/log/${PN}-${SLOT}"
 	local uploads="${DEST_DIR}/public/uploads"
@@ -165,46 +255,46 @@ each_ruby_install() {
 	keepdir "${temp}"
 
 	diropts -m755
-	dodir "${dest}"
+	dodir "${DEST_DIR}"
 	dodir "${uploads}"
 
-	dosym "${temp}" "${dest}/tmp"
-	dosym "${logs}" "${dest}/log"
+	dosym "${temp}" "${DEST_DIR}/tmp"
+	dosym "${logs}" "${DEST_DIR}/log"
 
 	## Install configs ##
 
 	# Note that we cannot install the config to /etc and symlink
-	# it to ${dest} since require_relative in config/application.rb
+	# it to ${DEST_DIR} since require_relative in config/application.rb
 	# seems to get confused by symlinks. So let's install the config
-	# to ${dest} and create a smylink to /etc/${P}
-	dosym "${dest}/config" "${conf}"
+	# to ${DEST_DIR} and create a smylink to /etc/${P}
+	dosym "${DEST_DIR}/config" "${CONF_DIR}"
 
-	echo "export RAILS_ENV=${RAILS_ENV}" > "${D}/${dest}/.profile"
+	echo "export RAILS_ENV=${RAILS_ENV}" > "${D}/${DEST_DIR}/.profile"
 
 	## Install all others ##
 
 	# remove needless dirs
 	rm -Rf tmp log
 
-	insinto "${dest}"
+	insinto "${DEST_DIR}"
 	doins -r ./
 
-	## Make binaries executable
-	exeinto "${dest}/bin"
+	# make binaries executable
+	exeinto "${DEST_DIR}/bin"
 	doexe bin/*
-	exeinto "${dest}/qa/bin"
+	exeinto "${DEST_DIR}/qa/bin"
 	doexe qa/bin/*
 
 	## Install logrotate config ##
 
 	dodir /etc/logrotate.d
-	sed -e "s|@LOG_DIR@|${logs}|" \
+	sed -e "s|@LOG_DIR@|${logs}|g" \
 		"${FILESDIR}"/gitlab.logrotate > "${D}"/etc/logrotate.d/${PN}-${SLOT} \
 		|| die "failed to filter gitlab.logrotate"
 
 	## Install gems via bundler ##
 
-	cd "${D}/${dest}"
+	cd "${D}/${DEST_DIR}"
 
 	local without="development test coverage omnibus"
 	local flag; for flag in ${WITHOUTflags}; do
@@ -223,35 +313,30 @@ each_ruby_install() {
 
 	## Clean ##
 
-	local gemsdir=vendor/bundle/ruby/$(ruby_rbconfig_value 'ruby_version')
+	local ruby_vpath=$(ruby_rbconfig_value 'ruby_version')
 
 	# remove gems cache
-	rm -Rf ${gemsdir}/cache
+	rm -Rf vendor/bundle/ruby/${ruby_vpath}/cache
 
 	# fix permissions
-	fowners -R ${GIT_USER}:${GIT_GROUP} "${dest}" "${conf}" "${temp}" "${logs}"
-	fperms o+Xr "${temp}" # Let nginx access the unicorn socket
+	fowners -R ${GIT_USER}:${GIT_GROUP} "${DEST_DIR}" "${CONF_DIR}" "${temp}" "${logs}"
+	fperms o+Xr "${temp}" # Let nginx access the puma/unicorn socket
+
 	# fix QA Security Notice: world writable file(s)
-	local wwfgems="gitlab-labkit nakayoshi_fork"
-	local gem; for gem in ${wwfgems}; do
-		fperms go-w -R ${dest}/${gemsdir}/gems/${gem}-*
+	elog "Fixing permissions of world writable files"
+	local gemsdir="vendor/bundle/ruby/${ruby_vpath}/gems"
+	local gem wwfgems="gitlab-labkit nakayoshi_fork"
+	# If we are using wildcards, the shell fills them without prefixing ${ED}. Thus
+	# we would target a file list from the real system instead from the sandbox.
+	for gem in ${wwfgems}; do
+		for file in $(find_files "d,f" "${DEST_DIR}/${gemsdir}/${gem}-*") ; do
+			fperms go-w $file
+		done
 	done
-
-	## RC scripts ##
-	local rcscript=${PN}-${SLOT}.init
-
-	cp "${FILESDIR}/${rcscript}" "${T}" || die
-	sed -i \
-		-e "s|@GIT_USER@|${GIT_USER}|" \
-		-e "s|@GIT_GROUP@|${GIT_USER}|" \
-		-e "s|@SLOT@|${SLOT}|" \
-		-e "s|@DEST_DIR@|${dest}|" \
-		-e "s|@LOG_DIR@|${logs}|" \
-		-e "s|@RESQUE_QUEUE@|${resque_queue}|" \
-		"${T}/${rcscript}" \
-		|| die "failed to filter ${rcscript}"
-
-	newinitd "${T}/${rcscript}" "${PN}-${SLOT}"
+	# in the nakayoshi_fork gem all files are also executable
+	for file in $(find_files "f" "${DEST_DIR}/${gemsdir}/nakayoshi_fork-*") ; do
+		fperms a-x $file
+	done
 }
 
 pkg_preinst() {
@@ -299,27 +384,32 @@ pkg_postinst() {
 		elog
 	fi
 
+	if use puma; then
+		elog "  4a. Copy ${CONF_DIR}/puma.rb.example to ${CONF_DIR}/puma.rb"
+		elog
+	fi
+
 	elog "  5. If this is a new installation, create a database for your GitLab instance."
 	if use postgres; then
-		elog "    If you have local PostgreSQL running, just copy&run:"
-		elog "        su postgres"
-		elog "        psql -c \"CREATE ROLE gitlab PASSWORD 'gitlab' \\"
-		elog "            NOSUPERUSER NOCREATEDB NOCREATEROLE INHERIT LOGIN;\""
-		elog "        createdb -E UTF-8 -O gitlab gitlab_${RAILS_ENV}"
-		elog "    Note: You should change your password to something more random..."
+		elog "     If you have local PostgreSQL running, just copy&run:"
+		elog "         su postgres"
+		elog "         psql -c \"CREATE ROLE gitlab PASSWORD 'gitlab' \\"
+		elog "             NOSUPERUSER NOCREATEDB NOCREATEROLE INHERIT LOGIN;\""
+		elog "         createdb -E UTF-8 -O gitlab gitlab_${RAILS_ENV}"
+		elog "     Note: You should change your password to something more random..."
 		elog
-		elog "    GitLab uses polymorphic associations which are not SQL-standard friendly."
-		elog "    To get it work you must use this ugly workaround:"
-		elog "        psql -U postgres -d gitlab"
-		elog "        CREATE CAST (integer AS text) WITH INOUT AS IMPLICIT;"
+		elog "     GitLab uses polymorphic associations which are not SQL-standard friendly."
+		elog "     To get it work you must use this ugly workaround:"
+		elog "         psql -U postgres -d gitlab"
+		elog "         CREATE CAST (integer AS text) WITH INOUT AS IMPLICIT;"
 		elog
-		elog "    GitLab needs two PostgreSQL extensions: pg_trgm and btree_gist."
-		elog "    To check the 'List of installed extensions' run:"
-		elog "        psql -U postgres -d gitlab -c \"\dx\""
-		elog "    To create the extensions if they are missing do:"
-		elog "        psql -U postgres -d gitlab"
-		elog "        CREATE EXTENSION IF NOT EXISTS pg_trgm;"
-		elog "        CREATE EXTENSION IF NOT EXISTS btree_gist;"
+		elog "     GitLab needs two PostgreSQL extensions: pg_trgm and btree_gist."
+		elog "     To check the 'List of installed extensions' run:"
+		elog "         psql -U postgres -d gitlab -c \"\dx\""
+		elog "     To create the extensions if they are missing do:"
+		elog "         psql -U postgres -d gitlab"
+		elog "         CREATE EXTENSION IF NOT EXISTS pg_trgm;"
+		elog "         CREATE EXTENSION IF NOT EXISTS btree_gist;"
 		elog
 	fi
 	elog "  6. Execute the following command to finalize your setup:"
@@ -353,14 +443,7 @@ pkg_config_do_upgrade_migrate_uploads() {
 	einfo "Migrating uploads ..."
 	einfo "This will move your uploads from \"$LATEST_DEST\" to \"${DEST_DIR}\"."
 	einfon "(C)ontinue or (s)kip? "
-	migrate_uploads=""
-	while true
-	do
-		read -r migrate_uploads
-		if [[ $migrate_uploads =~ ^(s|S)$ ]]    ; then migrate_uploads="" && break
-		elif [[ $migrate_uploads =~ ^(c|C|)$ ]] ; then migrate_uploads=1  && break
-		else eerror "Please type either \"c\" to continue or \"n\" to skip ... " ; fi
-	done
+	local migrate_uploads=$(continue_or_skip)
 	if [[ $migrate_uploads ]] ; then
 		su -l ${GIT_USER} -s /bin/sh -c "
 			rm -rf ${DEST_DIR}/public/uploads && \
@@ -376,14 +459,7 @@ pkg_config_do_upgrade_migrate_shared_data() {
 	einfo "Migrating shared data ..."
 	einfo "This will move your shared data from \"$LATEST_DEST\" to \"${DEST_DIR}\"."
 	einfon "(C)ontinue or (s)kip? "
-	migrate_shared=""
-	while true
-	do
-		read -r migrate_shared
-		if [[ $migrate_shared =~ ^(s|S)$ ]]    ; then migrate_shared="" && break
-		elif [[ $migrate_shared =~ ^(c|C|)$ ]] ; then migrate_shared=1  && break
-		else eerror "Please type either \"c\" to continue or \"n\" to skip ... " ; fi
-	done
+	local migrate_shared=$(continue_or_skip)
 	if [[ $migrate_shared ]] ; then
 		su -l ${GIT_USER} -s /bin/sh -c "
 			rm -rf ${DEST_DIR}/shared && \
@@ -396,17 +472,16 @@ pkg_config_do_upgrade_migrate_shared_data() {
 }
 
 pkg_config_do_upgrade_migrate_configuration() {
+	local configs_to_migrate="database.yml gitlab.yml resque.yml secrets.yml\
+		smtp_settings.rb"
+	use puma    && configs_to_migrate=+" puma.rb"
+	use unicorn && configs_to_migrate=+" unicorn.rb"
+	local conf
 	einfon "Migrate configuration, (C)ontinue or (s)kip? "
-	while true
-	do
-		read -r migrate_config
-		if [[ $migrate_config =~ ^(s|S)$ ]]    ; then migrate_config="" && break
-		elif [[ $migrate_config =~ ^(c|C|)$ ]] ; then migrate_config=1  && break
-		else eerror "Please type either \"c\" to continue or \"s\" to skip ... " ; fi
-	done
+	local migrate_config=$(continue_or_skip)
 	if [[ $migrate_config ]]
 	then
-		for conf in database.yml gitlab.yml resque.yml unicorn.rb secrets.yml ; do
+		for conf in $configs_to_migrate ; do
 			einfo "Migration config file \"$conf\" ..."
 			cp -p "${LATEST_DEST}/config/${conf}" "${DEST_DIR}/config/"
 			sed -i \
@@ -429,14 +504,14 @@ pkg_config_do_upgrade_migrate_configuration() {
 		done
 		if [[ $merge_config ]] ; then
 			local errmsg="failed to automatically migrate config, run "
-			errmsg+= "\"CONFIG_PROTECT=${DEST_DIR} dispatch-conf\" by hand, re-run "
-			errmsg+= "this routine and skip config migration to proceed."
+			errmsg+="\"CONFIG_PROTECT=${DEST_DIR} dispatch-conf\" by hand, re-run "
+			errmsg+="this routine and skip config migration to proceed."
 			local mmsg="Manually run \"CONFIG_PROTECT=${DEST_DIR} dispatch-conf\" "
-			mmsg+= "and re-run this routine and skip config migration to proceed."
+			mmsg+="and re-run this routine and skip config migration to proceed."
 			CONFIG_PROTECT="${DEST_DIR}" dispatch-conf || die "${errmsg}"
 		else
 			echo "${mmsg}" 
-			return
+			return 1
 		fi
 	fi
 }
@@ -474,7 +549,7 @@ pkg_config_do_upgrade_clean_up_assets() {
 		export LANG=en_US.UTF-8; export LC_ALL=en_US.UTF-8
 		cd ${DEST_DIR}
 		${BUNDLE} exec rake gitlab:assets:clean \
-			RAILS_ENV=${RAILS_ENV} NODE_ENV=${RAILS_ENV}" \
+			RAILS_ENV=${RAILS_ENV} NODE_ENV=${NODE_ENV}" \
 			|| die "failed to run gitlab:assets:clean"
 }
 
@@ -503,19 +578,22 @@ pkg_config_do_upgrade() {
 		einfo "Found your latest Gitlab instance at \"${LATEST_DEST}\"."
 	fi
 
+	local backup_rake_cmd="rake gitlab:backup:create RAILS_ENV=${RAILS_ENV}"
 	einfo "Please make sure that you've created a backup"
 	einfo "and stopped your running Gitlab instance: "
 	elog "\$ cd \"${LATEST_DEST}\""
-	elog "\$ sudo -u ${GIT_USER} ${BUNDLE} exec rake gitlab:backup:create RAILS_ENV=${RAILS_ENV}"
+	elog "\$ sudo -u ${GIT_USER} ${BUNDLE} exec ${backup_rake_cmd}"
+	elog "\$ systemctl stop ${PN}.target"
+	elog "or"
 	elog "\$ /etc/init.d/${LATEST_DEST#*/opt/} stop"
 	elog ""
 
-	einfon "Proceeed? [Y|n] "
+	einfon "Proceed? [Y|n] "
 	read -r proceed
 	if [[ !( $proceed =~ ^(y|Y|)$ ) ]]
 	then
 		einfo "Aborting migration"
-		return
+		return 1
 	fi
 
 	if [[ ${LATEST_DEST} != ${DEST_DIR} ]] ;
@@ -527,6 +605,8 @@ pkg_config_do_upgrade() {
 		pkg_config_do_upgrade_migrate_shared_data
 
 		pkg_config_do_upgrade_migrate_configuration
+		local ret=$?
+		if [ $ret -ne 0 ]; then return $ret; fi
 
 	fi
 
@@ -576,7 +656,7 @@ pkg_config_compile_assets() {
 		yarn add ajv@^4.0.0
 		yarn install --production=false --pure-lockfile --no-progress
 		${BUNDLE} exec rake gitlab:assets:compile \
-			RAILS_ENV=${RAILS_ENV} NODE_ENV=${RAILS_ENV} \
+			RAILS_ENV=${RAILS_ENV} NODE_ENV=${NODE_ENV} \
 			NODE_OPTIONS=\"--max-old-space-size=4096\"" \
 			|| die "failed to run yarn install and gitlab:assets:compile"
 }
@@ -590,10 +670,108 @@ pkg_config_compile_po_files() {
 			|| die "failed to compile GetText PO files"
 }
 
+pkg_config_do_fhs() {
+	# do the FHS migration
+	LATEST_DEST="/opt/gitlabhq-13.6"
+
+	if [[ -z "${LATEST_DEST}" || ! -d "${LATEST_DEST}" ]] ; then
+		einfo "The automatic migration to FHS compliant installation paths"
+		einfo "is supported for slot 13.6 gitlabhq versions only. If this is"
+		einfo "not an upgrade from www-apps/gitlabhq-13.6.2-r2 to -r4 please"
+		einfo "try a manual migration. Reading the ebuild code and the news"
+		einfo "\"FHS compliant directory structure\" will tell you what to do."
+		return 1
+	else
+		einfo "Found your latest Gitlab instance at \"${LATEST_DEST}\"."
+	fi
+
+	local backup_rake_cmd="rake gitlab:backup:create RAILS_ENV=${RAILS_ENV}"
+	einfo "Please make sure that you've created a backup"
+	einfo "and stopped your running Gitlab instance: "
+	elog "\$ cd \"${LATEST_DEST}\""
+	elog "\$ sudo -u ${GIT_USER} ${BUNDLE} exec ${backup_rake_cmd}"
+	elog "\$ systemctl stop ${PN}.target"
+	elog "or"
+	elog "\$ /etc/init.d/${LATEST_DEST#*/opt/} stop"
+	elog ""
+
+	einfo "First we will move the contents of /home/git to ${GIT_HOME}"
+	einfon "(C)ontinue or (s)kip? "
+	local proceed=$(continue_or_skip)
+	if [[ $proceed ]] ; then
+		# remove .gitconfig and .ssh/ created by pkg_postinst() here and the
+		# gitlab-shell ebuild respectively because of the new empty git HOME
+		rm -rf ${GIT_HOME}/.ssh ${GIT_HOME}/.gitconfig
+		# remove the unneded gitlab -> /opt/gitlab/gitlabhq link
+		rm -f /home/git/gitlab
+		mv /home/git/.[a-zA-Z]* /home/git/* ${GIT_HOME} || \
+			die "Failed to move git HOME content"
+		rmdir /home/git || die
+	fi
+
+	einfo "Next we will fix the command path in ${GIT_HOME}/.ssh/authorized_keys"
+	einfon "(C)ontinue or (s)kip? "
+	proceed=$(continue_or_skip)
+	if [[ $proceed ]] ; then
+		sed -i -e "s|/var/lib/gitlab-shell|/opt/gitlab/gitlab-shell|" \
+			${GIT_HOME}/.ssh/authorized_keys || die "Fixing authorized_keys failed"
+	fi
+
+	einfo "Now we will move the .gitlab_shell_secret to ${DEST_DIR} and"
+	einfo "link to it in the new gitlab-shell dir. We will also create"
+	einfo "the ${BASE_DIR}/${PN} symlink to the current slot."
+	einfon "(C)ontinue or (s)kip? "
+	proceed=$(continue_or_skip)
+	if [[ $proceed ]] ; then
+		mv /opt/gitlabhq-13.6/.gitlab_shell_secret ${DEST_DIR} || \
+			die "Failed to move the .gitlab_shell_secret file"
+		ln -s ${DEST_DIR}/.gitlab_shell_secret ${GITLAB_SHELL}/.gitlab_shell_secret || \
+			die "Failed to link the .gitlab_shell_secret file"
+		ln -s ${DEST_DIR} ${BASE_DIR}/${PN}  || \
+			die "Failed to create the ${BASE_DIR}/${PN} symlink"
+	fi
+
+	einfo "Finally we migrate the data from \"$LATEST_DEST\":"
+	einfon "(C)ontinue or (s)kip? "
+	proceed=$(continue_or_skip)
+	if [[ $proceed ]] ; then
+		pkg_config_do_upgrade_migrate_uploads
+		pkg_config_do_upgrade_migrate_shared_data
+		pkg_config_do_upgrade_migrate_configuration
+	fi
+
+	einfo ""
+	einfo "You have to adopt the config of your webserver to the new paths."
+	einfo "For nginx e. g. that would at least be the new workhorse socket:"
+	einfo "    unix:${BASE_DIR}/${PN}/tmp/sockets/gitlab-workhorse.socket"
+	einfo ""
+	einfo "There will be some leftover directories that we didn't remove"
+	einfo "in case you have non-GitLab files there:"
+	einfo "    /home/git/"
+	einfo "    /var/lib/git/"
+	einfo "    /var/lib/gitlab-shell/"
+	einfo ""
+}
+
 pkg_config() {
-	# Ask user whether this is the first installation
-	einfon "Do you want to upgrade an existing installation? [Y|n] "
-	do_upgrade=""
+	einfo "Do you want to migrate to the new FHS compliant installation paths?"
+	einfon "(Enter \"n\" if this is a new installation.) [Y|n] "
+	local do_fhs="" ret=0
+	while true
+	do
+		read -r do_fhs
+		if [[ $do_fhs =~ ^(n|N|)$ ]]  ; then do_fhs="" && break
+		elif [[ $do_fhs =~ ^(y|Y)$ ]] ; then do_fhs=1  && break
+		else eerror "Please type either \"y\" or \"n\" ... " ; fi
+	done
+
+	if [[ $do_fhs ]] ; then
+		pkg_config_do_fhs
+		if [ $ret -ne 0 ]; then return; fi
+	fi
+
+	einfon "Is this an upgrade to a new slot? [Y|n] "
+	local do_upgrade=""
 	while true
 	do
 		read -r do_upgrade
@@ -603,13 +781,30 @@ pkg_config() {
 	done
 
 	if [[ $do_upgrade ]] ; then
-
-		pkg_config_do_upgrade
-
+		ewarn "WARNING: It's not recommended to run the \"emerge --config\""
+		ewarn "of this \"${CATEGORY}/${PN}\" version for a new slot upgrade!"
+		ewarn "This is untested and probably will fail."
+		einfon "Proceed anyway? [Y|n] "
+		read -r proceed
+		if [[ $proceed =~ ^(y|Y)$ ]]
+		then
+			einfo "You've been warned!"
+			sleep 5
+			pkg_config_do_upgrade
+			if [ $ret -ne 0 ]; then return; fi
+		else
+			einfo "Aborting migration"
+			return
+		fi
 	else
-
-		pkg_config_initialize
-
+		if [[ ! $do_fhs ]] ; then
+			einfon "Is this a new installation? [Y|n] "
+			read -r proceed
+			if [[ $proceed =~ ^(y|Y)$ ]]
+			then
+				pkg_config_initialize
+			fi
+		fi
 	fi
 
 	pkg_config_compile_assets
@@ -630,7 +825,7 @@ pkg_config() {
 	einfo "GitLab is prepared, now you should configure your web server."
 }
 
-pkg_postrm() {
+pkg_postrm() { # see pkg_preinst()
 	local temp="/var/tmp/${PN}-${SLOT}"
 	if [ -e "${temp}/MINOR-UPGRADE" ]; then
 		rm "${temp}/MINOR-UPGRADE"

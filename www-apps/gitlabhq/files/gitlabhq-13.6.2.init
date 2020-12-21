@@ -3,26 +3,27 @@
 name="GitLab"
 description="GitLab git repository management"
 
-: ${rails_env:=@RAILS_ENV@}
+: ${rails_env:=production}
 
-: ${gitlab_user:=@GIT_USER@}
-: ${gitlab_group:=@GIT_GROUP@}
-: ${gitlab_home:="@DEST_DIR@"}
-: ${gitlab_config:="@DEST_DIR@/config"}
-: ${gitlab_pids:="@DEST_DIR@/tmp/pids"}
-: ${gitlab_sockets:="@DEST_DIR@/tmp/sockets"}
-: ${gitlab_log:="@LOG_DIR@"}
+: ${gitlab_user:=git}
+: ${gitlab_group:=git}
+: ${gitlab_home:="/opt/gitlabhq-13.6"}
+: ${gitlab_config:="/opt/gitlabhq-13.6/config"}
+: ${gitlab_pids:="/opt/gitlabhq-13.6/tmp/pids"}
+: ${gitlab_sockets:="/opt/gitlabhq-13.6/tmp/sockets"}
+: ${gitlab_log:="/var/log/gitlabhq-13.6"}
 : ${gitlab_env:=""}
-# add settings for GITLAB_UNICORN_MEMORY_MIN and GITLAB_UNICORN_MEMORY_MAX if needed
 
-: ${gitaly_home:="@GITLAB_GITALY@"}
-: ${gitaly_config:="@GITALY_CONF@"}
+: ${gitaly_home:="/var/lib/gitlab-gitaly-13.6"}
+: ${gitaly_config:="/etc/gitlab-gitaly-13.6"}
 
-: ${webserver_pidfile:="${gitlab_pids}/@WEBSERVER@.pid"}
-: ${webserver_log:="${gitlab_log}/@WEBSERVER@.log"}
-: ${webserver_socket:="${gitlab_sockets}/gitlab.socket"}
-: ${webserver_command:="/usr/bin/bundle"}
-: ${webserver_command_args:="exec @WEBSERVER_BIN@ -@WEBSERVER_C@ ${gitlab_config}/@WEBSERVER@.rb -@WEBSERVER_E@ ${rails_env} -@WEBSERVER_D@"}
+: ${unicorn_pidfile:="${gitlab_pids}/unicorn.pid"}
+: ${unicorn_log:="${gitlab_log}/unicorn.log"}
+: ${unicorn_socket:="${gitlab_sockets}/gitlab.socket"}
+: ${unicorn_command:="/usr/bin/bundle"}
+: ${unicorn_command_args:="exec unicorn_rails -c ${gitlab_config}/unicorn.rb -E ${rails_env} -D"}
+: ${unicorn_mem_min:=""}
+: ${unicorn_mem_max:=""}
 
 : ${sidekiq_pidfile:="${gitlab_pids}/sidekiq.pid"}
 : ${sidekiq_log:="${gitlab_log}/sidekiq.log"}
@@ -34,11 +35,11 @@ description="GitLab git repository management"
 : ${workhorse_pidfile:="${gitlab_pids}/workhorse.pid"}
 : ${workhorse_log:="${gitlab_log}/workhorse.log"}
 : ${workhorse_socket:="${gitlab_sockets}/gitlab-workhorse.socket"}
-: ${workhorse_command:="@WORKHORSE_BIN@/gitlab-workhorse"}
-: ${workhorse_command_args="-listenUmask 0 -listenNetwork unix -listenAddr ${workhorse_socket} -authBackend http://127.0.0.1:8080 -documentRoot ${gitlab_home}/public -authSocket ${webserver_socket}"}
+: ${workhorse_command:="/usr/bin/gitlab-workhorse"}
+: ${workhorse_command_args="-listenUmask 0 -listenNetwork unix -listenAddr ${workhorse_socket} -authBackend http://127.0.0.1:8080 -documentRoot ${gitlab_home}/public -authSocket ${unicorn_socket}"}
 
-: ${gitaly_command:="${gitaly_home}/bin/gitaly"}
-: ${gitaly_command_args:="${gitaly_config}/config.toml"}
+: ${gitaly_command:="${gitaly_home}/bin/gitlab-gitaly"}
+: ${gitaly_command_args:="${gitaly_config}//config.toml"}
 : ${gitaly_pidfile:="${gitlab_pids}/gitaly.pid"}
 : ${gitaly_log:="${gitlab_log}/gitaly.log"}
 : ${gitaly_socket:="${gitlab_sockets}/gitaly.socket"}
@@ -56,20 +57,21 @@ depend() {
 
 start() {
 
+	checkpath -d -o "${gitlab_user}:${gitlab_group}" -m750 "$(dirname "${unicorn_pidfile}")"
 	checkpath -d -o "${gitlab_user}:${gitlab_group}" -m750 "$(dirname "${sidekiq_pidfile}")"
-	checkpath -d -o "${gitlab_user}:${gitlab_group}" -m750 "$(dirname "${webserver_pidfile}")"
-	checkpath -d -o "${gitlab_user}:${gitlab_group}" -m750 "$(dirname "${webserver_socket}")"
 
-	ebegin "Starting GitLab @SLOT@ @WEBSERVER_NAME@ servers"
+	ebegin "Starting GitLab 13.6 Unicorn servers"
 	start-stop-daemon --start \
 		$(for env in $gitlab_env ; do echo "--env $env" ; done) \
+		--env GITLAB_UNICORN_MEMORY_MIN="${unicorn_mem_min}" \
+		--env GITLAB_UNICORN_MEMORY_MAX="${unicorn_mem_max}" \
 		--chdir "${gitlab_home}" \
 		--user="${gitlab_user}:${gitlab_group}" \
-		--pidfile="${webserver_pidfile}" \
-		--exec ${webserver_command} -- ${webserver_command_args}
+		--pidfile="${unicorn_pidfile}" \
+		--exec ${unicorn_command} -- ${unicorn_command_args}
 	eend $?
 
-	ebegin "Starting GitLab @SLOT@ Sidekiq"
+	ebegin "Starting GitLab 13.6 Sidekiq"
 	start-stop-daemon --start \
 		$(for env in $gitlab_env ; do echo "--env $env" ; done) \
 		--chdir "${gitlab_home}" \
@@ -78,10 +80,9 @@ start() {
 		--exec ${sidekiq_command} -- ${sidekiq_start_command_args}
 	eend $?
 
-	ebegin "Starting GitLab @SLOT@ Workhorse"
+	ebegin "Starting GitLab 13.6 Workhorse"
 	start-stop-daemon --start \
 		$(for env in $gitlab_env ; do echo "--env $env" ; done) \
-		--env "PATH=/opt/gitlab/gitlab-workhorse/bin/:$PATH"
 		--chdir "${gitlab_home}" \
 		--user="${gitlab_user}:${gitlab_group}" \
 		--pidfile="${workhorse_pidfile}" \
@@ -90,7 +91,7 @@ start() {
 		--exec ${workhorse_command} -- ${workhorse_command_args}
 	eend $?
 
-	ebegin "Starting GitLab @SLOT@ Gitaly"
+	ebegin "Starting GitLab 13.6 Gitaly"
 	start-stop-daemon --start \
 		$(for env in $gitlab_env ; do echo "--env $env" ; done) \
 		--chdir "${gitlab_home}" \
@@ -104,21 +105,21 @@ start() {
 }
 
 stop() {
-	ebegin "Stopping GitLab @SLOT@ Gitaly"
+	ebegin "Stopping GitLab 13.6 Gitaly"
 	start-stop-daemon --stop \
 		--chdir "${gitlab_home}" \
 		--user="${gitlab_user}:${gitlab_group}" \
 		--pidfile="${gitaly_pidfile}"
    	eend $?
 
-	ebegin "Stopping GitLab @SLOT@ Workhorse"
+	ebegin "Stopping GitLab 13.6 Workhorse"
 	start-stop-daemon --stop \
 		--chdir "${gitlab_home}" \
 		--user="${gitlab_user}:${gitlab_group}" \
 		--pidfile="${workhorse_pidfile}"
 	eend $?
 
-	ebegin "Stopping GitLab @SLOT@ Sidekiq"
+	ebegin "Stopping GitLab 13.6 Sidekiq"
 	start-stop-daemon --stop \
 		--chdir "${gitlab_home}" \
 		--user="${gitlab_user}:${gitlab_group}" \
@@ -126,17 +127,17 @@ stop() {
 		--exec ${sidekiq_command} -- ${sidekiq_stop_command_args}
 	eend $?
 
-	ebegin "Stopping GitLab @SLOT@ @WEBSERVER_NAME@ servers"
+	ebegin "Stopping GitLab 13.6 Unicorn servers"
 	start-stop-daemon --stop \
 		--chdir "${gitlab_home}" \
 		--user="${gitlab_user}:${gitlab_group}" \
-		--pidfile="${webserver_pidfile}"
+		--pidfile="${unicorn_pidfile}"
 	eend $?
 }
 
 do_status()
 {
-	name="Gitlab @SLOT@ $1"
+	name="Gitlab 13.6 $1"
 	msg=$(pidfile=$2 default_status 2>&1 | awk -F': ' '{print $2}')
 	pidfile=$2 default_status &>/dev/null
 	status=$?
@@ -155,5 +156,5 @@ status()
 	do_status "Gitaly" ${gitaly_pidfile}
 	do_status "Workhorse" ${workhorse_pidfile}
 	do_status "Sidekiq" ${sidekiq_pidfile}
-	do_status "@WEBSERVER_NAME@" ${webserver_pidfile}
+	do_status "Unicorn" ${unicorn_pidfile}
 }
