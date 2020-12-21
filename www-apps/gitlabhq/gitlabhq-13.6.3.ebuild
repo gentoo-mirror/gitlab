@@ -171,11 +171,17 @@ src_install() {
 		webserver_bin="puma"
 		webserver_name="Puma"
 		webserver_unit="${PN}-${SLOT}-puma.service"
+		webserver_c="C"
+		webserver_e="e"
+		webserver_d="d"
 	elif use unicorn; then
 		webserver="unicorn"
 		webserver_bin="unicorn_rails"
 		webserver_name="Unicorn"
 		webserver_unit="${PN}-${SLOT}-unicorn.service"
+		webserver_c="c"
+		webserver_e="E"
+		webserver_d="D"
 	fi
 
 	elog "Installing systemd unit files"
@@ -186,6 +192,9 @@ src_install() {
 		-e "s#@WEBSERVER@#${webserver}#g" \
 		-e "s#@WEBSERVER_BIN@#${webserver_bin}#g" \
 		-e "s#@WEBSERVER_NAME@#${webserver_name}#g" \
+		-e "s#@WEBSERVER_C@#${webserver_c}#g" \
+		-e "s#@WEBSERVER_E@#${webserver_e}#g" \
+		-e "s#@WEBSERVER_D@#${webserver_d}#g" \
 		"${FILESDIR}/${PN}-${SLOT}"-webserver.service_model \
 		> "${T}/${webserver_unit}" || die "Failed to configure: $webserver_unit"
 	systemd_dounit "${T}/${webserver_unit}" 
@@ -225,6 +234,9 @@ src_install() {
 		-e "s#@WEBSERVER@#${webserver}#g" \
 		-e "s#@WEBSERVER_BIN@#${webserver_bin}#g" \
 		-e "s#@WEBSERVER_NAME@#${webserver_name}#g" \
+		-e "s#@WEBSERVER_C@#${webserver_c}#g" \
+		-e "s#@WEBSERVER_E@#${webserver_e}#g" \
+		-e "s#@WEBSERVER_D@#${webserver_d}#g" \
 		"${T}/${rcscript}" \
 		|| die "failed to filter ${rcscript}"
 
