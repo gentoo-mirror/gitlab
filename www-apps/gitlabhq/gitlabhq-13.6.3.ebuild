@@ -170,12 +170,12 @@ src_install() {
 		webserver="puma"
 		webserver_bin="puma"
 		webserver_name="Puma"
-		webserver_unit="${T}/${PN}-${SLOT}-puma.service"
+		webserver_unit="${PN}-${SLOT}-puma.service"
 	elif use unicorn; then
 		webserver="unicorn"
 		webserver_bin="unicorn_rails"
 		webserver_name="Unicorn"
-		webserver_unit="${T}/${PN}-${SLOT}-unicorn.service"
+		webserver_unit="${PN}-${SLOT}-unicorn.service"
 	fi
 
 	elog "Installing systemd unit files"
