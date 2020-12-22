@@ -7,7 +7,7 @@ EAPI="5"
 EGIT_REPO_URI="https://gitlab.com/gitlab-org/gitlab-shell.git"
 EGIT_COMMIT="v${PV}"
 EGIT_CHECKOUT_DIR="${WORKDIR}/all"
-USE_RUBY="ruby25 ruby26"
+USE_RUBY="ruby26 ruby27"
 
 inherit eutils ruby-ng user git-r3
 
@@ -18,6 +18,8 @@ SLOT="0"
 KEYWORDS="~amd64 ~x86 ~arm"
 RESTRICT="network-sandbox"
 DEPEND="$(ruby_implementations_depend)
+	acct-user/git[gitlab]
+	acct-group/git
 	dev-vcs/git
 	dev-ruby/bundler
 	virtual/ssh
@@ -26,21 +28,17 @@ RDEPEND="${DEPEND}"
 
 GIT_USER="git"
 GIT_GROUP="git"
-DEST_DIR="/var/lib/${PN}"
+GIT_HOME="/var/lib/gitlab"
+BASE_DIR="/opt/gitlab"
+DEST_DIR="${BASE_DIR}/${PN}"
 
 RAILS_ENV=${RAILS_ENV:-production}
-REDIS_URL="unix:/var/run/redis/redis.sock"
+REDIS_URL="unix:/run/redis/redis.sock"
 
-pkg_setup() {
-	HOME=$(if [ -n "$(getent passwd git | cut -d: -f6)" ]; then (getent passwd git | cut -d: -f6); else (echo /var/lib/git); fi)
-	REPO_DIR="${HOME}/repositories"
-	AUTH_FILE="${HOME}/.ssh/authorized_keys"
-	KEY_DIR=$(dirname "${AUTH_FILE}")
-	GITLAB_URL="/opt/gitlabhq/tmp/sockets/gitlab-workhorse.socket"
-
-	enewgroup ${GIT_GROUP}
-	enewuser ${GIT_USER} -1 -1 "${HOME}" ${GIT_GROUP}
-}
+REPO_DIR="${HOME}/repositories"
+AUTH_FILE="${GIT_HOME}/.ssh/authorized_keys"
+KEY_DIR="${GIT_HOME}/.ssh/"
+GITLAB_URL="${BASE_DIR}/gitlabhq/tmp/sockets/gitlab-workhorse.socket"
 
 all_ruby_unpack() {
 	git-r3_src_unpack
@@ -49,11 +47,12 @@ all_ruby_unpack() {
 each_ruby_prepare() {
 	einfo $(pwd)
 	cp config.yml.example config.yml
+	local gitlab_url_encoded=$(echo "${GITLAB_URL}" | sed -s 's|/|%2F|g')
 	sed -i \
 		-e "s|\(user:\).*|\1 ${GIT_USER}|" \
-		-e "s|\(repos_path:\).*|\1 \"${REPO_DIR}\"|" \
+		-e "s|\(gitlab_url:\).*|\1 \"http+unix://${gitlab_url_encoded}\"|" \
 		-e "s|\(auth_file:\).*|\1 \"${AUTH_FILE}\"|" \
-		-e "s|\(gitlab_url:\).*|\1 \"http+unix://$(echo ${GITLAB_URL} | sed -s 's#/#%2F#g')\"|" \
+		-e "s|log_level: .*|log_level: WARN|" \
 		config.yml || die "failed to filter config.yml"
 }
 
@@ -62,7 +61,8 @@ each_ruby_compile() {
 	export LANG=en_US.UTF-8
 	export LC_ALL=en_US.UTF-8
 	local RUBY=${RUBY:-ruby}
-	${RUBY} /usr/bin/bundle install --path vendor/bundle || die "failed to run bundle install"
+	${RUBY} /usr/bin/bundle install --path vendor/bundle || \
+		die "failed to run bundle install"
 	ruby_version=$(ls $PWD/vendor/bundle/ruby)
 	export PATH=$PWD/vendor/bundle/ruby/$ruby_version/bin:$PATH
 	make compile || die "failed to run make compile"
@@ -75,17 +75,14 @@ each_ruby_install() {
 	touch gitlab-shell.log
 	doins -r . || die
 
-	dosym ${DEST_DIR}/bin/gitlab-keys /usr/bin/gitlab-keys || die
-	dosym ${DEST_DIR}/bin/gitlab-shell /usr/bin/gitlab-shell || die
-	dosym ${DEST_DIR}/bin/check /usr/bin/gitlab-check || die
+	# on my last testing these were not necessary anymore
+	#dosym ${DEST_DIR}/bin/gitlab-keys /usr/bin/gitlab-keys || die
+	#dosym ${DEST_DIR}/bin/gitlab-shell /usr/bin/gitlab-shell || die
+	#dosym ${DEST_DIR}/bin/check /usr/bin/gitlab-check || die
 
 	for bin in $(ls bin) ; do
 		fperms 0755 ${DEST_DIR}/bin/${bin} || die
 	done
-
-	fperms 0755 ${DEST_DIR}/hooks/post-receive || die
-	fperms 0755 ${DEST_DIR}/hooks/pre-receive || die
-	fperms 0755 ${DEST_DIR}/hooks/update || die
 
 	fowners ${GIT_USER} ${DEST_DIR}/gitlab-shell.log
 	fowners ${GIT_USER} ${DEST_DIR} || die

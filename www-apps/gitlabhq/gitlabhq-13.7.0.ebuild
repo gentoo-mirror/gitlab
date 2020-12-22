@@ -25,7 +25,7 @@ LICENSE="MIT"
 RESTRICT="network-sandbox splitdebug strip"
 SLOT=$(get_version_component_range 1-2)
 KEYWORDS="~amd64 ~x86"
-IUSE="favicon gitaly_git kerberos mysql +postgres -puma +unicorn"
+IUSE="favicon gitaly_git kerberos mysql +postgres +puma -unicorn"
 REQUIRED_USE="
 	^^ ( puma unicorn )
 	^^ ( mysql postgres )"

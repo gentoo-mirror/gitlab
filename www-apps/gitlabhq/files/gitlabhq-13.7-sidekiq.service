@@ -6,19 +6,18 @@
 ####################################################
 
 [Unit]
-Description=GitLab Unicorn Server
-# Only start service when config/unicorn.rb exist
-ConditionFileNotEmpty=@CONF_DIR@/unicorn.rb
+Description=GitLab Sidekiq Worker
 Requires=redis.service
-# Wants symlinks to postgresql-9.5.service or mysqld.service should to be added to
+# Wants symlinks to postgresql-12.service or mysqld.service should to be added to
 #   /etc/systemd/systemd/gitlabhq.target.wants
-After=redis.service postgresql-9.5.service mysqld.service
+After=redis.service postgresql-12.service mysqld.service
 PartOf=gitlabhq-@SLOT@.target
+ConditionPathExists=@TMP_DIR@
 
 [Service]
 User=git
 WorkingDirectory=@DEST_DIR@
+Environment=sidekiq_args="-C config/sidekiq_queues.yml -c 5"
 Environment=RAILS_ENV=production
-SyslogIdentifier=gitlab-unicorn
-PIDFile=@TMP_DIR@/pids/unicorn.pid
-ExecStart=@DEST_DIR@/bin/bundle exec "unicorn_rails -D -c @CONF_DIR@/unicorn.rb -E ${RAILS_ENV}"
+SyslogIdentifier=gitlab-sidekiq
+ExecStart=@DEST_DIR@/bin/bundle exec "sidekiq $sidekiq_args -e ${RAILS_ENV}"
