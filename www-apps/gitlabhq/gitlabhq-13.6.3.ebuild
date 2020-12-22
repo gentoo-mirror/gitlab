@@ -441,7 +441,8 @@ pkg_postinst() {
 
 pkg_config_do_upgrade_migrate_uploads() {
 	einfo "Migrating uploads ..."
-	einfo "This will move your uploads from \"$LATEST_DEST\" to \"${DEST_DIR}\"."
+	einfo "This will move your uploads from"
+	einfo "\"$LATEST_DEST\" to \"${DEST_DIR}\"."
 	einfon "(C)ontinue or (s)kip? "
 	local migrate_uploads=$(continue_or_skip)
 	if [[ $migrate_uploads ]] ; then
@@ -457,7 +458,8 @@ pkg_config_do_upgrade_migrate_uploads() {
 
 pkg_config_do_upgrade_migrate_shared_data() {
 	einfo "Migrating shared data ..."
-	einfo "This will move your shared data from \"$LATEST_DEST\" to \"${DEST_DIR}\"."
+	einfo "This will move your shared data from"
+	einfo "\"$LATEST_DEST\" to \"${DEST_DIR}\"."
 	einfon "(C)ontinue or (s)kip? "
 	local migrate_shared=$(continue_or_skip)
 	if [[ $migrate_shared ]] ; then
@@ -474,14 +476,15 @@ pkg_config_do_upgrade_migrate_shared_data() {
 pkg_config_do_upgrade_migrate_configuration() {
 	local configs_to_migrate="database.yml gitlab.yml resque.yml secrets.yml"
 	local initializers_to_migrate="smtp_settings.rb"
-	use puma    && configs_to_migrate=+" puma.rb"
-	use unicorn && configs_to_migrate=+" unicorn.rb"
+	use puma    && configs_to_migrate+=" puma.rb"
+	use unicorn && configs_to_migrate+=" unicorn.rb"
 	local conf example
 	einfon "Migrate configuration, (C)ontinue or (s)kip? "
 	local migrate_config=$(continue_or_skip)
 	if [[ $migrate_config ]]
 	then
 		for conf in $configs_to_migrate ; do
+			test -f "${LATEST_DEST}/config/${conf}" || break
 			einfo "Migration config file \"$conf\" ..."
 			cp -p "${LATEST_DEST}/config/${conf}" "${DEST_DIR}/config/"
 			sed -i \
@@ -493,6 +496,7 @@ pkg_config_do_upgrade_migrate_configuration() {
 				cp -p "${example}" "${DEST_DIR}/config/._cfg0000_${conf}"
 		done
 		for conf in $initializers_to_migrate ; do
+			test -f "${LATEST_DEST}/config/initializers/${conf}" || break
 			einfo "Migration config file \"initializers/$conf\" ..."
 			cp -p "${LATEST_DEST}/config/initializers/${conf}" \
 				"${DEST_DIR}/config/initializers/"
@@ -575,8 +579,8 @@ pkg_config_do_upgrade_configure_git() {
 pkg_config_do_upgrade() {
 	# do the upgrade
 	LATEST_DEST=$(test -n "${LATEST_DEST}" && echo ${LATEST_DEST} || \
-		find /opt -maxdepth 1 -iname "${PN}"'-*' -and -type d | \
-		sort -rV | head -n1)
+		find /opt/gitlab -maxdepth 1 -iname "${PN}"'-*' -and -type d \
+			-and -not -iname "${PN}-${SLOT}" |  sort -rV | head -n1)
 
 	if [[ -z "${LATEST_DEST}" || ! -d "${LATEST_DEST}" ]] ; then
 		einfon "Please enter the path to your latest Gitlab instance:"
