@@ -98,6 +98,9 @@ The Migration
        /home/git/
        /var/lib/git/
        /var/lib/gitlab-shell/
+   We also did not remove the old
+       /opt/gitlabhq -> gitlabhq-13.6/
+       /opt/gitlabhq-13.6/
 
 6. Check the eselect symlinks
 

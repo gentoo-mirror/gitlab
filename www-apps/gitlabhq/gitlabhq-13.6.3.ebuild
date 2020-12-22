@@ -762,6 +762,9 @@ pkg_config_do_fhs() {
 	einfo "    /home/git/"
 	einfo "    /var/lib/git/"
 	einfo "    /var/lib/gitlab-shell/"
+	einfo "We also did not remove the old"
+	einfo "    /opt/gitlabhq -> gitlabhq-13.6/"
+	einfo "    /opt/gitlabhq-13.6/"
 	einfo ""
 }
 
