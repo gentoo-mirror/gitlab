@@ -7,9 +7,9 @@
 
 [Unit]
 Description=Gitlab Workhorse handles slow HTTP requests for Gitlab.
-Requires=gitlabhq-@SLOT@-unicorn.service
-Wants=gitlabhq-@SLOT@-unicorn.service
-After=gitlabhq-@SLOT@-unicorn.service
+Requires=gitlabhq-@SLOT@-@WEBSERVER@.service
+Wants=gitlabhq-@SLOT@-@WEBSERVER@.service
+After=gitlabhq-@SLOT@-@WEBSERVER@.service
 PartOf=gitlabhq-@SLOT@.target
 
 [Service]
@@ -17,4 +17,4 @@ PartOf=gitlabhq-@SLOT@.target
 User=git
 WorkingDirectory=@DEST_DIR@
 SyslogIdentifier=gitlab-workhorse
-ExecStart=/usr/bin/gitlab-workhorse -listenUmask 0 -listenNetwork unix -listenAddr @TMP_DIR@/sockets/gitlab-workhorse.socket -authBackend http://127.0.0.1:8080 -authSocket @TMP_DIR@/sockets/gitlab.socket -secretPath @DEST_DIR@/.gitlab_workhorse_secret -documentRoot @DEST_DIR@/public >> @LOG_DIR@/gitlab-workhorse.log 2>&1
+ExecStart=/bin/bash -c 'PATH=@WORKHORSE_BIN@/:$PATH exec gitlab-workhorse -listenUmask 0 -listenNetwork unix -listenAddr @TMP_DIR@/sockets/gitlab-workhorse.socket -authBackend http://127.0.0.1:8080 -authSocket @TMP_DIR@/sockets/gitlab.socket -secretPath @DEST_DIR@/.gitlab_workhorse_secret -documentRoot @DEST_DIR@/public'
