@@ -25,7 +25,7 @@ LICENSE="MIT"
 RESTRICT="network-sandbox splitdebug strip"
 SLOT=$(get_version_component_range 1-2)
 KEYWORDS="~amd64 ~x86"
-IUSE="favicon gitaly_git kerberos mysql +postgres +puma -unicorn"
+IUSE="favicon gitaly_git kerberos mysql +postgres -puma +unicorn"
 REQUIRED_USE="
 	^^ ( puma unicorn )
 	^^ ( mysql postgres )"
@@ -580,7 +580,7 @@ pkg_config_do_upgrade() {
 	# do the upgrade
 	LATEST_DEST=$(test -n "${LATEST_DEST}" && echo ${LATEST_DEST} || \
 		find /opt/gitlab -maxdepth 1 -iname "${PN}"'-*' -and -type d \
-			-and -not -iname "${PN}-${SLOT}" | sort -rV | head -n1)
+			-and -not -iname "${PN}-${SLOT}" |  sort -rV | head -n1)
 
 	if [[ -z "${LATEST_DEST}" || ! -d "${LATEST_DEST}" ]] ; then
 		einfon "Please enter the path to your latest Gitlab instance:"
@@ -615,6 +615,20 @@ pkg_config_do_upgrade() {
 	if [[ ${LATEST_DEST} != ${DEST_DIR} ]] ;
 	then
 		einfo "Found major update, migrate data from \"$LATEST_DEST\":"
+
+		ewarn "WARNING: It's not recommended to run the \"emerge --config\""
+		ewarn "of this \"${CATEGORY}/${PN}\" version for a new slot upgrade!"
+		ewarn "This is untested and probably will fail."
+		einfon "Proceed anyway? [Y|n] "
+		read -r proceed
+		if [[ $proceed =~ ^(y|Y)$ ]]
+		then
+			einfo "You've been warned!"
+			sleep 5
+		else
+			einfo "Aborting migration"
+			return
+		fi
 
 		pkg_config_do_upgrade_migrate_uploads
 
@@ -686,18 +700,110 @@ pkg_config_compile_po_files() {
 			|| die "failed to compile GetText PO files"
 }
 
-pkg_config() {
-	local proceed ret=0
-	einfon "Is this an upgrade from a >=13.6.2-r4 version? [Y|n] "
-	read -r proceed
-	if [[ $proceed =~ ^(n|N)$ ]]
-	then
-		ewarn "WARNING: You can't upgrade from a version <13.6.2-r4 here!"
-		einfo "Aborting migration"
-		return
+pkg_config_do_fhs() {
+	# do the FHS migration
+	LATEST_DEST="/opt/gitlabhq-13.6"
+
+	if [[ -z "${LATEST_DEST}" || ! -d "${LATEST_DEST}" ]] ; then
+		einfo "The automatic migration to FHS compliant installation paths"
+		einfo "is supported for slot 13.6 gitlabhq versions only. If this is"
+		einfo "not an upgrade from www-apps/gitlabhq-13.6.2-r2 please"
+		einfo "try a manual migration. Reading the ebuild code and the news"
+		einfo "\"FHS compliant directory structure\" will tell you what to do."
+		return 1
+	else
+		einfo "Found your latest Gitlab instance at \"${LATEST_DEST}\"."
 	fi
 
-	einfon "Is this an upgrade to a new slot? [Y|n] "
+	local backup_rake_cmd="rake gitlab:backup:create RAILS_ENV=${RAILS_ENV}"
+	einfo "Please make sure that you've created a backup"
+	einfo "and stopped your running Gitlab instance: "
+	elog "\$ cd \"${LATEST_DEST}\""
+	elog "\$ sudo -u ${GIT_USER} ${BUNDLE} exec ${backup_rake_cmd}"
+	elog "\$ systemctl stop ${PN}.target"
+	elog "or"
+	elog "\$ /etc/init.d/${LATEST_DEST#*/opt/} stop"
+	elog ""
+
+	einfo "First we will move the contents of /home/git to ${GIT_HOME}"
+	einfon "(C)ontinue or (s)kip? "
+	local proceed=$(continue_or_skip)
+	if [[ $proceed ]] ; then
+		# remove .gitconfig and .ssh/ created by pkg_postinst() here and the
+		# gitlab-shell ebuild respectively because of the new empty git HOME
+		rm -rf ${GIT_HOME}/.ssh ${GIT_HOME}/.gitconfig
+		# remove the unneded gitlab -> /opt/gitlab/gitlabhq link
+		rm -f /home/git/gitlab
+		mv /home/git/.[a-zA-Z]* /home/git/* ${GIT_HOME} || \
+			die "Failed to move git HOME content"
+		rmdir /home/git || die
+	fi
+
+	einfo "Next we will fix the command path in ${GIT_HOME}/.ssh/authorized_keys"
+	einfon "(C)ontinue or (s)kip? "
+	proceed=$(continue_or_skip)
+	if [[ $proceed ]] ; then
+		sed -i -e "s|/var/lib/gitlab-shell|/opt/gitlab/gitlab-shell|" \
+			${GIT_HOME}/.ssh/authorized_keys || die "Fixing authorized_keys failed"
+	fi
+
+	einfo "Now we will move the .gitlab_shell_secret to ${DEST_DIR} and"
+	einfo "link to it in the new gitlab-shell dir. We will also create"
+	einfo "the ${BASE_DIR}/${PN} symlink to the current slot."
+	einfon "(C)ontinue or (s)kip? "
+	proceed=$(continue_or_skip)
+	if [[ $proceed ]] ; then
+		mv /opt/gitlabhq-13.6/.gitlab_shell_secret ${DEST_DIR} || \
+			die "Failed to move the .gitlab_shell_secret file"
+		ln -s ${DEST_DIR}/.gitlab_shell_secret ${GITLAB_SHELL}/.gitlab_shell_secret || \
+			die "Failed to link the .gitlab_shell_secret file"
+		ln -s ${DEST_DIR} ${BASE_DIR}/${PN}  || \
+			die "Failed to create the ${BASE_DIR}/${PN} symlink"
+	fi
+
+	einfo "Finally we migrate the data from \"$LATEST_DEST\":"
+	einfon "(C)ontinue or (s)kip? "
+	proceed=$(continue_or_skip)
+	if [[ $proceed ]] ; then
+		pkg_config_do_upgrade_migrate_uploads
+		pkg_config_do_upgrade_migrate_shared_data
+		pkg_config_do_upgrade_migrate_configuration
+	fi
+
+	einfo ""
+	einfo "You have to adopt the config of your webserver to the new paths."
+	einfo "For nginx e. g. that would at least be the new workhorse socket:"
+	einfo "    unix:${BASE_DIR}/${PN}/tmp/sockets/gitlab-workhorse.socket"
+	einfo ""
+	einfo "There will be some leftover directories that we didn't remove"
+	einfo "in case you have non-GitLab files there:"
+	einfo "    /home/git/"
+	einfo "    /var/lib/git/"
+	einfo "    /var/lib/gitlab-shell/"
+	einfo "We also did not remove the old"
+	einfo "    /opt/gitlabhq -> gitlabhq-13.6/"
+	einfo "    /opt/gitlabhq-13.6/"
+	einfo ""
+}
+
+pkg_config() {
+	einfo "Do you want to migrate to the new FHS compliant installation paths?"
+	einfon "(Enter \"n\" if this is a new installation.) [Y|n] "
+	local do_fhs="" ret=0
+	while true
+	do
+		read -r do_fhs
+		if [[ $do_fhs =~ ^(n|N|)$ ]]  ; then do_fhs="" && break
+		elif [[ $do_fhs =~ ^(y|Y)$ ]] ; then do_fhs=1  && break
+		else eerror "Please type either \"y\" or \"n\" ... " ; fi
+	done
+
+	if [[ $do_fhs ]] ; then
+		pkg_config_do_fhs
+		if [ $ret -ne 0 ]; then return; fi
+	fi
+
+	einfon "Is this an upgrade of an existing installation? [Y|n] "
 	local do_upgrade=""
 	while true
 	do
@@ -710,11 +816,13 @@ pkg_config() {
 	if [[ $do_upgrade ]] ; then
 		pkg_config_do_upgrade
 	else
-		einfon "Is this a new installation? [Y|n] "
-		read -r proceed
-		if [[ $proceed =~ ^(y|Y)$ ]]
-		then
-			pkg_config_initialize
+		if [[ ! $do_fhs ]] ; then
+			einfon "Is this a new installation? [Y|n] "
+			read -r proceed
+			if [[ $proceed =~ ^(y|Y)$ ]]
+			then
+				pkg_config_initialize
+			fi
 		fi
 	fi
 
