@@ -81,7 +81,7 @@ start() {
 	ebegin "Starting GitLab @SLOT@ Workhorse"
 	start-stop-daemon --start \
 		$(for env in $gitlab_env ; do echo "--env $env" ; done) \
-		--env "PATH=/opt/gitlab/gitlab-workhorse/bin/:$PATH"
+		--env "PATH=/opt/gitlab/gitlab-workhorse/bin/:$PATH" \
 		--chdir "${gitlab_home}" \
 		--user="${gitlab_user}:${gitlab_group}" \
 		--pidfile="${workhorse_pidfile}" \
