@@ -227,7 +227,7 @@ src_install() {
 		-e "s|@GIT_GROUP@|${GIT_GROUP}|g" \
 		-e "s|@SLOT@|${SLOT}|g" \
 		-e "s|@DEST_DIR@|${DEST_DIR}|g" \
-		-e "s|@LOG_DIR@|${logs}|g" \
+		-e "s|@LOG_DIR@|${DEST_DIR}/log|g" \
 		-e "s|@GITLAB_GITALY@|${GITLAB_GITALY}|g" \
 		-e "s|@GITALY_CONF@|${GITALY_CONF}|g" \
 		-e "s|@WORKHORSE_BIN@|${WORKHORSE_BIN}|g" \
