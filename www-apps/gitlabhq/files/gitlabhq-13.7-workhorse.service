@@ -1,10 +1,3 @@
-#####################################################
-#
-# Contributors      : bjorn-oivind
-# Downloaded from   : https://gitlab.com/gitlab-org/gitlab-recipes/tree/master/init/systemd
-#
-####################################################
-
 [Unit]
 Description=Gitlab Workhorse handles slow HTTP requests for Gitlab.
 Requires=gitlabhq-@SLOT@-@WEBSERVER@.service
@@ -13,7 +6,7 @@ After=gitlabhq-@SLOT@-@WEBSERVER@.service
 PartOf=gitlabhq-@SLOT@.target
 
 [Service]
-# instead of using daemon_with_pidfile script let systemd do the work
+Type=exec
 User=git
 WorkingDirectory=@DEST_DIR@
 SyslogIdentifier=gitlab-workhorse
