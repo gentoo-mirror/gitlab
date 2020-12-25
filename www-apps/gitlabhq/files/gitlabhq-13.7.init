@@ -58,7 +58,7 @@ start() {
 
 	checkpath -d -o "${gitlab_user}:${gitlab_group}" -m750 "$(dirname "${sidekiq_pidfile}")"
 	checkpath -d -o "${gitlab_user}:${gitlab_group}" -m750 "$(dirname "${webserver_pidfile}")"
-	checkpath -d -o "${gitlab_user}:${gitlab_group}" -m750 "$(dirname "${webserver_socket}")"
+	checkpath -d -o "${gitlab_user}:${gitlab_group}" -m755 "$(dirname "${webserver_socket}")"
 
 	ebegin "Starting GitLab @SLOT@ @WEBSERVER_NAME@ servers"
 	start-stop-daemon --start \
