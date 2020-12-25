@@ -1,0 +1,16 @@
+Title: Sidekiq Cluster
+Author: Horst Prote <prote@fmi.uni-stuttgart.de>
+Posted: 2020-12-25
+Revision: 1
+News-Item-Format: 2.0
+Display-If-Installed: www-apps/gitlabhq
+
+As of GitLab 12.10, for source installations Sidekiq Cluster should be
+used (see /opt/gitlab/gitlabhq-<SLOT>/doc/install/installation.md).
+
+With version 13.7.1 this overlay finally follows here.
+
+But note that the "bundle exec rake gitlab:check" function has a bug
+(https://gitlab.com/gitlab-org/gitlab/-/issues/295665) and finds fault
+with more than one sidekiq process running. But with sidekiq cluster
+this is normal and correct.
