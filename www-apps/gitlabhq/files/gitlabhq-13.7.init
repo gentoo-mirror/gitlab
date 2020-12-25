@@ -26,9 +26,9 @@ description="GitLab git repository management"
 
 : ${sidekiq_pidfile:="${gitlab_pids}/sidekiq.pid"}
 : ${sidekiq_log:="${gitlab_log}/sidekiq.log"}
-: ${sidekiq_config:="${gitlab_config}/sidekiq_queues.yml"}
-: ${sidekiq_command:="/usr/bin/bundle"}
-: ${sidekiq_start_command_args:="exec sidekiq -C ${sidekiq_config} -e ${rails_env} -d -P ${sidekiq_pidfile} -L ${sidekiq_log} $@ >> ${sidekiq_log} 2>&1"}
+: ${sidekiq_processes:="\"* * * * *\""}
+: ${sidekiq_command:="@DEST_DIR@/bin/sidekiq-cluster"}
+: ${sidekiq_start_command_args:="${sidekiq_processes} -e ${rails_env} -P ${sidekiq_pidfile} >> ${sidekiq_log} 2>&1"}
 : ${sidekiq_stop_command_args:="exec sidekiqctl stop ${sidekiq_pidfile} >> ${sidekiq_log}"}
 
 : ${workhorse_pidfile:="${gitlab_pids}/workhorse.pid"}
