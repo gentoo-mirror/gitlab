@@ -577,9 +577,21 @@ pkg_config_do_upgrade_configure_git() {
 
 pkg_config_do_upgrade() {
 	# do the upgrade
+	einfon "Is this an upgrade to a new slot? [Y|n] "
+	local and_not_new_slot new_slot=""
+	while true
+	do
+		read -r new_slot
+		if [[ $new_slot =~ ^(n|N|)$ ]]  ; then new_slot="" && break
+		elif [[ $new_slot =~ ^(y|Y)$ ]] ; then new_slot=1  && break
+		else eerror "Please type either \"y\" or \"n\" ... " ; fi
+	done
+	if [[ $new_slot ]]; then and_not_new_slot="-and -not -iname ${PN}-${SLOT}"
+	else and_not_new_slot=""; fi
+
 	LATEST_DEST=$(test -n "${LATEST_DEST}" && echo ${LATEST_DEST} || \
 		find /opt/gitlab -maxdepth 1 -iname "${PN}"'-*' -and -type d \
-			-and -not -iname "${PN}-${SLOT}" | sort -rV | head -n1)
+			${and_not_new_slot} | sort -rV | head -n1)
 
 	if [[ -z "${LATEST_DEST}" || ! -d "${LATEST_DEST}" ]] ; then
 		einfon "Please enter the path to your latest Gitlab instance:"
@@ -708,6 +720,8 @@ pkg_config() {
 
 	if [[ $do_upgrade ]] ; then
 		pkg_config_do_upgrade
+		local ret=$?
+		if [ $ret -ne 0 ]; then return $ret; fi
 	else
 		einfon "Is this a new installation? [Y|n] "
 		read -r proceed
