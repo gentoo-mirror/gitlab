@@ -7,5 +7,6 @@ acct-user/git:gitolite - Set home directory for git hosting via dev-vcs/gitolite
 dev-vcs/gitlab-gitaly:gitaly_git - Use the Git version provided by Gitaly.
 www-apps/gitlabhq:favicon - For the Custom Favicon to work, GraphicsMagick needs to be installed
 www-apps/gitlabhq:gitaly_git - Use the Git version provided by Gitaly
+www-apps/gitlabhq:mail_room - Enables support for GitLab MailRoom
 www-apps/gitlabhq:puma - Enables support for the puma HTTP server
 www-apps/gitlabhq:unicorn - Enables support for the unicorn HTTP
