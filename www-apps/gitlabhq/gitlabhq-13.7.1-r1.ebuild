@@ -199,7 +199,7 @@ all_ruby_install() {
 		systemd_dounit "${T}/${webserver_unit}"
 
 		local service services="gitaly sidekiq workhorse"
-		[[ use mail_room ]] && services+=" mailroom"
+		use mail_room && services+=" mailroom"
 		for service in ${services}; do
 			unit="${PN}-${SLOT}-${service}.service"
 			sed -e "s#@BASE_DIR@#${BASE_DIR}#g" \
@@ -216,7 +216,7 @@ all_ruby_install() {
 		done
 
 		local optional_wants=""
-		[[ use mail_room ]] && optional_wants+="Wants=gitlabhq-${SLOT}-mailroom.service"
+		use mail_room && optional_wants+="Wants=gitlabhq-${SLOT}-mailroom.service"
 		sed -e "s#@SLOT@#${SLOT}#g" \
 			-e "s#@WEBSERVER@#${webserver}#g" \
 			-e "s#@OPTIONAL_WANTS@#${optional_wants}#" \
@@ -228,7 +228,7 @@ all_ruby_install() {
 	else
 		## RC script ##
 		local mailroom_enabled=false rcscript=${PN}-${SLOT}.init
-		[[ use mail_room ]] && mailroom_enabled=true
+		use mail_room && mailroom_enabled=true
 
 		cp "${FILESDIR}/${rcscript}" "${T}" || die
 		sed -i \
