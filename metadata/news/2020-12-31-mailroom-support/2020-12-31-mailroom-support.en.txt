@@ -1,0 +1,12 @@
+Title: MailRoom Support
+Author: Horst Prote <prote@fmi.uni-stuttgart.de>
+Posted: 2020-12-31
+Revision: 1
+News-Item-Format: 2.0
+Display-If-Installed: www-apps/gitlabhq
+
+With version 13.7.1-r1 a mail_root USE flag (off by default) was added.
+
+When enabled, the mailroom.service is added as "Wants" to the gitlabhq
+systemd target and the mailroon_enabled variable is set to true in the
+init.d file respectively.
