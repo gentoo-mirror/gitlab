@@ -196,7 +196,7 @@ all_ruby_install() {
 			-e "s#@WEBSERVER_D@#${webserver_d}#g" \
 			"${FILESDIR}/${PN}-${SLOT}"-webserver.service_model \
 			> "${T}/${webserver_unit}" || die "Failed to configure: $webserver_unit"
-		systemd_dounit "${T}/${webserver_unit}" 
+		systemd_dounit "${T}/${webserver_unit}"
 
 		local service services="gitaly sidekiq workhorse"
 		[[ use mail_room ]] && services+=" mailroom"
@@ -212,7 +212,7 @@ all_ruby_install() {
 				-e "s#@WEBSERVER_BIN@#${webserver_bin}#g" \
 				-e "s#@WEBSERVER_NAME@#${webserver_name}#g" \
 				"${FILESDIR}/${unit}" > "${T}/${unit}" || die "Failed to configure: $unit"
-			systemd_dounit "${T}/${unit}" 
+			systemd_dounit "${T}/${unit}"
 		done
 
 		local optional_wants=""
@@ -535,7 +535,7 @@ pkg_config_do_upgrade_migrate_configuration() {
 			mmsg+="and re-run this routine and skip config migration to proceed."
 			CONFIG_PROTECT="${DEST_DIR}" dispatch-conf || die "${errmsg}"
 		else
-			echo "${mmsg}" 
+			echo "${mmsg}"
 			return 1
 		fi
 	fi
