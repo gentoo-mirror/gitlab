@@ -25,7 +25,7 @@ LICENSE="MIT"
 RESTRICT="network-sandbox splitdebug strip"
 SLOT=$(get_version_component_range 1-2)
 KEYWORDS="~amd64 ~x86"
-IUSE="favicon gitaly_git kerberos mysql +postgres +puma -unicorn systemd"
+IUSE="favicon gitaly_git kerberos -mail_room mysql +postgres +puma -unicorn systemd"
 REQUIRED_USE="
 	^^ ( puma unicorn )
 	^^ ( mysql postgres )"
@@ -162,7 +162,7 @@ continue_or_skip() {
 }
 
 all_ruby_install() {
-	local file unit webserver webserver_bin webserver_name
+	local unit webserver webserver_bin webserver_name
 	if use puma; then
 		webserver="puma"
 		webserver_bin="puma"
@@ -196,11 +196,12 @@ all_ruby_install() {
 			-e "s#@WEBSERVER_D@#${webserver_d}#g" \
 			"${FILESDIR}/${PN}-${SLOT}"-webserver.service_model \
 			> "${T}/${webserver_unit}" || die "Failed to configure: $webserver_unit"
+		systemd_dounit "${T}/${webserver_unit}"
 
-		systemd_dounit "${T}/${webserver_unit}" 
-
-		for file in "${FILESDIR}/${PN}-${SLOT}"*.{service,target}; do
-			unit=$(basename $file)
+		local service services="gitaly sidekiq workhorse"
+		[[ use mail_room ]] && services+=" mailroom"
+		for service in ${services}; do
+			unit="${PN}-${SLOT}-${service}.service"
 			sed -e "s#@BASE_DIR@#${BASE_DIR}#g" \
 			    -e "s#@DEST_DIR@#${DEST_DIR}#g" \
 			    -e "s#@CONF_DIR@#${DEST_DIR}/config#g" \
@@ -210,15 +211,24 @@ all_ruby_install() {
 				-e "s#@WEBSERVER@#${webserver}#g" \
 				-e "s#@WEBSERVER_BIN@#${webserver_bin}#g" \
 				-e "s#@WEBSERVER_NAME@#${webserver_name}#g" \
-				"${file}" > "${T}/${unit}" || die "Failed to configure: $unit"
-			systemd_dounit "${T}/${unit}" 
+				"${FILESDIR}/${unit}" > "${T}/${unit}" || die "Failed to configure: $unit"
+			systemd_dounit "${T}/${unit}"
 		done
 
-		systemd_dotmpfilesd "${FILESDIR}/${PN}-${SLOT}-tmpfiles.conf"
+		local optional_wants=""
+		[[ use mail_room ]] && optional_wants+="Wants=gitlabhq-${SLOT}-mailroom.service"
+		sed -e "s#@SLOT@#${SLOT}#g" \
+			-e "s#@WEBSERVER@#${webserver}#g" \
+			-e "s#@OPTIONAL_WANTS@#${optional_wants}#" \
+			"${FILESDIR}/${PN}-${SLOT}.target" > "${T}/${PN}-${SLOT}.target" \
+			|| die "Failed to configure: ${PN}-${SLOT}.target"
+		systemd_dounit "${T}/${PN}-${SLOT}.target"
 
+		systemd_dotmpfilesd "${FILESDIR}/${PN}-${SLOT}-tmpfiles.conf"
 	else
 		## RC script ##
-		local rcscript=${PN}-${SLOT}.init
+		local mailroom_enabled=false rcscript=${PN}-${SLOT}.init
+		[[ use mail_room ]] && mailroom_enabled=true
 
 		cp "${FILESDIR}/${rcscript}" "${T}" || die
 		sed -i \
@@ -231,6 +241,7 @@ all_ruby_install() {
 			-e "s|@GITLAB_GITALY@|${GITLAB_GITALY}|g" \
 			-e "s|@GITALY_CONF@|${GITALY_CONF}|g" \
 			-e "s|@WORKHORSE_BIN@|${WORKHORSE_BIN}|g" \
+			-e "s#@MAILROOM_ENABLED@#${mailroom_enabled}#g" \
 			-e "s#@WEBSERVER@#${webserver}#g" \
 			-e "s#@WEBSERVER_BIN@#${webserver_bin}#g" \
 			-e "s#@WEBSERVER_NAME@#${webserver_name}#g" \
@@ -239,7 +250,6 @@ all_ruby_install() {
 			-e "s#@WEBSERVER_D@#${webserver_d}#g" \
 			"${T}/${rcscript}" \
 			|| die "failed to filter ${rcscript}"
-
 		newinitd "${T}/${rcscript}" "${PN}-${SLOT}"
 	fi
 }
@@ -525,7 +535,7 @@ pkg_config_do_upgrade_migrate_configuration() {
 			mmsg+="and re-run this routine and skip config migration to proceed."
 			CONFIG_PROTECT="${DEST_DIR}" dispatch-conf || die "${errmsg}"
 		else
-			echo "${mmsg}" 
+			echo "${mmsg}"
 			return 1
 		fi
 	fi

@@ -31,6 +31,13 @@ description="GitLab git repository management"
 : ${sidekiq_start_command_args:="${sidekiq_processes} -e ${rails_env} -P ${sidekiq_pidfile} >> ${sidekiq_log} 2>&1"}
 : ${sidekiq_stop_command_args:="exec sidekiqctl stop ${sidekiq_pidfile} >> ${sidekiq_log}"}
 
+: ${mailroon_enabled:=@MAILROOM_ENABLED@}
+: ${mailroom_pidfile:="${gitlab_pids}/mailroom.pid"}
+: ${mailroom_log:="${gitlab_log}/mailroom.log"}
+: ${mailroom_config:="${gitlab_config}/mail_room.yml"}
+: ${mailroom_command:="/usr/bin/bundle"}
+: ${mailroom_start_command_args:="mail_room -q -c ${mailroom_config} >> ${mailroom_log} 2>&1"}
+
 : ${workhorse_pidfile:="${gitlab_pids}/workhorse.pid"}
 : ${workhorse_log:="${gitlab_log}/workhorse.log"}
 : ${workhorse_socket:="${gitlab_sockets}/gitlab-workhorse.socket"}
@@ -60,7 +67,7 @@ start() {
 	checkpath -d -o "${gitlab_user}:${gitlab_group}" -m750 "$(dirname "${webserver_pidfile}")"
 	checkpath -d -o "${gitlab_user}:${gitlab_group}" -m755 "$(dirname "${webserver_socket}")"
 
-	ebegin "Starting GitLab @SLOT@ @WEBSERVER_NAME@ servers"
+	ebegin "Starting GitLab @SLOT@ web server @WEBSERVER_NAME@"
 	start-stop-daemon --start \
 		$(for env in $gitlab_env ; do echo "--env $env" ; done) \
 		--chdir "${gitlab_home}" \
@@ -90,6 +97,17 @@ start() {
 		--exec ${workhorse_command} -- ${workhorse_command_args}
 	eend $?
 
+	if [ "$mail_room_enabled" = true ]; then
+	ebegin "Starting GitLab @SLOT@ MailRoom"
+	start-stop-daemon --start \
+		$(for env in $gitlab_env ; do echo "--env $env" ; done) \
+		--chdir "${gitlab_home}" \
+		--user="${gitlab_user}:${gitlab_group}" \
+		--pidfile="${mailroom_pidfile}" \
+		--exec ${mailroom_command} -- ${mailroom_start_command_args}
+	eend $?
+	fi
+
 	ebegin "Starting GitLab @SLOT@ Gitaly"
 	start-stop-daemon --start \
 		$(for env in $gitlab_env ; do echo "--env $env" ; done) \
@@ -110,6 +128,15 @@ stop() {
 		--user="${gitlab_user}:${gitlab_group}" \
 		--pidfile="${gitaly_pidfile}"
    	eend $?
+
+	if [ "$mail_room_enabled" = true ]; then
+	ebegin "Stopping GitLab @SLOT@ MailRoom"
+	start-stop-daemon --stop \
+		--chdir "${gitlab_home}" \
+		--user="${gitlab_user}:${gitlab_group}" \
+		--pidfile="${mailroom_pidfile}" \
+	eend $?
+	fi
 
 	ebegin "Stopping GitLab @SLOT@ Workhorse"
 	start-stop-daemon --stop \
