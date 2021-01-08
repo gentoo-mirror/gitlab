@@ -1,0 +1,15 @@
+[Unit]
+Description=GitLab Sidekiq Worker
+Requires=redis.service
+After=redis.service postgresql-12.service mysqld.service
+PartOf=gitlabhq-@SLOT@.target
+ConditionPathExists=@TMP_DIR@
+
+[Service]
+Type=exec
+User=git
+WorkingDirectory=@DEST_DIR@
+Environment=processes_args="* * * * *"
+Environment=RAILS_ENV=production
+SyslogIdentifier=gitlab-sidekiq
+ExecStart=@DEST_DIR@/bin/sidekiq-cluster "$processes_args" -e ${RAILS_ENV}

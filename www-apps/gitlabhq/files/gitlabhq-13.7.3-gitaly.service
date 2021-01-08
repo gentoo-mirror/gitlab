@@ -1,0 +1,14 @@
+[Unit]
+Description=Gitlab Gitaly handles Gitlab RPC calls.
+Wants=gitlabhq-@SLOT@-@WEBSERVER@.service
+Wants=gitlabhq-@SLOT@-workhorse.service
+After=gitlabhq-@SLOT@-@WEBSERVER@.service
+After=gitlabhq-@SLOT@-workhorse.service
+PartOf=gitlabhq-@SLOT@.target
+
+[Service]
+Type=exec
+User=git
+Environment="GITALY_ARGS=/etc/gitlab-gitaly-@SLOT@/config.toml"
+WorkingDirectory=@DEST_DIR@
+ExecStart=@BASE_DIR@/gitlab-gitaly-@SLOT@/bin/gitaly ${GITALY_ARGS}
