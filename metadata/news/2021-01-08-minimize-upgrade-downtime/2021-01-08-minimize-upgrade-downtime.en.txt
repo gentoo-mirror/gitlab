@@ -1,0 +1,28 @@
+Title: Minimize upgrade downtime
+Author: Horst Prote <prote@fmi.uni-stuttgart.de>
+Posted: 2021-01-08
+Revision: 1
+News-Item-Format: 2.0
+Display-If-Installed: www-apps/gitlabhq
+
+In order to minimize the downtime during upgrades the pkg_config() phase of
+www-apps/gitlabhq was redesigned and all versions of www-apps/gitlabhq and
+dev-vcs/gitlab-gitaly get a new slot now.
+
+Being installed in a new slot the new versions of gitlabhq and gitlab-gitaly
+will not interfere with the running GitLab instance during the "emerge" and
+it allows to move the ruby compilations from the pkg_config() phase to the
+pkg_install() phase.
+
+So far, one had to stop the old GitLab instance, create a backup and then
+call "emerge --config ..." which did the following steps:
+  (1) Move the public uploads to the new slot.
+  (2) Move the shared data to the new slot.
+  (3) Migrate the configuration.
+  (4) Migrate the database.
+  (5) Install yarn and compile assets.
+  (6) Compile GetText PO files.
+Steps (5) and (6) together take about the same time as the "emerge".
+
+In the new, revised ebuild steps (5) and (6) were moved to the pkg_install()
+phase reducing the downtime significantly.

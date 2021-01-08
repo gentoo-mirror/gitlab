@@ -1,7 +1,9 @@
 [Unit]
 Description=Gitlab Gitaly handles Gitlab RPC calls.
 Wants=gitlabhq-@SLOT@-@WEBSERVER@.service
+Wants=gitlabhq-@SLOT@-workhorse.service
 After=gitlabhq-@SLOT@-@WEBSERVER@.service
+After=gitlabhq-@SLOT@-workhorse.service
 PartOf=gitlabhq-@SLOT@.target
 
 [Service]

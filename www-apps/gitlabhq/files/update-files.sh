@@ -4,7 +4,7 @@ to=$2
 
 if [[ -z "$from" || -z "$to" ]] ; then
 	echo "Usage: $(basename $0) <from-version> <to-version>"
-	echo "Example: $(basename $0) 11.6 11.7"
+	echo "Example: $(basename $0) 13.7.1 13.7.2"
 	exit 1
 fi
 
