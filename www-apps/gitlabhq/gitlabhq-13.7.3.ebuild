@@ -335,15 +335,6 @@ each_ruby_install() {
 		RAILS_ENV=${RAILS_ENV} NODE_ENV=${NODE_ENV} NODE_OPTIONS="--max_old_space_size=4096" \
 		|| die "failed to update node dependencies and (re)compile assets"
 
-# keep old variant of the above 'till it's verified to work
-#	einfo "Running yarn install"
-#	yarn install --production=false --pure-lockfile --no-progress \
-#		--cwd "${D}/${DEST_DIR}" || die "yarn install failed"
-#
-#	einfo "Compile assets ..."
-#	${BUNDLE} exec rake gitlab:assets:compile RAILS_ENV=${RAILS_ENV} NODE_ENV=${NODE_ENV} \
-#		|| die "failed to compile assets"
-
 	## Clean ##
 
 	local ruby_vpath=$(ruby_rbconfig_value 'ruby_version')
@@ -351,7 +342,10 @@ each_ruby_install() {
 	# remove gems cache
 	rm -Rf vendor/bundle/ruby/${ruby_vpath}/cache
 
+	# clear yarn cache
+	yarn cache clean
 	# fix permissions
+
 	fowners -R ${GIT_USER}:${GIT_GROUP} "${DEST_DIR}" "${CONF_DIR}" "${TMP_DIR}" "${LOG_DIR}"
 	fperms o+Xr "${TMP_DIR}" # Let nginx access the puma/unicorn socket
 
