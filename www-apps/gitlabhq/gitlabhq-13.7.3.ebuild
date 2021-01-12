@@ -262,6 +262,12 @@ all_ruby_install() {
 			|| die "failed to filter ${rcscript}"
 		newinitd "${T}/${rcscript}" "${PN}-${SLOT}"
 	fi
+
+	# env file
+	cat > 42"${PN}" <<-EOF
+		CONFIG_PROTECT="${DEST_DIR}/config"
+	EOF
+	doenvd 42"${PN}"
 }
 
 each_ruby_install() {
