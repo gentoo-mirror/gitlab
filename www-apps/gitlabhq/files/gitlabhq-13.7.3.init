@@ -26,9 +26,9 @@ description="GitLab git repository management"
 
 : ${sidekiq_pidfile:="${gitlab_pids}/sidekiq.pid"}
 : ${sidekiq_log:="${gitlab_log}/sidekiq.log"}
-: ${sidekiq_processes:="\"* * * * *\""}
+: ${sidekiq_processes:="\"\* \* \* \* \*\""}
 : ${sidekiq_command:="@DEST_DIR@/bin/sidekiq-cluster"}
-: ${sidekiq_start_command_args:="${sidekiq_processes} -e ${rails_env} -P ${sidekiq_pidfile} >> ${sidekiq_log} 2>&1"}
+: ${sidekiq_start_command_args:="${sidekiq_processes} -e ${rails_env} -d -P ${sidekiq_pidfile} >> ${sidekiq_log} 2>&1"}
 : ${sidekiq_stop_command_args:="exec sidekiqctl stop ${sidekiq_pidfile} >> ${sidekiq_log}"}
 
 : ${mailroom_enabled:=@MAILROOM_ENABLED@}
