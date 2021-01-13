@@ -51,13 +51,15 @@ GEMS_DEPEND="
 	>=net-libs/nodejs-12
 	dev-db/postgresql:12
 	net-libs/http-parser"
-DEPEND="${GEMS_DEPEND}
+DEPEND="
+	${GEMS_DEPEND}
+	${RUBY_DEPS}
 	acct-user/git[gitlab]
 	acct-group/git
-	>=dev-lang/ruby-2.7[ssl]
-	>=dev-vcs/gitlab-shell-13.13.0
+	dev-lang/ruby[ssl]
+	>=dev-vcs/gitlab-shell-13.15.0
 	=dev-vcs/gitlab-gitaly-${PV}
-	>=www-servers/gitlab-workhorse-8.56.0
+	>=www-servers/gitlab-workhorse-8.58.2
 	!gitaly_git? ( >=dev-vcs/git-2.29.0[pcre,pcre-jit] )
 	gitaly_git? ( dev-vcs/gitlab-gitaly[gitaly_git] )
 	app-eselect/eselect-gitlabhq
