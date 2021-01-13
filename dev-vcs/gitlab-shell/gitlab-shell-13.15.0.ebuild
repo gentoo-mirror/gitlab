@@ -16,11 +16,12 @@ LICENSE="MIT"
 SLOT="0"
 KEYWORDS="~amd64 ~x86 ~arm"
 RESTRICT="network-sandbox"
-DEPEND="${RUBY_DEPS}
-	acct-user/git[gitlab]
+BDEPEND="${RUBY_DEPS}
+	dev-ruby/bundler"
+DEPEND="acct-user/git[gitlab]
 	acct-group/git
 	dev-vcs/git
-	dev-ruby/bundler
+	dev-lang/go
 	virtual/ssh
 	dev-db/redis"
 RDEPEND="${DEPEND}"
