@@ -1,0 +1,15 @@
+BDEPEND=>=dev-vcs/git-1.8.2.1[curl]
+DEFINED_PHASES=install postinst prepare unpack
+DEPEND=>=dev-lang/go-1.13.9 dev-libs/icu >=dev-ruby/bundler-2:2 dev-util/cmake !gitaly_git? ( >=dev-vcs/git-2.29.0[pcre,pcre-jit] ) app-eselect/eselect-gitlab-gitaly || ( dev-lang/ruby:2.7 ) virtual/rubygems
+DESCRIPTION=Gitaly is a Git RPC service for handling all the git calls made by GitLab.
+EAPI=7
+HOMEPAGE=https://gitlab.com/gitlab-org/gitaly
+IUSE=gitaly_git
+KEYWORDS=~amd64 ~x86 ~arm
+LICENSE=MIT
+PROPERTIES=live
+RDEPEND=>=dev-lang/go-1.13.9 dev-libs/icu >=dev-ruby/bundler-2:2 dev-util/cmake !gitaly_git? ( >=dev-vcs/git-2.29.0[pcre,pcre-jit] ) app-eselect/eselect-gitlab-gitaly || ( dev-lang/ruby:2.7 ) virtual/rubygems
+RESTRICT=network-sandbox strip
+SLOT=13.7.4
+_eclasses_=edos2unix	33e347e171066657f91f8b0c72ec8773	eutils	2d5b3f4b315094768576b6799e4f926e	git-r3	3e7ec3d6619213460c85e2aa48398441	l10n	8cdd85e169b835d518bc2fd59f780d8e	ruby-single	e6530f43a549f120f9396ccb852288f5	ruby-utils	03dfa7f54d59d740c2964dc7256d2820	user	b0a0d4ca9e3f79c38f8f4143b8d5a2d8	user-info	a2abd4e2f4c3b9b06d64bf1329359a02	wrapper	4251d4c84c25f59094fd557e0063a974
+_md5_=17ada3b679ecfa1626b95497099496c8
