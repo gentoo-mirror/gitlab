@@ -1,10 +1,9 @@
-# Copyright 1999-2015 Gentoo Foundation
+# Copyright 2021 Gentoo Authors
 # Distributed under the terms of the GNU General Public License v2
-# $Header: $
 
-EAPI="5"
+EAPI="7"
 
-# Mainteiner notes:
+# Maintainer notes:
 # - This ebuild uses Bundler to download and install all gems in deployment mode
 #   (i.e. into isolated directory inside application). That's not Gentoo way how
 #   it should be done, but GitLab has too many dependencies that it will be too
@@ -14,9 +13,8 @@ USE_RUBY="ruby27"
 
 EGIT_REPO_URI="https://gitlab.com/gitlab-org/gitlab-foss.git"
 EGIT_COMMIT="v${PV}"
-EGIT_CHECKOUT_DIR="${WORKDIR}/all"
 
-inherit eutils git-r3 linux-info ruby-ng systemd tmpfiles user versionator
+inherit eutils git-r3 linux-info ruby-single systemd tmpfiles user
 
 DESCRIPTION="GitLab is a complete DevOps platform"
 HOMEPAGE="https://gitlab.com/gitlab-org/gitlab-foss"
@@ -52,13 +50,15 @@ GEMS_DEPEND="
 	>=net-libs/nodejs-12
 	dev-db/postgresql:12
 	net-libs/http-parser"
-DEPEND="${GEMS_DEPEND}
+DEPEND="
+	${GEMS_DEPEND}
+	${RUBY_DEPS}
 	acct-user/git[gitlab]
 	acct-group/git
-	>=dev-lang/ruby-2.7[ssl]
-	>=dev-vcs/gitlab-shell-13.13.0
+	dev-lang/ruby[ssl]
+	>=dev-vcs/gitlab-shell-13.15.0
 	=dev-vcs/gitlab-gitaly-${PV}
-	>=www-servers/gitlab-workhorse-8.56.0
+	>=www-servers/gitlab-workhorse-8.58.2
 	!gitaly_git? ( >=dev-vcs/git-2.29.0[pcre,pcre-jit] )
 	gitaly_git? ( dev-vcs/gitlab-gitaly[gitaly_git] )
 	app-eselect/eselect-gitlabhq
@@ -72,15 +72,9 @@ RDEPEND="${DEPEND}
 	virtual/mta
 	kerberos? ( app-crypt/mit-krb5 )
 	favicon? ( media-gfx/graphicsmagick )"
-ruby_add_bdepend "
+BDEPEND="
 	virtual/rubygems
 	>=dev-ruby/bundler-2:2"
-
-RUBY_PATCHES=(
-	"${PN}-${SLOT}-fix-checks-gentoo.patch"
-	"${PN}-${SLOT}-fix-sidekiq_check.patch"
-	"${PN}-${SLOT}-fix-sendmail-param.patch"
-)
 
 GIT_USER="git"
 GIT_GROUP="git"
@@ -101,11 +95,12 @@ RAILS_ENV=${RAILS_ENV:-production}
 NODE_ENV=${RAILS_ENV:-production}
 BUNDLE="ruby /usr/bin/bundle"
 
-all_ruby_unpack() {
-	git-r3_src_unpack
-}
+src_prepare() {
+	eapply -p0 "${FILESDIR}/${PN}-${SLOT}-fix-checks-gentoo.patch"
+	eapply -p0 "${FILESDIR}/${PN}-${SLOT}-fix-sidekiq_check.patch"
+	eapply -p0 "${FILESDIR}/${PN}-${SLOT}-fix-sendmail-param.patch"
 
-all_ruby_prepare() {
+	eapply_user
 	# Update paths for gitlab
 	# Note: Order of -e expressions is important here
 	sed -i \
@@ -143,7 +138,7 @@ all_ruby_prepare() {
 
 	# With version 13.7.1 we moved the "yarn install" call
 	# from   pkg_config() - i.e. outside sandbox - to
-	# each_ruby_install() - i.e. inside  sandbox.
+	#       src_install() - i.e. inside  sandbox.
 	# But yarn still wants to create/read /usr/local/share/.yarnrc
 	addwrite /usr/local/share/
 }
@@ -168,7 +163,112 @@ continue_or_skip() {
 	echo $answer
 }
 
-all_ruby_install() {
+src_install() {
+	## Prepare directories ##
+	local uploads="${DEST_DIR}/public/uploads"
+
+	diropts -m750
+	keepdir "${LOG_DIR}"
+	keepdir "${TMP_DIR}"
+
+	diropts -m755
+	dodir "${DEST_DIR}"
+	dodir "${uploads}"
+
+	## Install configs ##
+
+	# Note that we cannot install the config to /etc and symlink
+	# it to ${DEST_DIR} since require_relative in config/application.rb
+	# seems to get confused by symlinks. So let's install the config
+	# to ${DEST_DIR} and create a smylink to /etc/${P}
+	dosym "${DEST_DIR}/config" "${CONF_DIR}"
+
+	echo "export RAILS_ENV=${RAILS_ENV}" > "${D}/${DEST_DIR}/.profile"
+
+	## Install all others ##
+
+	insinto "${DEST_DIR}"
+	doins -r ./
+
+	# make binaries executable
+	exeinto "${DEST_DIR}/bin"
+	doexe bin/*
+	exeinto "${DEST_DIR}/qa/bin"
+	doexe qa/bin/*
+
+	## Install logrotate config ##
+
+	dodir /etc/logrotate.d
+	sed -e "s|@LOG_DIR@|${LOG_DIR}|g" \
+		"${FILESDIR}"/gitlab.logrotate > "${D}"/etc/logrotate.d/${PN}-${SLOT} \
+		|| die "failed to filter gitlab.logrotate"
+
+	## Install gems via bundler ##
+
+	cd "${D}/${DEST_DIR}"
+
+	local without="development test coverage omnibus"
+	local flag; for flag in ${WITHOUTflags}; do
+		without+="$(use $flag || echo ' '$flag)"
+	done
+	${BUNDLE} config set deployment 'true'
+	${BUNDLE} config set without "${without}"
+	${BUNDLE} config build.gpgm --use-system-libraries
+	${BUNDLE} config build.nokogiri --use-system-libraries
+	${BUNDLE} config build.yajl-ruby --use-system-libraries
+
+	einfo "Current ruby version is \"$(ruby --version)\""
+
+	einfo "Running bundle install ..."
+	${BUNDLE} install --jobs=$(nproc) || die "bundle install failed"
+
+	## Install GetText PO files, yarn, assets via bundler ##
+
+	einfo "Compiling GetText PO files ..."
+	${BUNDLE} exec rake gettext:compile RAILS_ENV=${RAILS_ENV} \
+		|| die "failed to compile GetText PO files"
+
+	einfo "Update node dependencies and (re)compile assets ..."
+	${BUNDLE} exec rake yarn:install gitlab:assets:clean gitlab:assets:compile \
+		RAILS_ENV=${RAILS_ENV} NODE_ENV=${NODE_ENV} NODE_OPTIONS="--max_old_space_size=4096" \
+		|| die "failed to update node dependencies and (re)compile assets"
+
+	## Clean ##
+
+	local ruby_vpath=$(ls vendor/bundle/ruby/)
+
+	# remove gems cache
+	rm -Rf vendor/bundle/ruby/${ruby_vpath}/cache
+
+	# clear yarn cache
+	yarn cache clean
+	# fix permissions
+
+	fowners -R ${GIT_USER}:${GIT_GROUP} "${DEST_DIR}" "${CONF_DIR}" "${TMP_DIR}" "${LOG_DIR}"
+	fperms o+Xr "${TMP_DIR}" # Let nginx access the puma/unicorn socket
+
+	# fix QA Security Notice: world writable file(s)
+	elog "Fixing permissions of world writable files"
+	local gemsdir="vendor/bundle/ruby/${ruby_vpath}/gems"
+	local file gem wwfgems="gitlab-labkit nakayoshi_fork"
+	# If we are using wildcards, the shell fills them without prefixing ${ED}. Thus
+	# we would target a file list from the real system instead from the sandbox.
+	for gem in ${wwfgems}; do
+		for file in $(find_files "d,f" "${DEST_DIR}/${gemsdir}/${gem}-*"); do
+			fperms go-w $file
+		done
+	done
+	# in the nakayoshi_fork gem all files are also executable
+	for file in $(find_files "f" "${DEST_DIR}/${gemsdir}/nakayoshi_fork-*"); do
+		fperms a-x $file
+	done
+
+	# remove tmp and log dir of the build process
+	rm -Rf tmp log
+	dosym "${TMP_DIR}" "${DEST_DIR}/tmp"
+	dosym "${LOG_DIR}" "${DEST_DIR}/log"
+
+	# systemd/openrc files
 	local unit webserver webserver_bin webserver_name
 	if use puma; then
 		webserver="puma"
@@ -268,113 +368,7 @@ all_ruby_install() {
 		CONFIG_PROTECT="${DEST_DIR}/config"
 	EOF
 	doenvd 42"${PN}"
-}
 
-each_ruby_install() {
-	local uploads="${DEST_DIR}/public/uploads"
-
-	## Prepare directories ##
-
-	diropts -m750
-	keepdir "${LOG_DIR}"
-	keepdir "${TMP_DIR}"
-
-	diropts -m755
-	dodir "${DEST_DIR}"
-	dodir "${uploads}"
-
-	## Install configs ##
-
-	# Note that we cannot install the config to /etc and symlink
-	# it to ${DEST_DIR} since require_relative in config/application.rb
-	# seems to get confused by symlinks. So let's install the config
-	# to ${DEST_DIR} and create a smylink to /etc/${P}
-	dosym "${DEST_DIR}/config" "${CONF_DIR}"
-
-	echo "export RAILS_ENV=${RAILS_ENV}" > "${D}/${DEST_DIR}/.profile"
-
-	## Install all others ##
-
-	insinto "${DEST_DIR}"
-	doins -r ./
-
-	# make binaries executable
-	exeinto "${DEST_DIR}/bin"
-	doexe bin/*
-	exeinto "${DEST_DIR}/qa/bin"
-	doexe qa/bin/*
-
-	## Install logrotate config ##
-
-	dodir /etc/logrotate.d
-	sed -e "s|@LOG_DIR@|${LOG_DIR}|g" \
-		"${FILESDIR}"/gitlab.logrotate > "${D}"/etc/logrotate.d/${PN}-${SLOT} \
-		|| die "failed to filter gitlab.logrotate"
-
-	## Install gems via bundler ##
-
-	cd "${D}/${DEST_DIR}"
-
-	local without="development test coverage omnibus"
-	local flag; for flag in ${WITHOUTflags}; do
-		without+="$(use $flag || echo ' '$flag)"
-	done
-	${BUNDLE} config set deployment 'true'
-	${BUNDLE} config set without "${without}"
-	${BUNDLE} config build.gpgm --use-system-libraries
-	${BUNDLE} config build.nokogiri --use-system-libraries
-	${BUNDLE} config build.yajl-ruby --use-system-libraries
-
-	einfo "Current ruby version is \"$(ruby --version)\""
-
-	einfo "Running bundle install ..."
-	${BUNDLE} install --jobs=$(nproc) || die "bundle install failed"
-
-	## Install GetText PO files, yarn, assets via bundler ##
-
-	einfo "Compiling GetText PO files ..."
-	${BUNDLE} exec rake gettext:compile RAILS_ENV=${RAILS_ENV} \
-		|| die "failed to compile GetText PO files"
-
-	einfo "Update node dependencies and (re)compile assets ..."
-	${BUNDLE} exec rake yarn:install gitlab:assets:clean gitlab:assets:compile \
-		RAILS_ENV=${RAILS_ENV} NODE_ENV=${NODE_ENV} NODE_OPTIONS="--max_old_space_size=4096" \
-		|| die "failed to update node dependencies and (re)compile assets"
-
-	## Clean ##
-
-	local ruby_vpath=$(ruby_rbconfig_value 'ruby_version')
-
-	# remove gems cache
-	rm -Rf vendor/bundle/ruby/${ruby_vpath}/cache
-
-	# clear yarn cache
-	yarn cache clean
-	# fix permissions
-
-	fowners -R ${GIT_USER}:${GIT_GROUP} "${DEST_DIR}" "${CONF_DIR}" "${TMP_DIR}" "${LOG_DIR}"
-	fperms o+Xr "${TMP_DIR}" # Let nginx access the puma/unicorn socket
-
-	# fix QA Security Notice: world writable file(s)
-	elog "Fixing permissions of world writable files"
-	local gemsdir="vendor/bundle/ruby/${ruby_vpath}/gems"
-	local file gem wwfgems="gitlab-labkit nakayoshi_fork"
-	# If we are using wildcards, the shell fills them without prefixing ${ED}. Thus
-	# we would target a file list from the real system instead from the sandbox.
-	for gem in ${wwfgems}; do
-		for file in $(find_files "d,f" "${DEST_DIR}/${gemsdir}/${gem}-*"); do
-			fperms go-w $file
-		done
-	done
-	# in the nakayoshi_fork gem all files are also executable
-	for file in $(find_files "f" "${DEST_DIR}/${gemsdir}/nakayoshi_fork-*"); do
-		fperms a-x $file
-	done
-
-	# remove tmp and log dir of the build process
-	rm -Rf tmp log
-	dosym "${TMP_DIR}" "${DEST_DIR}/tmp"
-	dosym "${LOG_DIR}" "${DEST_DIR}/log"
 }
 
 pkg_preinst() {
@@ -458,22 +452,6 @@ pkg_postinst() {
 	elog "    emerge --config \"=${CATEGORY}/${PF}\""
 	elog
 	elog "Important: Do not remove the earlier version prior migration!"
-
-	if linux_config_exists; then
-		if linux_chkconfig_present PAX; then
-			elog  ""
-			ewarn "Warning: PaX support is enabled!"
-			ewarn "You must disable mprotect for ruby. Otherwise FFI will"
-			ewarn "trigger mprotect errors that are hard to trace. Please run: "
-			ewarn "    paxctl -m ruby"
-		fi
-	else
-		elog  ""
-		einfo "Important: Cannot find a linux kernel configuration!"
-		einfo "So cannot check for PaX support."
-		einfo "If CONFIG_PAX is set, you should disable mprotect for ruby"
-		einfo "since FFI may trigger mprotect errors."
-	fi
 }
 
 pkg_config_do_upgrade_migrate_data() {
