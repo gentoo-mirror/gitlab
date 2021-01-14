@@ -77,12 +77,6 @@ BDEPEND="
 	virtual/rubygems
 	>=dev-ruby/bundler-2:2"
 
-PATCHES=(
-	"${PN}-${SLOT}-fix-checks-gentoo.patch"
-	"${PN}-${SLOT}-fix-sidekiq_check.patch"
-	"${PN}-${SLOT}-fix-sendmail-param.patch"
-)
-
 GIT_USER="git"
 GIT_GROUP="git"
 GIT_HOME="/var/lib/gitlab"
@@ -103,6 +97,11 @@ NODE_ENV=${RAILS_ENV:-production}
 BUNDLE="ruby /usr/bin/bundle"
 
 src_prepare() {
+	epatch "${FILESDIR}/${PN}-${SLOT}-fix-checks-gentoo.patch"
+	epatch "${FILESDIR}/${PN}-${SLOT}-fix-sidekiq_check.patch"
+	epatch "${FILESDIR}/${PN}-${SLOT}-fix-sendmail-param.patch"
+
+	eapply_user
 	# Update paths for gitlab
 	# Note: Order of -e expressions is important here
 	sed -i \
@@ -143,8 +142,6 @@ src_prepare() {
 	#       src_install() - i.e. inside  sandbox.
 	# But yarn still wants to create/read /usr/local/share/.yarnrc
 	addwrite /usr/local/share/
-
-	eapply_user
 }
 
 find_files() {
