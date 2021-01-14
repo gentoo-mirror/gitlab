@@ -2,14 +2,14 @@
 # Distributed under the terms of the GNU General Public License v2
 # $Header: $
 
-EAPI="5"
+EAPI="7"
 
 EGIT_REPO_URI="https://gitlab.com/gitlab-org/gitaly.git"
 EGIT_COMMIT="v${PV}"
 
 USE_RUBY="ruby27"
 
-inherit eutils git-r3 user ruby-single versionator
+inherit eutils git-r3 user ruby-single
 
 DESCRIPTION="Gitaly is a Git RPC service for handling all the git calls made by GitLab."
 HOMEPAGE="https://gitlab.com/gitlab-org/gitaly"
@@ -41,6 +41,8 @@ GITLAB_SOCKETS="${BASE_DIR}/gitlabhq-${SLOT}/tmp/sockets"
 BUNDLE="ruby /usr/bin/bundle"
 
 src_prepare() {
+	eapply_user
+
 	# Update paths for gitlab
 	# Note: Order of -e expressions is important here
 	local gitlabhq_urlenc=$(echo "${BASE_DIR}/gitlabhq/" | sed -e "s|/|%2F|g")
