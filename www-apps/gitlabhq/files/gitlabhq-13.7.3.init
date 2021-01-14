@@ -72,7 +72,6 @@ start() {
 		--chdir "${gitlab_home}" \
 		--user="${gitlab_user}:${gitlab_group}" \
 		--pidfile="${webserver_pidfile}" \
-		--make-pidfile \
 		--background -1 "${webserver_log}" -2 "${webserver_log}" \
 		--exec ${webserver_command} -- ${webserver_command_args}
 	eend $?
@@ -83,7 +82,6 @@ start() {
 		--chdir "${gitlab_home}" \
 		--user="${gitlab_user}:${gitlab_group}" \
 		--pidfile="${sidekiq_pidfile}" \
-		--make-pidfile \
 		--background -1 "${sidekiq_log}" -2 "${sidekiq_log}" \
 		--exec ${sidekiq_command} -- "${sidekiq_processes}" ${sidekiq_command_args}
 	eend $?
