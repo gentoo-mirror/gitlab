@@ -453,22 +453,6 @@ pkg_postinst() {
 	elog "    emerge --config \"=${CATEGORY}/${PF}\""
 	elog
 	elog "Important: Do not remove the earlier version prior migration!"
-
-	if linux_config_exists; then
-		if linux_chkconfig_present PAX; then
-			elog  ""
-			ewarn "Warning: PaX support is enabled!"
-			ewarn "You must disable mprotect for ruby. Otherwise FFI will"
-			ewarn "trigger mprotect errors that are hard to trace. Please run: "
-			ewarn "    paxctl -m ruby"
-		fi
-	else
-		elog  ""
-		einfo "Important: Cannot find a linux kernel configuration!"
-		einfo "So cannot check for PaX support."
-		einfo "If CONFIG_PAX is set, you should disable mprotect for ruby"
-		einfo "since FFI may trigger mprotect errors."
-	fi
 }
 
 pkg_config_do_upgrade_migrate_data() {
