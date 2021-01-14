@@ -543,15 +543,15 @@ pkg_config_do_upgrade_migrate_configuration() {
 		done
 		if [[ $merge_config ]]; then
 			local errmsg="failed to automatically migrate config, run "
-			errmsg+="\"CONFIG_PROTECT=${DEST_DIR} ${merge_config}\" by hand, re-run "
+			errmsg+="\"CONFIG_PROTECT=${DEST_DIR}/config ${merge_config}\" by hand, re-run "
 			errmsg+="this routine and skip config migration to proceed."
-			local mmsg="Manually run \"CONFIG_PROTECT=${DEST_DIR} ${merge_config}\" "
+			local mmsg="Manually run \"CONFIG_PROTECT=${DEST_DIR}/config ${merge_config}\" "
 			mmsg+="and re-run this routine and skip config migration to proceed."
 			# Set PATH without /usr/lib/portage/python*/ebuild-helpers because
 			# the portageq helper (a bash script) would be executed by etc-update
 			# explicitly with python leading to SyntaxErrors
 			/bin/bash -c "PATH=/usr/sbin:/usr/bin:/sbin:/bin \
-				CONFIG_PROTECT=\"${DEST_DIR}\" ${merge_config}" || die "${errmsg}"
+				CONFIG_PROTECT=\"${DEST_DIR}/config\" ${merge_config}" || die "${errmsg}"
 		else
 			echo "${mmsg}"
 			return 1
