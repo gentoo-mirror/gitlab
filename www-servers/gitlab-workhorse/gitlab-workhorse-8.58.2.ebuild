@@ -1,8 +1,7 @@
-# Copyright 1999-2015 Gentoo Foundation
+# Copyright 2021 Gentoo Authors
 # Distributed under the terms of the GNU General Public License v2
-# $Header: $
 
-EAPI="5"
+EAPI="7"
 
 EGIT_REPO_URI="https://gitlab.com/gitlab-org/gitlab-workhorse.git"
 EGIT_COMMIT="v${PV}"
