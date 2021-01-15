@@ -207,6 +207,25 @@ src_install() {
 
 	cd "${D}/${DEST_DIR}"
 
+	if [ -d ${BASE_DIR}/${PN}/ ]; then
+		einfo "Using parts of the installed gitlabhq to save time:"
+	fi
+	# Hack: Don't start from scratch, use the installed bundler
+	if [ -d ${BASE_DIR}/${PN}/vendor/bundle ]; then
+		einfo "   Copying ${BASE_DIR}/${PN}/vendor/bundle/ ..."
+		cp -a ${BASE_DIR}/${PN}/vendor/bundle/ vendor/
+	fi
+	# Hack: Don't start from scratch, use the installed node_modules
+	if [ -d ${BASE_DIR}/${PN}/node_modules ]; then
+		einfo "   Copying ${BASE_DIR}/${PN}/node_modules/ ..."
+		cp -a ${BASE_DIR}/${PN}/node_modules/ ./
+	fi
+	# Hack: Don't start from scratch, use the installed public/assets
+	if [ -d ${BASE_DIR}/${PN}/public/assets ]; then
+		einfo "   Copying ${BASE_DIR}/${PN}/public/assets/ ..."
+		cp -a ${BASE_DIR}/${PN}/public/assets/ public/
+	fi
+
 	local without="development test coverage omnibus"
 	local flag; for flag in ${WITHOUTflags}; do
 		without+="$(use $flag || echo ' '$flag)"
@@ -224,14 +243,15 @@ src_install() {
 
 	## Install GetText PO files, yarn, assets via bundler ##
 
-	einfo "Compiling GetText PO files ..."
-	${BUNDLE} exec rake gettext:compile RAILS_ENV=${RAILS_ENV} \
-		|| die "failed to compile GetText PO files"
-
 	einfo "Update node dependencies and (re)compile assets ..."
 	${BUNDLE} exec rake yarn:install gitlab:assets:clean gitlab:assets:compile \
 		RAILS_ENV=${RAILS_ENV} NODE_ENV=${NODE_ENV} NODE_OPTIONS="--max_old_space_size=4096" \
 		|| die "failed to update node dependencies and (re)compile assets"
+
+	# seems to be part of yarn:install above already, so commented out
+	#einfo "Compiling GetText PO files ..."
+	#${BUNDLE} exec rake gettext:compile RAILS_ENV=${RAILS_ENV} \
+	#	|| die "failed to compile GetText PO files"
 
 	## Clean ##
 
@@ -240,8 +260,6 @@ src_install() {
 	# remove gems cache
 	rm -Rf vendor/bundle/ruby/${ruby_vpath}/cache
 
-	# clear yarn cache
-	yarn cache clean
 	# fix permissions
 
 	fowners -R ${GIT_USER}:${GIT_GROUP} "${DEST_DIR}" "${CONF_DIR}" "${TMP_DIR}" "${LOG_DIR}"
@@ -369,16 +387,6 @@ src_install() {
 	EOF
 	doenvd 42"${PN}"
 
-}
-
-pkg_preinst() {
-	# if the tmp dir for our ${SLOT} exists
-	# set a flag file to keep it (see pkg_postrm())
-	local temp="/var/tmp/${PN}-${SLOT}"
-	if [ -e "$temp" ]; then
-		einfo "Keeping temporary files from \"$temp\" ..."
-		touch "${temp}/MINOR-UPGRADE"
-	fi
 }
 
 pkg_postinst() {
@@ -721,15 +729,5 @@ pkg_config() {
 	else
 		einfo "To configure your nginx site have a look at the examples configurations"
 		einfo "in the ${DEST_DIR}/lib/support/nginx/ folder."
-	fi
-}
-
-pkg_postrm() { # see pkg_preinst()
-	local temp="/var/tmp/${PN}-${SLOT}"
-	if [ -e "${temp}/MINOR-UPGRADE" ]; then
-		rm "${temp}/MINOR-UPGRADE"
-	else
-		einfo "Removing temporary files from \"$temp\" ..."
-		rm -r "$temp"
 	fi
 }
