@@ -67,6 +67,17 @@ src_prepare() {
 	${BUNDLE} config set deployment 'true'
 	${BUNDLE} config set without "${without}"
 	${BUNDLE} config build.nokogiri --use-system-libraries
+
+	if [ -d ${BASE_DIR}/${PN}/ ]; then
+		einfo "Using parts of the installed gitlab-gitaly to save time:"
+	fi
+	# Hack: Don't start from scratch, use the installed bundle
+	mkdir -p ruby/vendor/bundle
+	cd ruby/vendor
+	if [ -d ${BASE_DIR}/${PN}/ruby/vendor/bundle/ruby ]; then
+		einfo "   Copying ${BASE_DIR}/${PN}/ruby/vendor/bundle/ruby/ ..."
+		cp -a ${BASE_DIR}/${PN}/ruby/vendor/bundle/ruby/ bundle/
+	fi
 }
 
 src_install() {
