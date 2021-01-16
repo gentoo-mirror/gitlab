@@ -14,4 +14,4 @@ Environment=RAILS_ENV=production
 Environment=SIDEKIQ_MEMORY_KILLER_MAX_RSS=2000000
 SyslogIdentifier=gitlab-sidekiq
 ExecStart=@DEST_DIR@/bin/sidekiq-cluster "$processes_args" -e ${RAILS_ENV}
-Restart=on-success
+Restart=on-failure
