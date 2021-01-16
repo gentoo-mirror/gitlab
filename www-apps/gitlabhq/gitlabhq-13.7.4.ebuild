@@ -210,7 +210,7 @@ src_install() {
 	if [ -d ${BASE_DIR}/${PN}/ ]; then
 		einfo "Using parts of the installed gitlabhq to save time:"
 	fi
-	# Hack: Don't start from scratch, use the installed bundler
+	# Hack: Don't start from scratch, use the installed bundle
 	if [ -d ${BASE_DIR}/${PN}/vendor/bundle ]; then
 		einfo "   Copying ${BASE_DIR}/${PN}/vendor/bundle/ ..."
 		cp -a ${BASE_DIR}/${PN}/vendor/bundle/ vendor/
@@ -255,7 +255,8 @@ src_install() {
 
 	## Clean ##
 
-	local ruby_vpath=$(ls vendor/bundle/ruby/)
+	local rubyV=$(sed -e "s/\(.\)\(.\)/\1\.\2\.0/" <<< "${USE_RUBY##*ruby}")
+	local ruby_vpath=vendor/bundle/ruby/${rubyV}
 
 	# remove gems cache
 	rm -Rf vendor/bundle/ruby/${ruby_vpath}/cache
