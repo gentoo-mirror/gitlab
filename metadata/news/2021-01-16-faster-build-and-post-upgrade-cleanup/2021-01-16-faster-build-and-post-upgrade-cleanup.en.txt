@@ -1,12 +1,12 @@
-Title: Faster gitlabhq build and post-upgrade cleanup
+Title: Faster builds and post-upgrade cleanup
 Author: Horst Prote <prote@fmi.uni-stuttgart.de>
-Posted: 2021-01-15
+Posted: 2021-01-16
 Revision: 1
 News-Item-Format: 2.0
 Display-If-Installed: www-apps/gitlabhq
 
-Due to a dirty hack (1) the build time for www-apps/gitlabhq could be halved
-for upgrades/rebuilds of an existing installation.
+Due to a dirty hack (1) the build time for gitlabhq and gitlab-gitaly could
+be halved for upgrades/rebuilds of an existing installation.
 
 If you already used this overlay before version 13.7.x there may be some
 leftover files/directories on your GitLab host because of the major
