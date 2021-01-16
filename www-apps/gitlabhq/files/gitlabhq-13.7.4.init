@@ -57,7 +57,7 @@ fi
 depend() {
 	provide gitlab
 	need redis
-	use net mysql postgresql
+	use net postgresql
 }
 
 start() {

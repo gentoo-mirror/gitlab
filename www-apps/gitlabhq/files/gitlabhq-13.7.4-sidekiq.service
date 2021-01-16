@@ -1,7 +1,7 @@
 [Unit]
 Description=GitLab Sidekiq Worker
 Requires=redis.service
-After=redis.service postgresql-12.service mysqld.service
+After=redis.service postgresql-12.service
 PartOf=gitlabhq-@SLOT@.target
 ConditionPathExists=@TMP_DIR@
 
