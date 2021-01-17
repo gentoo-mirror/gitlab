@@ -63,17 +63,19 @@ src_prepare() {
 	sed -s 's|LDFLAGS|GO_LDFLAGS|g' -i Makefile || die
 	sed -s 's|^BUNDLE_FLAGS|#BUNDLE_FLAGS|' -i Makefile || die
 
+	cd ruby
 	local without="development test"
-	${BUNDLE} config set deployment 'true'
-	${BUNDLE} config set without "${without}"
-	${BUNDLE} config build.nokogiri --use-system-libraries
+	${BUNDLE} config set --local path 'vendor/bundle'
+	${BUNDLE} config set --local deployment 'true'
+	${BUNDLE} config set --local without "${without}"
+	${BUNDLE} config set --local build.nokogiri --use-system-libraries
 
 	if [ -d ${BASE_DIR}/${PN}/ ]; then
 		einfo "Using parts of the installed gitlab-gitaly to save time:"
 	fi
 	# Hack: Don't start from scratch, use the installed bundle
-	mkdir -p ruby/vendor/bundle
-	cd ruby/vendor
+	mkdir -p vendor/bundle
+	cd vendor
 	if [ -d ${BASE_DIR}/${PN}/ruby/vendor/bundle/ruby ]; then
 		einfo "   Copying ${BASE_DIR}/${PN}/ruby/vendor/bundle/ruby/ ..."
 		cp -a ${BASE_DIR}/${PN}/ruby/vendor/bundle/ruby/ bundle/
@@ -87,6 +89,9 @@ src_install() {
 	find ruby/vendor -iname 'Makefile' -delete
 	# Other cleanup candidates: a.out *.bin
 
+	# Clean up old gems (this is required due to our Hack above)
+	sh -c "cd ruby; ${BUNDLE} clean"
+
 	into "${DEST_DIR}" # Will install binaries to ${DEST_DIR}/bin. Don't specify the "bin"!
 	dobin _build/bin/*
 
@@ -94,8 +99,7 @@ src_install() {
 	doins -r "ruby"
 
 	# Make binaries in ruby/ executable
-	local rubyV=$(sed -e "s/\(.\)\(.\)/\1\.\2\.0/" <<< "${USE_RUBY##*ruby}")
-	# Note: For USE_RUBY="ruby26 ruby27" we will get "2.7.0" here. That should be ok.
+	local rubyV=$(ls ruby/vendor/bundle/ruby)
 	exeinto "${DEST_DIR}/ruby/git-hooks/"
 	doexe ruby/git-hooks/gitlab-shell-hook
 	exeinto "${DEST_DIR}/ruby/bin"

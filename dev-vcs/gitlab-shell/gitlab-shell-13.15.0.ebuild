@@ -57,11 +57,10 @@ src_compile() {
 	einfo "Running \"bundle install\" ..."
 	export LANG=en_US.UTF-8
 	export LC_ALL=en_US.UTF-8
-	local RUBY=${RUBY:-ruby}
-	${RUBY} /usr/bin/bundle config set path 'vendor/bundle'
-	${RUBY} /usr/bin/bundle install || die "failed to run bundle install"
-	ruby_version=$(ls $PWD/vendor/bundle/ruby)
-	export PATH=$PWD/vendor/bundle/ruby/$ruby_version/bin:$PATH
+	ruby /usr/bin/bundle config set --local path 'vendor/bundle'
+	ruby /usr/bin/bundle install || die "failed to run bundle install"
+	ruby_version=$(ls vendor/bundle/ruby)
+	export PATH=$PWD/vendor/bundle/ruby/${ruby_version}/bin:$PATH
 	make compile || die "failed to run make compile"
 }
 
