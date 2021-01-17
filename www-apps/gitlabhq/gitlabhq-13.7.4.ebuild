@@ -230,11 +230,11 @@ src_install() {
 	local flag; for flag in ${WITHOUTflags}; do
 		without+="$(use $flag || echo ' '$flag)"
 	done
-	${BUNDLE} config set deployment 'true'
-	${BUNDLE} config set without "${without}"
-	${BUNDLE} config build.gpgm --use-system-libraries
-	${BUNDLE} config build.nokogiri --use-system-libraries
-	${BUNDLE} config build.yajl-ruby --use-system-libraries
+	${BUNDLE} config set --local deployment 'true'
+	${BUNDLE} config set --local without "${without}"
+	${BUNDLE} config set --local build.gpgm --use-system-libraries
+	${BUNDLE} config set --local build.nokogiri --use-system-libraries
+	${BUNDLE} config set --local build.yajl-ruby --use-system-libraries
 
 	einfo "Current ruby version is \"$(ruby --version)\""
 
@@ -255,11 +255,14 @@ src_install() {
 
 	## Clean ##
 
-	local rubyV=$(sed -e "s/\(.\)\(.\)/\1\.\2\.0/" <<< "${USE_RUBY##*ruby}")
+	# Clean up old gems (this is required due to our Hack above)
+	${BUNDLE} clean
+
+	local rubyV=$(ls vendor/bundle/ruby)
 	local ruby_vpath=vendor/bundle/ruby/${rubyV}
 
 	# remove gems cache
-	rm -Rf vendor/bundle/ruby/${ruby_vpath}/cache
+	rm -Rf ${ruby_vpath}/cache
 
 	# fix permissions
 
@@ -268,7 +271,7 @@ src_install() {
 
 	# fix QA Security Notice: world writable file(s)
 	elog "Fixing permissions of world writable files"
-	local gemsdir="vendor/bundle/ruby/${ruby_vpath}/gems"
+	local gemsdir="${ruby_vpath}/gems"
 	local file gem wwfgems="gitlab-labkit nakayoshi_fork"
 	# If we are using wildcards, the shell fills them without prefixing ${ED}. Thus
 	# we would target a file list from the real system instead from the sandbox.
