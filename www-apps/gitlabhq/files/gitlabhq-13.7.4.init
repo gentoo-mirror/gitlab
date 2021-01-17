@@ -28,7 +28,7 @@ description="GitLab git repository management"
 : ${sidekiq_log:="${gitlab_log}/sidekiq.log"}
 : ${sidekiq_processes:="* * * * *"}
 : ${sidekiq_command:="@DEST_DIR@/bin/sidekiq-cluster"}
-: ${sidekiq_command_args:="-e ${rails_env} -P ${sidekiq_pidfile}"}
+: ${sidekiq_command_args:="-e ${rails_env}"}
 
 : ${mailroom_enabled:=@MAILROOM_ENABLED@}
 : ${mailroom_pidfile:="${gitlab_pids}/mailroom.pid"}
@@ -77,13 +77,13 @@ start() {
 	eend $?
 
 	ebegin "Starting GitLab @SLOT@ Sidekiq"
-	start-stop-daemon --start \
+	supervise-daemon ${RC_SVCNAME} --start \
 		$(for env in $gitlab_env ; do echo "--env $env" ; done) \
 		--chdir "${gitlab_home}" \
 		--user="${gitlab_user}:${gitlab_group}" \
 		--pidfile="${sidekiq_pidfile}" \
-		--background -1 "${sidekiq_log}" -2 "${sidekiq_log}" \
-		--exec ${sidekiq_command} -- "${sidekiq_processes}" ${sidekiq_command_args}
+		-1 "${sidekiq_log}" -2 "${sidekiq_log}" \
+		${sidekiq_command} -- "${sidekiq_processes}" ${sidekiq_command_args}
 	eend $?
 
 	ebegin "Starting GitLab @SLOT@ Workhorse"
@@ -130,7 +130,7 @@ stop() {
 		--chdir "${gitlab_home}" \
 		--user="${gitlab_user}:${gitlab_group}" \
 		--pidfile="${gitaly_pidfile}"
-   	eend $?
+	eend $?
 
 	if [ "$mailroom_enabled" = true ]; then
 	ebegin "Stopping GitLab @SLOT@ MailRoom"
@@ -149,10 +149,10 @@ stop() {
 	eend $?
 
 	ebegin "Stopping GitLab @SLOT@ Sidekiq"
-	start-stop-daemon --stop \
+	supervise-daemon ${RC_SVCNAME} --stop \
 		--chdir "${gitlab_home}" \
 		--user="${gitlab_user}:${gitlab_group}" \
-		--pidfile="${sidekiq_pidfile}" \
+		--pidfile="${sidekiq_pidfile}"
 	eend $?
 
 	ebegin "Stopping GitLab @SLOT@ @WEBSERVER_NAME@ servers"
