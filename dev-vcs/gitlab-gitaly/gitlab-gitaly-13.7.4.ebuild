@@ -99,7 +99,7 @@ src_install() {
 	doins -r "ruby"
 
 	# Make binaries in ruby/ executable
-	local rubyV=$(ls vendor/bundle/ruby)
+	local rubyV=$(ls ruby/vendor/bundle/ruby)
 	exeinto "${DEST_DIR}/ruby/git-hooks/"
 	doexe ruby/git-hooks/gitlab-shell-hook
 	exeinto "${DEST_DIR}/ruby/bin"
