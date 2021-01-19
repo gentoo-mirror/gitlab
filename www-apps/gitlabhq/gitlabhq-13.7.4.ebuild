@@ -102,10 +102,14 @@ src_prepare() {
 
 	eapply_user
 	# Update paths for gitlab
-	# Note: Order of -e expressions is important here
+	# Note: Order of -e expressions is important here.
+	#       The gitlab-shell path "${D}/${GITLAB_SHELL}" is set
+	#       temporarily to prevent lib/gitlab/shell.rb creating the
+	#       gitlab_shell.secret symlink outside the sandbox. We set this
+	#       to "${GITLAB_SHELL} after "yarn:install" in src_install().
 	sed -i \
 		-e "s|/sockets/private/|/sockets/|g" \
-		-e "s|/home/git/gitlab-shell|${GITLAB_SHELL}|g" \
+		-e "s|/home/git/gitlab-shell|${D}/${GITLAB_SHELL}|g" \
 		-e "s|/home/git/gitlab/|${DEST_DIR}/|g" \
 		-e "s|/home/git/gitaly|${GITLAB_GITALY}|g" \
 		-e "s|/home/git|${GIT_HOME}|g" \
@@ -243,15 +247,19 @@ src_install() {
 
 	## Install GetText PO files, yarn, assets via bundler ##
 
+	dodir ${GITLAB_SHELL}
+	# Let lib/gitlab/shell.rb set the .gitlab_shell_secret synlink
+	# inside the sandbox. The real symlink will be set in pkg_config().
 	einfo "Update node dependencies and (re)compile assets ..."
 	${BUNDLE} exec rake yarn:install gitlab:assets:clean gitlab:assets:compile \
 		RAILS_ENV=${RAILS_ENV} NODE_ENV=${NODE_ENV} NODE_OPTIONS="--max_old_space_size=4096" \
 		|| die "failed to update node dependencies and (re)compile assets"
-
-	# seems to be part of yarn:install above already, so commented out
-	#einfo "Compiling GetText PO files ..."
-	#${BUNDLE} exec rake gettext:compile RAILS_ENV=${RAILS_ENV} \
-	#	|| die "failed to compile GetText PO files"
+	# Correct the gitlab-shell path we fooled lib/gitlab/shell.rb with.
+	sed -i \
+		-e "s|${D}/${GITLAB_SHELL}|${GITLAB_SHELL}|g" \
+		${D}/${DEST_DIR}/config/gitlab.yml || die "failed to change back gitlab-shell path"
+	# Remove the ${GITLAB_SHELL} we fooled lib/gitlab/shell.rb with.
+	rm -rf ${D}/${GITLAB_SHELL}
 
 	## Clean ##
 
