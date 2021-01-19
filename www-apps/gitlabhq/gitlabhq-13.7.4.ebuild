@@ -207,6 +207,12 @@ src_install() {
 		"${FILESDIR}"/gitlab.logrotate > "${D}"/etc/logrotate.d/${PN}-${SLOT} \
 		|| die "failed to filter gitlab.logrotate"
 
+	# env file
+	cat > 42"${PN}" <<-EOF
+		CONFIG_PROTECT="${DEST_DIR}/config"
+	EOF
+	doenvd 42"${PN}"
+
 	## Install gems via bundler ##
 
 	cd "${D}/${DEST_DIR}"
@@ -392,13 +398,6 @@ src_install() {
 			|| die "failed to filter ${rcscript}"
 		newinitd "${T}/${rcscript}" "${PN}-${SLOT}"
 	fi
-
-	# env file
-	cat > 42"${PN}" <<-EOF
-		CONFIG_PROTECT="${DEST_DIR}/config"
-	EOF
-	doenvd 42"${PN}"
-	rm -f 42"${PN}"
 }
 
 pkg_postinst() {
