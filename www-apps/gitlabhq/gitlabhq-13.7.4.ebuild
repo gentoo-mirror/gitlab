@@ -398,7 +398,7 @@ src_install() {
 		CONFIG_PROTECT="${DEST_DIR}/config"
 	EOF
 	doenvd 42"${PN}"
-
+	rm -f 42"${PN}"
 }
 
 pkg_postinst() {
