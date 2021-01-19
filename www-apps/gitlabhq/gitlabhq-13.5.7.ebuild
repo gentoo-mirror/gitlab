@@ -56,9 +56,9 @@ DEPEND="
 	acct-user/git[gitlab]
 	acct-group/git
 	dev-lang/ruby[ssl]
-	~dev-vcs/gitlab-shell-13.14.0
+	~dev-vcs/gitlab-shell-13.11.0
 	~dev-vcs/gitlab-gitaly-${PV}
-	~www-servers/gitlab-workhorse-8.58.2
+	~www-servers/gitlab-workhorse-8.51.2
 	!gitaly_git? ( >=dev-vcs/git-2.29.0[pcre,pcre-jit] )
 	gitaly_git? ( dev-vcs/gitlab-gitaly[gitaly_git] )
 	app-eselect/eselect-gitlabhq
