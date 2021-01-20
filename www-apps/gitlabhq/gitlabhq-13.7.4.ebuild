@@ -410,9 +410,11 @@ pkg_postinst() {
 		su -l ${GIT_USER} -s /bin/sh -c "
 			git config --global core.autocrlf 'input';
 			git config --global gc.auto 0;
+			git config --global repack.writeBitmaps true;
+			git config --global receive.advertisePushOptions true;
+			git config --global core.fsyncObjectFiles true;
 			git config --global user.email 'gitlab@localhost';
-			git config --global user.name 'GitLab'
-			git config --global repack.writeBitmaps true" \
+			git config --global user.name 'GitLab'" \
 			|| die "failed to setup git configuration"
 	fi
 
