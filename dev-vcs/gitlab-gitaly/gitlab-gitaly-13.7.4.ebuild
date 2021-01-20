@@ -35,7 +35,8 @@ CONF_DIR="/etc/${PN}-${SLOT}"
 
 GIT_REPOS="${GIT_HOME}/repositories"
 GITLAB_SHELL="${BASE_DIR}/gitlab-shell"
-GITLAB_SOCKETS="${BASE_DIR}/gitlabhq-${SLOT}/tmp/sockets"
+GITLABHQ="${BASE_DIR}/gitlabhq-${SLOT}"
+GITLAB_SOCKETS="${GITLABHQ}/tmp/sockets"
 
 BUNDLE="ruby /usr/bin/bundle"
 
@@ -44,12 +45,12 @@ src_prepare() {
 
 	# Update paths for gitlab
 	# Note: Order of -e expressions is important here
-	local gitlabhq_urlenc=$(echo "${BASE_DIR}/gitlabhq/" | sed -e "s|/|%2F|g")
+	local gitlabhq_urlenc=$(echo "${GITLABHQ}/" | sed -e "s|/|%2F|g")
 	sed -i \
 		-e "s|^bin_dir = \"/home/git/gitaly\"|bin_dir = \"${DEST_DIR}/bin\"|" \
 		-e "s|/home/git/gitaly|${DEST_DIR}|g" \
 		-e "s|/home/git/gitlab-shell|${GITLAB_SHELL}|g" \
-		-e "s|/home/git/gitlab/log|${BASE_DIR}/gitlabhq/log|g" \
+		-e "s|/home/git/gitlab/log|${GITLABHQ}/log|g" \
 		-e "s|http+unix://%2Fhome%2Fgit%2Fgitlab%2F|http+unix://${gitlabhq_urlenc}|" \
 		-e "s|/home/git/gitlab/tmp/sockets/private|${GITLAB_SOCKETS}|g" \
 		-e "s|/home/git/|${GIT_HOME}/|g" \
@@ -121,7 +122,7 @@ pkg_postinst() {
 		einfo "Note: With gitaly_git USE flag enabled the included git was installed to"
 		einfo "      ${DEST_DIR}/bin/. In order to use it one has to set the"
 		einfo "      git \"bin_path\" variable in \"${CONF_DIR}/config.toml\" and in"
-		einfo "      \"/etc/gitlabhq/gitlab.yml\" to \"${DEST_DIR}/bin/git\""
+		einfo "      \"/etc/gitlabhq-${SLOT}/gitlab.yml\" to \"${DEST_DIR}/bin/git\""
 	fi
 	einfo "Use \"eselect ${PN}\" to select the gitaly slot."
 }
