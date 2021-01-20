@@ -405,18 +405,21 @@ src_install() {
 pkg_postinst() {
 	tmpfiles_process "${PN}-${SLOT}.conf"
 	if [ ! -e "${GIT_HOME}/.gitconfig" ]; then
-		einfo "Setting git user in ${GIT_HOME}/.gitconfig, feel free to "
-		einfo "modify this file according to your needs!"
+		einfo "Setting git user/email in ${GIT_HOME}/.gitconfig,"
+		einfo "feel free to modify this file according to your needs!"
 		su -l ${GIT_USER} -s /bin/sh -c "
-			git config --global core.autocrlf 'input';
-			git config --global gc.auto 0;
-			git config --global repack.writeBitmaps true;
-			git config --global receive.advertisePushOptions true;
-			git config --global core.fsyncObjectFiles true;
 			git config --global user.email 'gitlab@localhost';
 			git config --global user.name 'GitLab'" \
-			|| die "failed to setup git configuration"
+			|| die "failed to setup git user/email"
 	fi
+	einfo "Configure Git global settings for git user"
+	su -l ${GIT_USER} -s /bin/sh -c "
+		git config --global core.autocrlf 'input';
+		git config --global gc.auto 0;
+		git config --global repack.writeBitmaps true;
+		git config --global receive.advertisePushOptions true;
+		git config --global core.fsyncObjectFiles true" \
+		|| die "failed to Configure Git global settings for git user"
 
 	local db_name=gitlab_${RAILS_ENV} db_user=gitlab
 	elog "If this is a new installation, proceed with the following steps:"
