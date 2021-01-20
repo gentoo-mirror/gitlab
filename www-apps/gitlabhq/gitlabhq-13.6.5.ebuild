@@ -583,6 +583,16 @@ pkg_config_do_upgrade_migrate_configuration() {
 }
 
 pkg_config_do_upgrade_migrate_database() {
+	einfo  "Gitaly must be running for the next step. Execute"
+	if use systemd; then
+		einfo "systemctl --job-mode=ignore-dependencies start ${PN}-${SLOT}-gitaly.service"
+	else
+		einfo "Comment out all daemons in ${PN}-${SLOT}.init up to gitaly and run"
+		einfo "rc-service ${PN}-${SLOT} start"
+	fi
+	einfon "Hit <Enter> to continue "
+	local answer
+	read -r answer
 	einfo "Migrating database ..."
 	su -l ${GIT_USER} -s /bin/sh -c "
 		export LANG=en_US.UTF-8; export LC_ALL=en_US.UTF-8
@@ -677,6 +687,16 @@ pkg_config_initialize() {
 		die
 	fi
 
+	einfo  "Gitaly must be running for the next step. Execute"
+	if use systemd; then
+		einfo "systemctl --job-mode=ignore-dependencies start ${PN}-${SLOT}-gitaly.service"
+	else
+		einfo "Comment out all daemons in ${PN}-${SLOT}.init up to gitaly and run"
+		einfo "rc-service ${PN}-${SLOT} start"
+	fi
+	einfon "Hit <Enter> to continue "
+	local answer
+	read -r answer
 	einfo "Initializing database ..."
 	su -l ${GIT_USER} -s /bin/sh -c "
 		export LANG=en_US.UTF-8; export LC_ALL=en_US.UTF-8
