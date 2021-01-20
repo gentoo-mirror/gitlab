@@ -178,6 +178,7 @@ src_install() {
 	keepdir "${TMP_DIR}"
 
 	diropts -m755
+	dodir "${GIT_REPOS}"
 	dodir "${DEST_DIR}"
 	dodir "${uploads}"
 
