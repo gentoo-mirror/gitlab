@@ -172,6 +172,8 @@ continue_or_skip() {
 src_install() {
 	## Prepare directories ##
 	local uploads="${DEST_DIR}/public/uploads"
+	diropts -m700
+	dodir "${uploads}"
 
 	diropts -m750
 	keepdir "${LOG_DIR}"
@@ -180,7 +182,6 @@ src_install() {
 	diropts -m755
 	dodir "${GIT_REPOS}"
 	dodir "${DEST_DIR}"
-	dodir "${uploads}"
 
 	## Install configs ##
 
