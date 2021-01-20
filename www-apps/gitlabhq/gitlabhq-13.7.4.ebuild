@@ -416,26 +416,27 @@ pkg_postinst() {
 			|| die "failed to setup git configuration"
 	fi
 
+	local db_name=gitlab_${RAILS_ENV} db_user=gitlab
 	elog "If this is a new installation, proceed with the following steps:"
 	elog
 	elog "  1. If this is a new installation, create a database for your GitLab instance."
 	elog "     On yor database server (local ore remote), just copy&run:"
 	elog "         su postgres"
-	elog "         psql -c \"CREATE ROLE gitlab PASSWORD 'gitlab' \\"
+	elog "         psql -c \"CREATE ROLE ${db_user} PASSWORD 'gitlab' \\"
 	elog "             NOSUPERUSER NOCREATEDB NOCREATEROLE INHERIT LOGIN;\""
-	elog "         createdb -E UTF-8 -O gitlab gitlab_${RAILS_ENV}"
+	elog "         createdb -E UTF-8 -O ${db_user} ${db_name}"
 	elog "     Note: You should change your password to something more random..."
 	elog
 	elog "     GitLab uses polymorphic associations which are not SQL-standard friendly."
 	elog "     To get it work you must use this ugly workaround:"
-	elog "         psql -U postgres -d gitlab"
+	elog "         psql -U postgres -d ${db_name}"
 	elog "         CREATE CAST (integer AS text) WITH INOUT AS IMPLICIT;"
 	elog
 	elog "     GitLab needs two PostgreSQL extensions: pg_trgm and btree_gist."
 	elog "     To check the 'List of installed extensions' run:"
-	elog "         psql -U postgres -d gitlab -c \"\dx\""
+	elog "         psql -U postgres -d ${db_name} -c \"\dx\""
 	elog "     To create the extensions if they are missing do:"
-	elog "         psql -U postgres -d gitlab"
+	elog "         psql -U postgres -d ${db_name}"
 	elog "         CREATE EXTENSION IF NOT EXISTS pg_trgm;"
 	elog "         CREATE EXTENSION IF NOT EXISTS btree_gist;"
 	elog
