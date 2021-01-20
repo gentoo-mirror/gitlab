@@ -580,7 +580,8 @@ pkg_config_do_upgrade_migrate_database() {
 		einfo "systemctl --job-mode=ignore-dependencies start ${PN}-${SLOT}-gitaly.service"
 	else
 		einfo "Comment out all daemons in ${PN}-${SLOT}.init up to gitaly and run"
-		einfo "rc-service ${PN}-${SLOT} start"
+		einfo "\$ rc-service ${PN}-${SLOT} start"
+		einfo "Remove the comments afterwards again."
 	fi
 	einfon "Hit <Enter> to continue "
 	local answer
@@ -684,7 +685,8 @@ pkg_config_initialize() {
 		einfo "systemctl --job-mode=ignore-dependencies start ${PN}-${SLOT}-gitaly.service"
 	else
 		einfo "Comment out all daemons in ${PN}-${SLOT}.init up to gitaly and run"
-		einfo "rc-service ${PN}-${SLOT} start"
+		einfo "\$ rc-service ${PN}-${SLOT} start"
+		einfo "Remove the comments afterwards again."
 	fi
 	einfon "Hit <Enter> to continue "
 	local answer
@@ -735,12 +737,16 @@ pkg_config() {
 		ln -s "${DEST_DIR}/.gitlab_shell_secret" "${GITLAB_SHELL}/.gitlab_shell_secret"
 	fi
 
-	if [[ $do_upgrade ]]; then
-		einfo
-		einfo "You might want to select the new gitlabhq slot now. Check with:"
-		einfo "\$ eselect gitlabhq list"
-		einfo "It's recommended to use the same slot with gitaly. Check with:"
-		einfo "\$ eselect gitlab-gitaly list"
+	einfo
+	einfo "Please select the gitlabhq slot now. Check with:"
+	einfo "\$ eselect gitlabhq list"
+	einfo "It's recommended to use the same slot with gitaly. Check with:"
+	einfo "\$ eselect gitlab-gitaly list"
+	einfo "Then start gitlab with"
+	if use systemd; then
+		einfo "\$ systemctl start ${PN}-${SLOT}.target"
+	else
+		einfo "\$ rc-service ${PN}-${SLOT} start"
 	fi
 
 	einfo
