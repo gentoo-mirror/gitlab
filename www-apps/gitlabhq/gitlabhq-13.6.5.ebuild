@@ -693,6 +693,7 @@ pkg_config_initialize() {
 	read -r answer
 	einfon "Set the Administrator/root password: "
 	read -sr pw
+	einfo
 	einfon "Set the Administrator/root email: "
 	read -r email
 	einfo "Initializing database ..."
