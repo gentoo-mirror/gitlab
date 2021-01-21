@@ -4,7 +4,7 @@
     <repo quality="experimental" status="unofficial">
         <name><![CDATA[gitlab]]></name>
         <description lang="en"><![CDATA[Gentoo Overlay for GitLab]]></description>
-        <homepage>https://https://gitlab.awesome-it.de/overlays/gitlab</homepage>
+        <homepage>https://gitlab.awesome-it.de/overlays/gitlab</homepage>
         <owner type="person">
             <email>prote@fmi.uni-stuttgart.de</email>
             <name><![CDATA[Horst Prote]]></name>
