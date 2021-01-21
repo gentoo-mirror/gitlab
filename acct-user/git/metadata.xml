@@ -8,7 +8,7 @@
 	<use>
 		<flag name="gitea">Set home directory for git hosting
 			via <pkg>www-apps/gitea</pkg>.</flag>
-		<flag name="gitea">Set home directory for gitlab hosting
+		<flag name="gitlab">Set home directory for gitlab hosting
 			via <pkg>www-apps/gitlabhq</pkg>.</flag>
 		<flag name="gitolite">Set home directory for git hosting
 			via <pkg>dev-vcs/gitolite</pkg>
