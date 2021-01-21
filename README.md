@@ -7,8 +7,6 @@ up to date.
 
 Horst
 
----
-
 # Installation
 
 See the Gentoo [Wiki page](https://wiki.gentoo.org/wiki/GitLab).
