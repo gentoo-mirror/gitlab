@@ -65,8 +65,7 @@ DEPEND="
 	net-misc/curl
 	virtual/ssh
 	>=sys-apps/yarn-1.15.0
-	dev-libs/re2
-	<=sys-apps/gawk-4.9999"
+	dev-libs/re2"
 RDEPEND="${DEPEND}
 	>=dev-db/redis-5.0
 	virtual/mta
@@ -690,13 +689,19 @@ pkg_config_initialize() {
 		einfo "Remove the comments afterwards again."
 	fi
 	einfon "Hit <Enter> to continue "
-	local answer
+	local answer pw email
 	read -r answer
+	einfon "Set the Administrator/root password: "
+	read -sr pw
+	einfo
+	einfon "Set the Administrator/root email: "
+	read -r email
 	einfo "Initializing database ..."
 	su -l ${GIT_USER} -s /bin/sh -c "
 		export LANG=en_US.UTF-8; export LC_ALL=en_US.UTF-8
 		cd ${DEST_DIR}
-		${BUNDLE} exec rake gitlab:setup RAILS_ENV=${RAILS_ENV}" \
+		${BUNDLE} exec rake gitlab:setup RAILS_ENV=${RAILS_ENV} \
+			GITLAB_ROOT_PASSWORD=${pw} GITLAB_ROOT_EMAIL=${email}" \
 			|| die "failed to run rake gitlab:setup"
 }
 
