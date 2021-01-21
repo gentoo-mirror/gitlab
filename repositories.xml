@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE repositories SYSTEM "/dtd/repositories.dtd">
+<repositories xmlns="" version="1.0">
+    <repo quality="experimental" status="unofficial">
+        <name><![CDATA[gitlab]]></name>
+        <description lang="en"><![CDATA[Gentoo Overlay for GitLab]]></description>
+        <homepage>https://gitlab.awesome-it.de/overlays/gitlab</homepage>
+        <owner type="person">
+            <email>prote@fmi.uni-stuttgart.de</email>
+            <name><![CDATA[Horst Prote]]></name>
+        </owner>
+        <source type="git">https://gitlab.awesome-it.de/overlays/gitlab.git</source>
+        <source type="git">git@git.local.awesome-it.de:overlays/gitlab.git</source>
+    </repo>
+</repositories>
