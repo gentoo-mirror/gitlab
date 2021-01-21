@@ -30,3 +30,11 @@ pkg_setup() {
 		die "Incorrect USE flag combination"
 	fi
 }
+
+pkg_postinst() {
+	acct-user_pkg_postinst
+	ewarn "For GitLab the git user has to be unlocked with"
+	ewarn "an non-empty but unusable password. Please run"
+	ewarn "\"vipw -s\" and change the password field of git"
+	ewarn "from \"!\" to \"*\"."
+}
