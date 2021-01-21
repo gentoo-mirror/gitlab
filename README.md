@@ -6,3 +6,9 @@ as we use GitLab on Gentoo at our university institute I'll try to keep it
 up to date.
 
 Horst
+
+---
+
+# Installation
+
+See the Gentoo [Wiki page](https://wiki.gentoo.org/wiki/GitLab).
