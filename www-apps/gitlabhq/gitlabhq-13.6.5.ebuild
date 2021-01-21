@@ -284,7 +284,7 @@ src_install() {
 
 	# fix permissions
 
-	fowners -R ${GIT_USER}:${GIT_GROUP} "${DEST_DIR}" "${CONF_DIR}" "${TMP_DIR}" "${LOG_DIR}"
+	fowners -R ${GIT_USER}:$GIT_GROUP $DEST_DIR $CONF_DIR $TMP_DIR $LOG_DIR $GIT_REPOS
 	fperms o+Xr "${TMP_DIR}" # Let nginx access the puma/unicorn socket
 
 	# fix QA Security Notice: world writable file(s)
@@ -735,8 +735,8 @@ pkg_config() {
 	## (Re-)Link gitlab_shell_secret into gitlab-shell
 	if [ -L "${GITLAB_SHELL}/.gitlab_shell_secret" ]; then
 		rm "${GITLAB_SHELL}/.gitlab_shell_secret"
-		ln -s "${DEST_DIR}/.gitlab_shell_secret" "${GITLAB_SHELL}/.gitlab_shell_secret"
 	fi
+	ln -s "${DEST_DIR}/.gitlab_shell_secret" "${GITLAB_SHELL}/.gitlab_shell_secret"
 
 	einfo
 	einfo "Please select the gitlabhq slot now. Check with:"
