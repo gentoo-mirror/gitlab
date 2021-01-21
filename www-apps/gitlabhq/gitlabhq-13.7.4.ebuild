@@ -65,8 +65,7 @@ DEPEND="
 	net-misc/curl
 	virtual/ssh
 	>=sys-apps/yarn-1.15.0
-	dev-libs/re2
-	<=sys-apps/gawk-4.9999"
+	dev-libs/re2"
 RDEPEND="${DEPEND}
 	>=dev-db/redis-5.0
 	virtual/mta
