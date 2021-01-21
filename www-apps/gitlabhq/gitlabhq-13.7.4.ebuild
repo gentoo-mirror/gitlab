@@ -458,9 +458,15 @@ pkg_postinst() {
 		elog
 	fi
 
-	elog "  6. Execute the following command to finalize your setup:"
+	elog "  6. You need to configure redis to have a UNIX socket and you may"
+	elog "     adjust the maxmemory settings. Change /etc/redis/conf to"
+	elog "       unixsocket /var/run/redis/redis.sock"
+	elog "       unixsocketperm 770"
+	elog "       maxmemory 1024MB"
+	elog "       maxmemory-policy volatile-lru"
+	elog
+	elog "  7. Make sure the Redis server is running and execute:"
 	elog "         emerge --config \"=${CATEGORY}/${PF}\""
-	elog "     Note: Do not forget to start Redis server."
 	elog
 	elog "If this is an upgrade of an existing GitLab instance,"
 	elog "run the following command and choose upgrading when prompted:"
