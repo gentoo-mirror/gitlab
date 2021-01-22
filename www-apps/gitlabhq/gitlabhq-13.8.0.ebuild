@@ -621,12 +621,20 @@ pkg_config_do_upgrade_check_background_migrations() {
 	# ensure that any background migrations have been fully completed
 	# see /opt/gitlab/gitlabhq-${SLOT}/doc/update/README.md
 	einfo "Checking for background migrations..."
-	local rails_cmd="'puts Gitlab::BackgroundMigration.remaining'"
-	su -l ${GIT_USER} -s /bin/sh -c "
+	local bm rails_cmd="'puts Gitlab::BackgroundMigration.remaining'"
+	bm=$(su -l ${GIT_USER} -s /bin/sh -c "
 		export LANG=en_US.UTF-8; export LC_ALL=en_US.UTF-8
 		cd ${DEST_DIR}
 		${BUNDLE} exec rails runner -e ${RAILS_ENV} ${rails_cmd}" \
-			|| die "failed to check for background migrations"
+			|| die "failed to check for background migrations")
+	if [ "${bm}" != "0" ]; then
+		elog "The new version may require a set of background migrations to be finished."
+		elog "For more information see:"
+		elog "https://gitlab.com/gitlab-org/gitlab-foss/-/blob/master/doc/update/README.md#checking-for-background-migrations-before-upgrading"
+		die "Number of remainig background migrations is ${bm}"
+	else
+		elog "OK: No remainig background migrations found."
+	fi
 }
 
 pkg_config_do_upgrade() {
@@ -662,6 +670,8 @@ pkg_config_do_upgrade() {
 		einfo "Aborting migration"
 		return 1
 	fi
+
+	pkg_config_do_upgrade_check_background_migrations
 
 	if [[ ${LATEST_DEST} != ${DEST_DIR} ]]; then
 		einfo "Found major update: Migration from \"${LATEST_DEST}\" to \"${DEST_DIR}\"."
