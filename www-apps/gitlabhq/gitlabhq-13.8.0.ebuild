@@ -663,6 +663,8 @@ pkg_config_do_upgrade() {
 		return 1
 	fi
 
+	pkg_config_do_upgrade_check_background_migrations
+
 	if [[ ${LATEST_DEST} != ${DEST_DIR} ]]; then
 		einfo "Found major update: Migration from \"${LATEST_DEST}\" to \"${DEST_DIR}\"."
 
