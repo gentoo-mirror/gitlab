@@ -47,7 +47,7 @@ GEMS_DEPEND="
 	dev-libs/libxslt
 	dev-util/ragel
 	dev-libs/yajl
-	>=net-libs/nodejs-12
+	>=net-libs/nodejs-14
 	dev-db/postgresql:12
 	net-libs/http-parser"
 DEPEND="
@@ -56,9 +56,9 @@ DEPEND="
 	acct-user/git[gitlab]
 	acct-group/git
 	dev-lang/ruby[ssl]
-	~dev-vcs/gitlab-shell-13.11.0
+	~dev-vcs/gitlab-shell-13.15.0
 	~dev-vcs/gitlab-gitaly-${PV}
-	~www-servers/gitlab-workhorse-8.51.2
+	~www-servers/gitlab-workhorse-8.59.0
 	!gitaly_git? ( >=dev-vcs/git-2.29.0[pcre,pcre-jit] )
 	gitaly_git? ( dev-vcs/gitlab-gitaly[gitaly_git] )
 	app-eselect/eselect-gitlabhq
@@ -179,7 +179,7 @@ src_install() {
 	keepdir "${TMP_DIR}"
 
 	diropts -m755
-	dodir "${GIT_REPOS}"
+	keepdir "${GIT_REPOS}"
 	dodir "${DEST_DIR}"
 
 	## Install configs ##
@@ -211,10 +211,11 @@ src_install() {
 		|| die "failed to filter gitlab.logrotate"
 
 	# env file
-	cat > 42"${PN}" <<-EOF
+	cat > 42"${PN}-${SLOT}" <<-EOF
 		CONFIG_PROTECT="${DEST_DIR}/config"
 	EOF
-	doenvd 42"${PN}"
+	doenvd 42"${PN}-${SLOT}"
+	rm -f 42"${PN}-${SLOT}"
 
 	## Install gems via bundler ##
 
@@ -614,6 +615,18 @@ pkg_config_do_upgrade_configure_git() {
 	su -l ${GIT_USER} -s /bin/sh -c "
 		git config --global repack.writeBitmaps true" \
 			|| die "failed to configure Git"
+}
+
+pkg_config_do_upgrade_check_background_migrations() {
+	# ensure that any background migrations have been fully completed
+	# see /opt/gitlab/gitlabhq-${SLOT}/doc/update/README.md
+	einfo "Checking for background migrations..."
+	local rails_cmd="'puts Gitlab::BackgroundMigration.remaining'"
+	su -l ${GIT_USER} -s /bin/sh -c "
+		export LANG=en_US.UTF-8; export LC_ALL=en_US.UTF-8
+		cd ${DEST_DIR}
+		${BUNDLE} exec rails runner -e ${RAILS_ENV} ${rails_cmd}" \
+			|| die "failed to check for background migrations"
 }
 
 pkg_config_do_upgrade() {

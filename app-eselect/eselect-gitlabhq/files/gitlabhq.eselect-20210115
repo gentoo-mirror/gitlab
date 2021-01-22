@@ -117,10 +117,10 @@ do_set() {
         remove_symlink || die -q "Couldn't remove existing symlink"
         set_symlink "$1" || die -q "Couldn't set a new symlink"
 		echo "You may now clean up the old slot by running:"
-		echo "emerge -C www-apps/${old_version}"
-		echo "rm -r /opt/gitlab/${old_version}"
-		echo "rm -r /var/log/${old_version}"
-		echo "rm -r /var/tmp/${old_version}"
+		echo "  emerge -C www-apps/${old_version}"
+		echo "  rm -r /opt/gitlab/${old_version}"
+		echo "  rm -r /var/log/${old_version}"
+		echo "  rm -r /var/tmp/${old_version}"
     elif [[ -e ${EROOT}/opt/gitlab/gitlabhq ]]; then
         # we have something strange
         die -q "${EROOT}/opt/gitlab/gitlabhq exists but is not a symlink"
