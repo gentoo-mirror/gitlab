@@ -179,7 +179,7 @@ src_install() {
 	keepdir "${TMP_DIR}"
 
 	diropts -m755
-	dodir "${GIT_REPOS}"
+	keepdir "${GIT_REPOS}"
 	dodir "${DEST_DIR}"
 
 	## Install configs ##
@@ -211,10 +211,11 @@ src_install() {
 		|| die "failed to filter gitlab.logrotate"
 
 	# env file
-	cat > 42"${PN}" <<-EOF
+	cat > 42"${PN}-${SLOT}" <<-EOF
 		CONFIG_PROTECT="${DEST_DIR}/config"
 	EOF
-	doenvd 42"${PN}"
+	doenvd 42"${PN}-${SLOT}"
+	rm -f 42"${PN}-${SLOT}"
 
 	## Install gems via bundler ##
 
