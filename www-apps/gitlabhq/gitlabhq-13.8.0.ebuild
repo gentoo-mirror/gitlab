@@ -23,7 +23,7 @@ LICENSE="MIT"
 RESTRICT="network-sandbox splitdebug strip"
 SLOT=$PV
 KEYWORDS="~amd64 ~x86"
-IUSE="favicon gitaly_git kerberos -mail_room +puma -unicorn speedup_hack systemd"
+IUSE="favicon gitaly_git kerberos -mail_room +puma -unicorn +speedup_hack systemd"
 REQUIRED_USE="
 	^^ ( puma unicorn )"
 # USE flags that affect the --without option below
