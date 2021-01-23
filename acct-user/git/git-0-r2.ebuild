@@ -16,6 +16,8 @@ ACCT_USER_HOME_PERMS=750
 ACCT_USER_SHELL=/bin/sh
 ACCT_USER_GROUPS=( git )
 
+RDEPEND="acct-group/redis"
+
 acct-user_add_deps
 
 pkg_setup() {
@@ -33,8 +35,14 @@ pkg_setup() {
 
 pkg_postinst() {
 	acct-user_pkg_postinst
-	ewarn "For GitLab the git user has to be unlocked with"
-	ewarn "an non-empty but unusable password. Please run"
-	ewarn "\"vipw -s\" and change the password field of git"
-	ewarn "from \"!\" to \"*\"."
+	elog "For GitLab the git user has to be unlocked but doesn't"
+	elog "need a password as only ssh public key login is used."
+	elog "Changing the password field of git in /etc/shadow:"
+	if [ $(passwd -S git | cut -d" " -f2) == "P" ]; then
+		eerror "Change canceled, because the git user has a real password."
+		eerror "Run \"usermod -p '*' git\" to do the change manually."
+	else
+		usermod -p '*' git
+		elog "Changed the password field from \"!\" to \"*\"."
+	fi
 }
