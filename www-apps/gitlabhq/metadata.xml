@@ -11,6 +11,7 @@
     <flag name="mail_room">Enables support for GitLab MailRoom</flag>
     <flag name="puma">Enables support for the puma HTTP server</flag>
     <flag name="unicorn">Enables support for the unicorn HTTP server</flag>
+    <flag name="speedup_hack">Using parts of the installed gitlabhq to save build time.</flag>
   </use>
 </pkgmetadata>
 

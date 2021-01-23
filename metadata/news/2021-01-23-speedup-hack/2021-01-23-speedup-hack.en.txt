@@ -12,11 +12,14 @@ One will get a @preserved-rebuild warning but the rebuild will always
 copy the version linked to the old library from the current installation
 and so bundler would simply "use" this instead of rebuilding.
 
-To still enjoy the reduced build time when possible I introduced a new
-www-apps/gitlabhq specific environment variable: BUNDLE_SPEEDUP_HACK.
-Set this to "off" to deactivate the hack, e. g.:
+To still enjoy the reduced build time when possible the new USE flag
 
-  BUNDLE_SPEEDUP_HACK=off emerge gitlabhq
+  speedup_hack
+
+was introduced which is on by default. To switch it off for one emerge
+only simply do
+
+  USE="-speedup_hack" emerge gitlabhq
 
 ---
 (1) See news "Faster builds and post-upgrade cleanup" from 2021-01-16

@@ -23,7 +23,7 @@ LICENSE="MIT"
 RESTRICT="network-sandbox splitdebug strip"
 SLOT=$PV
 KEYWORDS="~amd64 ~x86"
-IUSE="favicon gitaly_git kerberos -mail_room +puma -unicorn systemd"
+IUSE="favicon gitaly_git kerberos -mail_room +puma -unicorn speedup_hack systemd"
 REQUIRED_USE="
 	^^ ( puma unicorn )"
 # USE flags that affect the --without option below
@@ -221,7 +221,7 @@ src_install() {
 
 	cd "${D}/${DEST_DIR}"
 
-	if ! has off ${BUNDLE_SPEEDUP_HACK}; then
+	if use speedup_hack; then
 		if [ -d ${BASE_DIR}/${PN}/ ]; then
 			einfo "Using parts of the installed gitlabhq to save time:"
 		fi
