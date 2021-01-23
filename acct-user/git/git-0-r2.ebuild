@@ -35,8 +35,14 @@ pkg_setup() {
 
 pkg_postinst() {
 	acct-user_pkg_postinst
-	usermod -p '*' git
-	elog "For GitLab the git user has to be unlocked but doesn't need"
-	elog "a password as only ssh public key login is used. So we"
-	elog "changed the password field of git from \"!\" to \"*\"."
+	elog "For GitLab the git user has to be unlocked but doesn't"
+	elog "need a password as only ssh public key login is used."
+	elog "Changing the password field of git in /etc/shadow:"
+	if [ $(passwd -S git | cut -d" " -f2) == "P" ]; then
+		eerror "Change canceled, because the git user has a real password."
+		eerror "Run \"usermod -p '*' git\" to do the change manually."
+	else
+		usermod -p '*' git
+		elog "Changed the password field from \"!\" to \"*\"."
+	fi
 }
