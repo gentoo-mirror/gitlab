@@ -315,17 +315,17 @@ src_install() {
 		webserver_bin="puma"
 		webserver_name="Puma"
 		webserver_unit="${PN}-${SLOT}-puma.service"
-		webserver_c="C"
-		webserver_e="e"
-		webserver_d="d"
+		webserver_c="-C"
+		webserver_e="-e"
+		webserver_d=""
 	elif use unicorn; then
 		webserver="unicorn"
 		webserver_bin="unicorn_rails"
 		webserver_name="Unicorn"
 		webserver_unit="${PN}-${SLOT}-unicorn.service"
-		webserver_c="c"
-		webserver_e="E"
-		webserver_d="D"
+		webserver_c="-c"
+		webserver_e="-E"
+		webserver_d="-D"
 	fi
 
 	if use systemd; then

@@ -22,7 +22,7 @@ description="GitLab git repository management"
 : ${webserver_log:="${gitlab_log}/@WEBSERVER@.log"}
 : ${webserver_socket:="${gitlab_sockets}/gitlab.socket"}
 : ${webserver_command:="/usr/bin/bundle"}
-: ${webserver_command_args:="exec @WEBSERVER_BIN@ -@WEBSERVER_C@ ${gitlab_config}/@WEBSERVER@.rb -@WEBSERVER_E@ ${rails_env} -@WEBSERVER_D@"}
+: ${webserver_command_args:="exec @WEBSERVER_BIN@ @WEBSERVER_C@ ${gitlab_config}/@WEBSERVER@.rb @WEBSERVER_E@ ${rails_env} @WEBSERVER_D@"}
 
 : ${sidekiq_pidfile:="${gitlab_pids}/sidekiq.pid"}
 : ${sidekiq_log:="${gitlab_log}/sidekiq.log"}
