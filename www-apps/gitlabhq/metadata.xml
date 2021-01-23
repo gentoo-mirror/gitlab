@@ -10,7 +10,7 @@
     <flag name="gitaly_git">Use the Git version provided by Gitaly</flag>
     <flag name="mail_room">Enables support for GitLab MailRoom</flag>
     <flag name="puma">Enables support for the puma HTTP server</flag>
-    <flag name="unicorn">Enables support for the unicorn HTTP</flag>
+    <flag name="unicorn">Enables support for the unicorn HTTP server</flag>
   </use>
 </pkgmetadata>
 
