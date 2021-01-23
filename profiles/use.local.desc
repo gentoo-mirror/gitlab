@@ -10,4 +10,4 @@ www-apps/gitlabhq:favicon - For the Custom Favicon to work, GraphicsMagick needs
 www-apps/gitlabhq:gitaly_git - Use the Git version provided by Gitaly
 www-apps/gitlabhq:mail_room - Enables support for GitLab MailRoom
 www-apps/gitlabhq:puma - Enables support for the puma HTTP server
-www-apps/gitlabhq:unicorn - Enables support for the unicorn HTTP
+www-apps/gitlabhq:unicorn - Enables support for the unicorn HTTP server
