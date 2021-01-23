@@ -315,17 +315,17 @@ src_install() {
 		webserver_bin="puma"
 		webserver_name="Puma"
 		webserver_unit="${PN}-${SLOT}-puma.service"
-		webserver_c="C"
-		webserver_e="e"
-		webserver_d="d"
+		webserver_c="-C"
+		webserver_e="-e"
+		webserver_d=""
 	elif use unicorn; then
 		webserver="unicorn"
 		webserver_bin="unicorn_rails"
 		webserver_name="Unicorn"
 		webserver_unit="${PN}-${SLOT}-unicorn.service"
-		webserver_c="c"
-		webserver_e="E"
-		webserver_d="D"
+		webserver_c="-c"
+		webserver_e="-E"
+		webserver_d="-D"
 	fi
 
 	if use systemd; then
@@ -624,7 +624,7 @@ pkg_config_do_upgrade_check_background_migrations() {
 	local bm rails_cmd="'puts Gitlab::BackgroundMigration.remaining'"
 	bm=$(su -l ${GIT_USER} -s /bin/sh -c "
 		export LANG=en_US.UTF-8; export LC_ALL=en_US.UTF-8
-		cd ${DEST_DIR}
+		cd ${BASE_DIR}/${PN}
 		${BUNDLE} exec rails runner -e ${RAILS_ENV} ${rails_cmd}" \
 			|| die "failed to check for background migrations")
 	if [ "${bm}" != "0" ]; then
