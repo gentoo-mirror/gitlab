@@ -16,6 +16,8 @@ ACCT_USER_HOME_PERMS=750
 ACCT_USER_SHELL=/bin/sh
 ACCT_USER_GROUPS=( git )
 
+RDEPEND="acct-group/redis"
+
 acct-user_add_deps
 
 pkg_setup() {
@@ -33,8 +35,8 @@ pkg_setup() {
 
 pkg_postinst() {
 	acct-user_pkg_postinst
-	ewarn "For GitLab the git user has to be unlocked with"
-	ewarn "an non-empty but unusable password. Please run"
-	ewarn "\"vipw -s\" and change the password field of git"
-	ewarn "from \"!\" to \"*\"."
+	usermod -p '*' git
+	elog "For GitLab the git user has to be unlocked but doesn't need"
+	elog "a password as only ssh public key login is used. So we"
+	elog "changed the password field of git from \"!\" to \"*\"."
 }
