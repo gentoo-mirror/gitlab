@@ -424,9 +424,10 @@ pkg_postinst() {
 		|| die "failed to Configure Git global settings for git user"
 
 	local db_name=gitlab_${RAILS_ENV} db_user=gitlab
+	elog
 	elog "If this is a new installation, proceed with the following steps:"
 	elog
-	elog "  1. If this is a new installation, create a database user for GitLab."
+	elog "  1. Create a database user for GitLab."
 	elog "     On your database server (local ore remote), just copy&run:"
 	elog "       su -l postgres"
 	elog "       psql -d template1 -c \"CREATE USER ${db_user} CREATEDB PASSWORD 'gitlab'\""
