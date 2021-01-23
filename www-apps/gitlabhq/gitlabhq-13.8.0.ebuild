@@ -221,23 +221,25 @@ src_install() {
 
 	cd "${D}/${DEST_DIR}"
 
-	if [ -d ${BASE_DIR}/${PN}/ ]; then
-		einfo "Using parts of the installed gitlabhq to save time:"
-	fi
-	# Hack: Don't start from scratch, use the installed bundle
-	if [ -d ${BASE_DIR}/${PN}/vendor/bundle ]; then
-		einfo "   Copying ${BASE_DIR}/${PN}/vendor/bundle/ ..."
-		cp -a ${BASE_DIR}/${PN}/vendor/bundle/ vendor/
-	fi
-	# Hack: Don't start from scratch, use the installed node_modules
-	if [ -d ${BASE_DIR}/${PN}/node_modules ]; then
-		einfo "   Copying ${BASE_DIR}/${PN}/node_modules/ ..."
-		cp -a ${BASE_DIR}/${PN}/node_modules/ ./
-	fi
-	# Hack: Don't start from scratch, use the installed public/assets
-	if [ -d ${BASE_DIR}/${PN}/public/assets ]; then
-		einfo "   Copying ${BASE_DIR}/${PN}/public/assets/ ..."
-		cp -a ${BASE_DIR}/${PN}/public/assets/ public/
+	if ! has off ${BUNDLE_SPEEDUP_HACK}; then
+		if [ -d ${BASE_DIR}/${PN}/ ]; then
+			einfo "Using parts of the installed gitlabhq to save time:"
+		fi
+		# Hack: Don't start from scratch, use the installed bundle
+		if [ -d ${BASE_DIR}/${PN}/vendor/bundle ]; then
+			einfo "   Copying ${BASE_DIR}/${PN}/vendor/bundle/ ..."
+			cp -a ${BASE_DIR}/${PN}/vendor/bundle/ vendor/
+		fi
+		# Hack: Don't start from scratch, use the installed node_modules
+		if [ -d ${BASE_DIR}/${PN}/node_modules ]; then
+			einfo "   Copying ${BASE_DIR}/${PN}/node_modules/ ..."
+			cp -a ${BASE_DIR}/${PN}/node_modules/ ./
+		fi
+		# Hack: Don't start from scratch, use the installed public/assets
+		if [ -d ${BASE_DIR}/${PN}/public/assets ]; then
+			einfo "   Copying ${BASE_DIR}/${PN}/public/assets/ ..."
+			cp -a ${BASE_DIR}/${PN}/public/assets/ public/
+		fi
 	fi
 
 	local without="development test coverage omnibus"

@@ -1,0 +1,22 @@
+Title: Bundle speedup hack 
+Author: Horst Prote <prote@fmi.uni-stuttgart.de>
+Posted: 2021-01-23
+Revision: 1
+News-Item-Format: 2.0
+Display-If-Installed: www-apps/gitlabhq
+
+So the dirty hack (1) turned out to break the build if a system library
+used by some gem was updated since last installation of www-apps/gitlabhq.
+
+One will get a @preserved-rebuild warning but the rebuild will always
+copy the version linked to the old library from the current installation
+and so bundler would simply "use" this instead of rebuilding.
+
+To still enjoy the reduced build time when possible I introduced a new
+www-apps/gitlabhq specific environment variable: BUNDLE_SPEEDUP_HACK.
+Set this to "off" to deactivate the hack, e. g.:
+
+  BUNDLE_SPEEDUP_HACK=off emerge gitlabhq
+
+---
+(1) See news "Faster builds and post-upgrade cleanup" from 2021-01-16
