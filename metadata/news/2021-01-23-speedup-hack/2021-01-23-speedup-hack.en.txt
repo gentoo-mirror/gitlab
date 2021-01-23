@@ -6,7 +6,7 @@ News-Item-Format: 2.0
 Display-If-Installed: www-apps/gitlabhq
 
 So the dirty hack (1) turned out to break the build if a system library
-use by some gem was updated since last installation of www-apps/gitlabhq.
+used by some gem was updated since last installation of www-apps/gitlabhq.
 
 One will get a @preserved-rebuild warning but the rebuild will always
 copy the version linked to the old library from the current installation
