@@ -23,7 +23,7 @@ LICENSE="MIT"
 RESTRICT="network-sandbox splitdebug strip"
 SLOT=$PV
 KEYWORDS="~amd64 ~x86"
-IUSE="favicon gitaly_git kerberos -mail_room +puma -unicorn +speedup_hack systemd"
+IUSE="favicon gitaly_git kerberos -mail_room +puma -unicorn systemd"
 REQUIRED_USE="
 	^^ ( puma unicorn )"
 # USE flags that affect the --without option below
@@ -221,25 +221,26 @@ src_install() {
 
 	cd "${D}/${DEST_DIR}"
 
-	if use speedup_hack; then
-		if [ -d ${BASE_DIR}/${PN}/ ]; then
-			einfo "Using parts of the installed gitlabhq to save time:"
-		fi
-		# Hack: Don't start from scratch, use the installed bundle
-		if [ -d ${BASE_DIR}/${PN}/vendor/bundle ]; then
+	if [ -d ${BASE_DIR}/${PN}/ ]; then
+		einfo "Using parts of the installed gitlabhq to save time:"
+	fi
+	# Hack: Don't start from scratch, use the installed bundle
+	if [ -d ${BASE_DIR}/${PN}/vendor/bundle ]; then
+		portageq list_preserved_libs / >/dev/null # returns 1 when no preserved_libs found
+		if [ "$?" = "1" ]; then
 			einfo "   Copying ${BASE_DIR}/${PN}/vendor/bundle/ ..."
 			cp -a ${BASE_DIR}/${PN}/vendor/bundle/ vendor/
 		fi
-		# Hack: Don't start from scratch, use the installed node_modules
-		if [ -d ${BASE_DIR}/${PN}/node_modules ]; then
-			einfo "   Copying ${BASE_DIR}/${PN}/node_modules/ ..."
-			cp -a ${BASE_DIR}/${PN}/node_modules/ ./
-		fi
-		# Hack: Don't start from scratch, use the installed public/assets
-		if [ -d ${BASE_DIR}/${PN}/public/assets ]; then
-			einfo "   Copying ${BASE_DIR}/${PN}/public/assets/ ..."
-			cp -a ${BASE_DIR}/${PN}/public/assets/ public/
-		fi
+	fi
+	# Hack: Don't start from scratch, use the installed node_modules
+	if [ -d ${BASE_DIR}/${PN}/node_modules ]; then
+		einfo "   Copying ${BASE_DIR}/${PN}/node_modules/ ..."
+		cp -a ${BASE_DIR}/${PN}/node_modules/ ./
+	fi
+	# Hack: Don't start from scratch, use the installed public/assets
+	if [ -d ${BASE_DIR}/${PN}/public/assets ]; then
+		einfo "   Copying ${BASE_DIR}/${PN}/public/assets/ ..."
+		cp -a ${BASE_DIR}/${PN}/public/assets/ public/
 	fi
 
 	local without="development test coverage omnibus"
