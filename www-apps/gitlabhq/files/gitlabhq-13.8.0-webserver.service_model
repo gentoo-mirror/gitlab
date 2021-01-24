@@ -12,4 +12,4 @@ WorkingDirectory=@DEST_DIR@
 Environment=RAILS_ENV=production
 SyslogIdentifier=gitlab-@WEBSERVER@
 PIDFile=@TMP_DIR@/pids/@WEBSERVER@.pid
-ExecStart=@DEST_DIR@/bin/bundle exec "@WEBSERVER_BIN@ -@WEBSERVER_C@ @CONF_DIR@/@WEBSERVER@.rb -@WEBSERVER_E@ ${RAILS_ENV}"
+ExecStart=@DEST_DIR@/bin/bundle exec "@WEBSERVER_BIN@ @WEBSERVER_C@ @CONF_DIR@/@WEBSERVER@.rb @WEBSERVER_E@ ${RAILS_ENV}"
