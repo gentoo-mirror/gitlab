@@ -3,7 +3,7 @@ acct-user/git 0-r2: Git repository hosting user
 acct-user/gitlab-runner 0: Dedicated user for gitlab-runner
 app-eselect/eselect-gitlab-gitaly 20210115: Manages multiple gitlab-gitaly versions
 app-eselect/eselect-gitlabhq 20210115: Manages multiple gitlabhq versions
-dev-util/gitlab-runner-bin 13.6.0-r2 13.7.0: GitLab Runner
+dev-util/gitlab-runner-bin 13.6.0-r2 13.7.0 13.8.0: GitLab Runner
 dev-vcs/gitlab-gitaly 13.6.2 13.6.2-r1 13.6.2-r2 13.6.3 13.6.5 13.7.0 13.7.1 13.7.3 13.7.4 13.8.0: Gitaly is a Git RPC service for handling all the git calls made by GitLab.
 dev-vcs/gitlab-shell 13.13.0 13.13.0-r1 13.13.0-r2 13.14.0 13.15.0: SSH access for GitLab
 www-apps/gitlabhq 13.6.2-r2 13.6.2-r4 13.6.3-r1 13.6.5 13.7.1-r1 13.7.3-r1 13.7.4 13.8.0: GitLab is a complete DevOps platform
