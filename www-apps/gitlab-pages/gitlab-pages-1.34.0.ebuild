@@ -20,21 +20,19 @@ DEPEND="dev-lang/go"
 RDEPEND="${DEPEND}"
 BDEPEND=""
 
-GIT_USER="git"
-GIT_GROUP="git"
-GIT_HOME="/var/lib/gitlab"
-
 src_install() {
-	exeinto $GIT_HOME
-	doexe gitlab-pages
-	fowners ${GIT_USER}:$GIT_GROUP ${GIT_HOME}/gitlab-pages
+	dosbin gitlab-pages
 }
 
 pkg_postinst() {
 	einfo "This package was added to the gitlab overlay in January 2021."
-	einfo "It installs the ${PN} binary to ${GIT_HOME} and"
-	einfo "was never tested/used by the overlay maintainer. -- Good Luck!"
+	einfo "It installs the ${PN} binary and was never tested/used"
+	einfo "by the overlay maintainer. -- Good Luck!"
 	einfo
 	einfo "Read <gitlabhq-base-dir>/doc/administration/pages/source.md"
 	einfo "on how to set up GitLab Pages."
+	einfo
+	einfo "Note that this package lacks an OpenRC init or a systemd service"
+	einfo "file. Let /usr/share/doc/${PF}/README.md inspire you on"
+	einfo "writing one yourself."
 }
