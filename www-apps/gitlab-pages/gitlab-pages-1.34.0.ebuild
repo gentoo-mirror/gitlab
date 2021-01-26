@@ -14,25 +14,43 @@ LICENSE="MIT"
 RESTRICT="mirror"
 SLOT="0"
 KEYWORDS="~amd64 ~x86"
+IUSE="systemd"
 
 RESTRICT="network-sandbox"
-DEPEND="dev-lang/go"
+DEPEND="
+	dev-lang/go
+	acct-user/gitlab-pages"
 RDEPEND="${DEPEND}"
 BDEPEND=""
 
 src_install() {
-	dosbin gitlab-pages
+	exeinto /opt/gitlab/${PN}
+	doexe gitlab-pages
+	insinto /opt/gitlab/${PN}
+	doins README.md
+	if use systemd; then
+		insinto /etc/systemd/system/${PN}.d
+		doins "${FILESDIR}/${PN}.conf"
+		systemd_dounit "${FILESDIR}/${PN}.service"
+	else
+		doconfd "${FILESDIR}"/${PN}.confd
+		doinitd "${FILESDIR}"/${PN}.initd
+	fi
 }
 
 pkg_postinst() {
-	einfo "This package was added to the gitlab overlay in January 2021."
-	einfo "It installs the ${PN} binary and was never tested/used"
+	einfo "This package was added to the gitlab overlay in January 2021. It installs"
+	einfo "the binary /opt/gitlab/${PN}/gitlab-pages and was never tested/used"
 	einfo "by the overlay maintainer. -- Good Luck!"
 	einfo
-	einfo "Read <gitlabhq-base-dir>/doc/administration/pages/source.md"
-	einfo "on how to set up GitLab Pages."
+	einfo "Read <gitlabhq-base-dir>/doc/administration/pages/source.md and "
+	einfo "/opt/gitlab/${PN}/README.md on how to set up GitLab Pages."
 	einfo
-	einfo "Note that this package lacks an OpenRC init or a systemd service"
-	einfo "file. Let /usr/share/doc/${PF}/README.md inspire you on"
-	einfo "writing one yourself."
+	if use systemd; then
+		einfo "Edit /etc/systemd/system/${PN}.d/${PN}.conf and adjust"
+		einfo "the settings for the ${PN}.service unit."
+	else
+		einfo "Edit /etc/conf.d/${PN} and adjust" 
+        einfo "the settings for the /etc/init.d/${PN} service."
+	fi
 }
