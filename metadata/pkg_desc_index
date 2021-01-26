@@ -1,5 +1,6 @@
 acct-group/gitlab 0: System group: gitlab
 acct-user/git 0-r2: Git repository hosting user
+acct-user/gitlab-pages 0: Dedicated user for gitlab-pages
 acct-user/gitlab-runner 0: Dedicated user for gitlab-runner
 app-eselect/eselect-gitlab-gitaly 20210115: Manages multiple gitlab-gitaly versions
 app-eselect/eselect-gitlabhq 20210115: Manages multiple gitlabhq versions
