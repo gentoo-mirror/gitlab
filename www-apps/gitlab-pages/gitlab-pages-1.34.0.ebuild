@@ -39,18 +39,19 @@ src_install() {
 }
 
 pkg_postinst() {
-	einfo "This package was added to the gitlab overlay in January 2021. It installs"
-	einfo "the binary /opt/gitlab/${PN}/gitlab-pages and was never tested/used"
-	einfo "by the overlay maintainer. -- Good Luck!"
-	einfo
-	einfo "Read <gitlabhq-base-dir>/doc/administration/pages/source.md and "
-	einfo "/opt/gitlab/${PN}/README.md on how to set up GitLab Pages."
-	einfo
+	elog
+	elog "This package was added to the gitlab overlay in January 2021. It installs"
+	elog "the binary /opt/gitlab/${PN}/gitlab-pages and was never tested/used"
+	elog "by the overlay maintainer. -- Good Luck!"
+	elog
+	elog "Read <gitlabhq-base-dir>/doc/administration/pages/source.md and "
+	elog "/opt/gitlab/${PN}/README.md on how to set up GitLab Pages."
+	elog
 	if use systemd; then
-		einfo "Edit /etc/systemd/system/${PN}.d/${PN}.conf and adjust"
-		einfo "the settings for the ${PN}.service unit."
+		elog "Edit /etc/systemd/system/${PN}.d/${PN}.conf and adjust"
+		elog "the settings for the ${PN}.service unit."
 	else
-		einfo "Edit /etc/conf.d/${PN} and adjust" 
-        einfo "the settings for the /etc/init.d/${PN} service."
+		elog "Edit /etc/conf.d/${PN} and adjust" 
+        elog "the settings for the /etc/init.d/${PN} service."
 	fi
 }
