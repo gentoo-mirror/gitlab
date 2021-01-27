@@ -131,7 +131,7 @@ do_set() {
 
 ### unset action ###
 
-describe_usset() {
+describe_unset() {
     echo "Unset the gitlabhq symlink target"
 }
 
