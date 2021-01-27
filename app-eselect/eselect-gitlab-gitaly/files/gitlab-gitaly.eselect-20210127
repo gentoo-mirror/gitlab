@@ -106,7 +106,7 @@ do_set() {
 
 ### unset action ###
 
-describe_usset() {
+describe_unset() {
     echo "Unset the gitlab-gitaly symlink target"
 }
 
