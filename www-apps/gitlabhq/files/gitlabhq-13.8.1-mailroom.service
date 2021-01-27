@@ -1,8 +1,7 @@
 [Unit]
 Description=Gitlab MailRoom
-Requires=gitlabhq-@SLOT@-sidekiq.service
-Wants=gitlabhq-@SLOT@-sidekiq.service
-After=gitlabhq-@SLOT@-sidekiq.service
+Requires=gitlabhq-@SLOT@-@WEBSERVER@.service
+After=gitlabhq-@SLOT@-@WEBSERVER@.service
 PartOf=gitlabhq-@SLOT@.target
 
 [Service]
