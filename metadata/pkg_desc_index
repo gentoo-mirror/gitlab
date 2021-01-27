@@ -2,11 +2,11 @@ acct-group/gitlab 0: System group: gitlab
 acct-user/git 0-r2: Git repository hosting user
 acct-user/gitlab-pages 0: Dedicated user for gitlab-pages
 acct-user/gitlab-runner 0: Dedicated user for gitlab-runner
-app-eselect/eselect-gitlab-gitaly 20210115: Manages multiple gitlab-gitaly versions
-app-eselect/eselect-gitlabhq 20210115: Manages multiple gitlabhq versions
+app-eselect/eselect-gitlab-gitaly 20210127: Manages multiple gitlab-gitaly versions
+app-eselect/eselect-gitlabhq 20210127: Manages multiple gitlabhq versions
 dev-util/gitlab-runner-bin 13.6.0-r2 13.7.0 13.8.0: GitLab Runner
-dev-vcs/gitlab-gitaly 13.6.2 13.6.2-r1 13.6.2-r2 13.6.3 13.6.5 13.7.0 13.7.1 13.7.3 13.7.4 13.7.5 13.8.0: Gitaly is a Git RPC service for handling all the git calls made by GitLab.
+dev-vcs/gitlab-gitaly 13.6.2 13.6.2-r1 13.6.2-r2 13.6.3 13.6.5 13.7.0 13.7.1 13.7.3 13.7.4 13.7.5 13.8.0 13.8.1: Gitaly is a Git RPC service for handling all the git calls made by GitLab.
 dev-vcs/gitlab-shell 13.13.0 13.13.0-r1 13.13.0-r2 13.14.0 13.15.0: SSH access for GitLab
 www-apps/gitlab-pages 1.34.0: GitLab Pages daemon used to serve static websites for GitLab users
-www-apps/gitlabhq 13.6.2-r2 13.6.2-r4 13.6.3-r1 13.6.5 13.7.1-r1 13.7.3-r1 13.7.4 13.7.5 13.8.0: GitLab is a complete DevOps platform
-www-servers/gitlab-workhorse 8.54.2 8.56.0 8.58.2 8.59.0: Handles slow HTTP requests for GitLab
+www-apps/gitlabhq 13.6.2-r2 13.6.2-r4 13.6.3-r1 13.6.5 13.7.1-r1 13.7.3-r1 13.7.4 13.7.5 13.8.0 13.8.1: GitLab is a complete DevOps platform
+www-servers/gitlab-workhorse 8.54.2 8.56.0 8.58.2 8.59.0 8.61.0: Handles slow HTTP requests for GitLab
