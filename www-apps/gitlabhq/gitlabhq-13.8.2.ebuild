@@ -592,7 +592,6 @@ pkg_config_do_upgrade_migrate_database() {
 	else
 		einfo "Comment out all daemons in ${PN}-${SLOT}.init up to gitaly and run"
 		einfo "\$ rc-service ${PN}-${SLOT} start"
-		einfo "Remove the comments afterwards again."
 	fi
 	einfon "Hit <Enter> to continue "
 	local answer
@@ -603,6 +602,16 @@ pkg_config_do_upgrade_migrate_database() {
 		cd ${DEST_DIR}
 		${BUNDLE} exec rake db:migrate RAILS_ENV=${RAILS_ENV}" \
 			|| die "failed to migrate database."
+	einfo "Stop the running Gitaly now. Execute"
+	if use systemd; then
+		einfo "systemctl stop ${PN}-${SLOT}-gitaly.service"
+	else
+		einfo "\$ rc-service ${PN}-${SLOT} stop"
+		einfo "Remove the comments for the non-gitaly daemons again."
+	fi
+	einfon "Hit <Enter> to continue "
+	local answer
+	read -r answer
 }
 
 pkg_config_do_upgrade_clear_redis_cache() {
