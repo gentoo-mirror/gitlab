@@ -588,10 +588,10 @@ pkg_config_do_upgrade_migrate_configuration() {
 pkg_config_do_upgrade_migrate_database() {
 	einfo  "Gitaly must be running for the next step. Execute"
 	if use systemd; then
-		einfo "systemctl --job-mode=ignore-dependencies start ${PN}-${SLOT}-gitaly.service"
+		einfo "systemctl --job-mode=ignore-dependencies start ${PN}-${PREV_SLOT}-gitaly.service"
 	else
-		einfo "Comment out all daemons in ${PN}-${SLOT}.init up to gitaly and run"
-		einfo "\$ rc-service ${PN}-${SLOT} start"
+		einfo "Comment out all daemons in ${PN}-${PREV_SLOT}.init up to gitaly and run"
+		einfo "\$ rc-service ${PN}-${PREV_SLOT} start"
 	fi
 	einfon "Hit <Enter> to continue "
 	local answer
@@ -604,9 +604,9 @@ pkg_config_do_upgrade_migrate_database() {
 			|| die "failed to migrate database."
 	einfo "Stop the running Gitaly now. Execute"
 	if use systemd; then
-		einfo "systemctl stop ${PN}-${SLOT}-gitaly.service"
+		einfo "systemctl stop ${PN}-${PREV_SLOT}-gitaly.service"
 	else
-		einfo "\$ rc-service ${PN}-${SLOT} stop"
+		einfo "\$ rc-service ${PN}-${PREV_SLOT} stop"
 		einfo "Remove the comments for the non-gitaly daemons again."
 	fi
 	einfon "Hit <Enter> to continue "
@@ -666,6 +666,8 @@ pkg_config_do_upgrade() {
 	else
 		einfo "Found your latest Gitlab instance at \"${LATEST_DEST}\"."
 	fi
+	PREV_SLOT=${LATEST_DEST##*-}
+	# this global variable is used in pkg_config_do_upgrade_migrate_database()
 
 	local backup_rake_cmd="rake gitlab:backup:create RAILS_ENV=${RAILS_ENV}"
 	einfo "Please make sure that you've created a backup"
@@ -687,7 +689,7 @@ pkg_config_do_upgrade() {
 	pkg_config_do_upgrade_check_background_migrations
 
 	if [[ ${LATEST_DEST} != ${DEST_DIR} ]]; then
-		einfo "Found major update: Migration from \"${LATEST_DEST}\" to \"${DEST_DIR}\"."
+		einfo "Found update: Migration from \"${LATEST_DEST}\" to \"${DEST_DIR}\"."
 
 		pkg_config_do_upgrade_migrate_data
 
