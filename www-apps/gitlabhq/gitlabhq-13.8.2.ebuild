@@ -151,7 +151,7 @@ src_prepare() {
 find_files() {
 	local f t="${1}"
 	for f in $(find ${ED}${2} -type ${t}); do
-		echo $f | sed "s#${ED}##"
+		echo $f | sed "s|${ED}||"
 	done
 }
 
@@ -334,16 +334,16 @@ src_install() {
 	if use systemd; then
 		## Systemd files ##
 		elog "Installing systemd unit files"
-		sed -e "s#@DEST_DIR@#${DEST_DIR}#g" \
-			-e "s#@CONF_DIR@#${DEST_DIR}/config#g" \
-			-e "s#@TMP_DIR@#${TMP_DIR}#g" \
-			-e "s#@SLOT@#${SLOT}#g" \
-			-e "s#@WEBSERVER@#${webserver}#g" \
-			-e "s#@WEBSERVER_BIN@#${webserver_bin}#g" \
-			-e "s#@WEBSERVER_NAME@#${webserver_name}#g" \
-			-e "s#@WEBSERVER_C@#${webserver_c}#g" \
-			-e "s#@WEBSERVER_E@#${webserver_e}#g" \
-			-e "s#@WEBSERVER_D@#${webserver_d}#g" \
+		sed -e "s|@DEST_DIR@|${DEST_DIR}|g" \
+			-e "s|@CONF_DIR@|${DEST_DIR}/config|g" \
+			-e "s|@TMP_DIR@|${TMP_DIR}|g" \
+			-e "s|@SLOT@|${SLOT}|g" \
+			-e "s|@WEBSERVER@|${webserver}|g" \
+			-e "s|@WEBSERVER_BIN@|${webserver_bin}|g" \
+			-e "s|@WEBSERVER_NAME@|${webserver_name}|g" \
+			-e "s|@WEBSERVER_C@|${webserver_c}|g" \
+			-e "s|@WEBSERVER_E@|${webserver_e}|g" \
+			-e "s|@WEBSERVER_D@|${webserver_d}|g" \
 			"${FILESDIR}/${PN}-${SLOT}"-webserver.service_model \
 			> "${T}/${webserver_unit}" || die "Failed to configure: $webserver_unit"
 		systemd_dounit "${T}/${webserver_unit}"
@@ -352,29 +352,29 @@ src_install() {
 		use mail_room && services+=" mailroom"
 		for service in ${services}; do
 			unit="${PN}-${SLOT}-${service}.service"
-			sed -e "s#@BASE_DIR@#${BASE_DIR}#g" \
-			    -e "s#@DEST_DIR@#${DEST_DIR}#g" \
-			    -e "s#@CONF_DIR@#${DEST_DIR}/config#g" \
-			    -e "s#@TMP_DIR@#${TMP_DIR}#g" \
-			    -e "s#@WORKHORSE_BIN@#${WORKHORSE_BIN}#g" \
-			    -e "s#@SLOT@#${SLOT}#g" \
-				-e "s#@WEBSERVER@#${webserver}#g" \
-				-e "s#@WEBSERVER_BIN@#${webserver_bin}#g" \
-				-e "s#@WEBSERVER_NAME@#${webserver_name}#g" \
+			sed -e "s|@BASE_DIR@|${BASE_DIR}|g" \
+			    -e "s|@DEST_DIR@|${DEST_DIR}|g" \
+			    -e "s|@CONF_DIR@|${DEST_DIR}/config|g" \
+			    -e "s|@TMP_DIR@|${TMP_DIR}|g" \
+			    -e "s|@WORKHORSE_BIN@|${WORKHORSE_BIN}|g" \
+			    -e "s|@SLOT@|${SLOT}|g" \
+				-e "s|@WEBSERVER@|${webserver}|g" \
+				-e "s|@WEBSERVER_BIN@|${webserver_bin}|g" \
+				-e "s|@WEBSERVER_NAME@|${webserver_name}|g" \
 				"${FILESDIR}/${unit}" > "${T}/${unit}" || die "Failed to configure: $unit"
 			systemd_dounit "${T}/${unit}"
 		done
 
 		local optional_wants=""
 		use mail_room && optional_wants+="Wants=gitlabhq-${SLOT}-mailroom.service"
-		sed -e "s#@SLOT@#${SLOT}#g" \
-			-e "s#@WEBSERVER@#${webserver}#g" \
-			-e "s#@OPTIONAL_WANTS@#${optional_wants}#" \
+		sed -e "s|@SLOT@|${SLOT}|g" \
+			-e "s|@WEBSERVER@|${webserver}|g" \
+			-e "s|@OPTIONAL_WANTS@|${optional_wants}|" \
 			"${FILESDIR}/${PN}-${SLOT}.target" > "${T}/${PN}-${SLOT}.target" \
 			|| die "Failed to configure: ${PN}-${SLOT}.target"
 		systemd_dounit "${T}/${PN}-${SLOT}.target"
 
-		sed -e "s#@SLOT@#${SLOT}#g" \
+		sed -e "s|@SLOT@|${SLOT}|g" \
 			"${FILESDIR}/${PN}-${SLOT}-tmpfiles.conf" > "${T}/${PN}-${SLOT}-tmpfiles.conf" \
 			|| die "Failed to configure: ${PN}-${SLOT}-tmpfiles.conf"
 		newtmpfiles "${T}/${PN}-${SLOT}-tmpfiles.conf" "${PN}-${SLOT}.conf"
@@ -391,19 +391,31 @@ src_install() {
 			-e "s|@SLOT@|${SLOT}|g" \
 			-e "s|@DEST_DIR@|${DEST_DIR}|g" \
 			-e "s|@LOG_DIR@|${DEST_DIR}/log|g" \
-			-e "s|@GITLAB_GITALY@|${GITLAB_GITALY}|g" \
-			-e "s|@GITALY_CONF@|${GITALY_CONF}|g" \
 			-e "s|@WORKHORSE_BIN@|${WORKHORSE_BIN}|g" \
-			-e "s#@MAILROOM_ENABLED@#${mailroom_enabled}#g" \
-			-e "s#@WEBSERVER@#${webserver}#g" \
-			-e "s#@WEBSERVER_BIN@#${webserver_bin}#g" \
-			-e "s#@WEBSERVER_NAME@#${webserver_name}#g" \
-			-e "s#@WEBSERVER_C@#${webserver_c}#g" \
-			-e "s#@WEBSERVER_E@#${webserver_e}#g" \
-			-e "s#@WEBSERVER_D@#${webserver_d}#g" \
+			-e "s|@MAILROOM_ENABLED@|${mailroom_enabled}|g" \
+			-e "s|@WEBSERVER@|${webserver}|g" \
+			-e "s|@WEBSERVER_BIN@|${webserver_bin}|g" \
+			-e "s|@WEBSERVER_NAME@|${webserver_name}|g" \
+			-e "s|@WEBSERVER_C@|${webserver_c}|g" \
+			-e "s|@WEBSERVER_E@|${webserver_e}|g" \
+			-e "s|@WEBSERVER_D@|${webserver_d}|g" \
 			"${T}/${rcscript}" \
 			|| die "failed to filter ${rcscript}"
 		newinitd "${T}/${rcscript}" "${PN}-${SLOT}"
+		rcscript=gitlab-gitaly-${SLOT}.init
+		cp "${FILESDIR}/${rcscript}" "${T}" || die
+		sed -i \
+			-e "s|@RAILS_ENV@|${RAILS_ENV}|g" \
+			-e "s|@GIT_USER@|${GIT_USER}|g" \
+			-e "s|@GIT_GROUP@|${GIT_GROUP}|g" \
+			-e "s|@SLOT@|${SLOT}|g" \
+			-e "s|@DEST_DIR@|${DEST_DIR}|g" \
+			-e "s|@LOG_DIR@|${DEST_DIR}/log|g" \
+			-e "s|@GITLAB_GITALY@|${GITLAB_GITALY}|g" \
+			-e "s|@GITALY_CONF@|${GITALY_CONF}|g" \
+			"${T}/${rcscript}" \
+			|| die "failed to filter ${rcscript}"
+		newinitd "${T}/${rcscript}" "gitlab-gitaly-${SLOT}"
 	fi
 }
 
@@ -590,8 +602,7 @@ pkg_config_do_upgrade_migrate_database() {
 	if use systemd; then
 		einfo "systemctl --job-mode=ignore-dependencies start ${PN}-${PREV_SLOT}-gitaly.service"
 	else
-		einfo "Comment out all daemons in ${PN}-${PREV_SLOT}.init up to gitaly and run"
-		einfo "\$ rc-service ${PN}-${PREV_SLOT} start"
+		einfo "\$ rc-service gitlab-gitaly-${PREV_SLOT} start"
 	fi
 	einfon "Hit <Enter> to continue "
 	local answer
@@ -606,8 +617,7 @@ pkg_config_do_upgrade_migrate_database() {
 	if use systemd; then
 		einfo "systemctl stop ${PN}-${PREV_SLOT}-gitaly.service"
 	else
-		einfo "\$ rc-service ${PN}-${PREV_SLOT} stop"
-		einfo "Remove the comments for the non-gitaly daemons again."
+		einfo "\$ rc-service gitlab-gitaly-${PREV_SLOT} stop"
 	fi
 	einfon "Hit <Enter> to continue "
 	local answer
@@ -676,7 +686,7 @@ pkg_config_do_upgrade() {
 	elog "\$ sudo -u ${GIT_USER} ${BUNDLE} exec ${backup_rake_cmd}"
 	elog "\$ systemctl stop ${PN}.target"
 	elog "or"
-	elog "\$ /etc/init.d/${LATEST_DEST#*/opt/} stop"
+	elog "\$ rc-service ${PN} stop"
 	elog ""
 
 	einfon "Proceed? [Y|n] "
@@ -728,9 +738,7 @@ pkg_config_initialize() {
 	if use systemd; then
 		einfo "systemctl --job-mode=ignore-dependencies start ${PN}-${SLOT}-gitaly.service"
 	else
-		einfo "Comment out all daemons in ${PN}-${SLOT}.init up to gitaly and run"
-		einfo "\$ rc-service ${PN}-${SLOT} start"
-		einfo "Remove the comments afterwards again."
+		einfo "\$ rc-service gitaly-${SLOT} start"
 	fi
 	einfon "Hit <Enter> to continue "
 	local answer pw email
@@ -788,15 +796,15 @@ pkg_config() {
 	ln -s "${DEST_DIR}/.gitlab_shell_secret" "${GITLAB_SHELL}/.gitlab_shell_secret"
 
 	einfo
-	einfo "Please select the gitlabhq slot now. Check with:"
-	einfo "\$ eselect gitlabhq list"
-	einfo "It's recommended to use the same slot with gitaly. Check with:"
-	einfo "\$ eselect gitlab-gitaly list"
+	einfo "Please select the gitlabhq slot now. Run:"
+	einfo "\$ eselect gitlabhq set ${PN}-${SLOT}"
+	einfo "It's recommended to use the same slot with gitaly. Run:"
+	einfo "\$ eselect gitlab-gitaly set gitlab-gitaly-${SLOT}"
 	einfo "Then start gitlab with"
 	if use systemd; then
-		einfo "\$ systemctl start ${PN}-${SLOT}.target"
+		einfo "\$ systemctl start ${PN}.target"
 	else
-		einfo "\$ rc-service ${PN}-${SLOT} start"
+		einfo "\$ rc-service ${PN} start"
 	fi
 
 	einfo
