@@ -549,6 +549,7 @@ pkg_config_do_upgrade_migrate_configuration() {
 			cp -p "${LATEST_DEST}/config/${conf}" "${DEST_DIR}/config/"
 			sed -i \
 			-e "s|$(basename $LATEST_DEST)|${PN}-${SLOT}|g" \
+			-e "s|/opt/gitlab/gitlab-gitaly-${LATEST_DEST##*-}|${GITLAB_GITALY}|g" \
 			"${DEST_DIR}/config/$conf"
 
 			example="${DEST_DIR}/config/${conf}.example"
