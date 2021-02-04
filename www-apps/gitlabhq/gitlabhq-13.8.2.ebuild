@@ -353,11 +353,11 @@ src_install() {
 		for service in ${services}; do
 			unit="${PN}-${SLOT}-${service}.service"
 			sed -e "s|@BASE_DIR@|${BASE_DIR}|g" \
-			    -e "s|@DEST_DIR@|${DEST_DIR}|g" \
-			    -e "s|@CONF_DIR@|${DEST_DIR}/config|g" \
-			    -e "s|@TMP_DIR@|${TMP_DIR}|g" \
-			    -e "s|@WORKHORSE_BIN@|${WORKHORSE_BIN}|g" \
-			    -e "s|@SLOT@|${SLOT}|g" \
+				-e "s|@DEST_DIR@|${DEST_DIR}|g" \
+				-e "s|@CONF_DIR@|${DEST_DIR}/config|g" \
+				-e "s|@TMP_DIR@|${TMP_DIR}|g" \
+				-e "s|@WORKHORSE_BIN@|${WORKHORSE_BIN}|g" \
+				-e "s|@SLOT@|${SLOT}|g" \
 				-e "s|@WEBSERVER@|${webserver}|g" \
 				-e "s|@WEBSERVER_BIN@|${webserver_bin}|g" \
 				-e "s|@WEBSERVER_NAME@|${webserver_name}|g" \
@@ -548,8 +548,8 @@ pkg_config_do_upgrade_migrate_configuration() {
 			einfo "   Moving config file \"$conf\" ..."
 			cp -p "${LATEST_DEST}/config/${conf}" "${DEST_DIR}/config/"
 			sed -i \
-			    -e "s|$(basename $LATEST_DEST)|${PN}-${SLOT}|g" \
-			    "${DEST_DIR}/config/$conf"
+			-e "s|$(basename $LATEST_DEST)|${PN}-${SLOT}|g" \
+			"${DEST_DIR}/config/$conf"
 
 			example="${DEST_DIR}/config/${conf}.example"
 			test -f "${example}" && \
@@ -561,8 +561,8 @@ pkg_config_do_upgrade_migrate_configuration() {
 			cp -p "${LATEST_DEST}/config/initializers/${conf}" \
 				"${DEST_DIR}/config/initializers/"
 			sed -i \
-			    -e "s|$(basename $LATEST_DEST)|${PN}-${SLOT}|g" \
-			    "${DEST_DIR}/config/initializers/$conf"
+				-e "s|$(basename $LATEST_DEST)|${PN}-${SLOT}|g" \
+				"${DEST_DIR}/config/initializers/$conf"
 
 			example="${DEST_DIR}/config/initializers/${conf}.sample"
 			test -f "${example}" && \
