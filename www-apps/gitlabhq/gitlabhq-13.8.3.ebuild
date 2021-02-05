@@ -347,14 +347,14 @@ src_install() {
 		sed -e "s|@SLOT@|${SLOT}|g" \
 			-e "s|@WEBSERVER@|${webserver}|g" \
 			-e "s|@OPTIONAL_WANTS@|${optional_wants}|" \
-			"${FILESDIR}/${PN}-${SLOT}.target" > "${T}/${PN}-${SLOT}.target" \
+			"${FILESDIR}/${PN}.target.${vSYS}" > "${T}/${PN}-${SLOT}.target" \
 			|| die "failed to configure: ${PN}-${SLOT}.target"
 		systemd_dounit "${T}/${PN}-${SLOT}.target"
 
 		sed -e "s|@SLOT@|${SLOT}|g" \
-			"${FILESDIR}/${PN}-${SLOT}-tmpfiles.conf" > "${T}/${PN}-${SLOT}-tmpfiles.conf" \
+			"${FILESDIR}/${PN}-tmpfiles.conf" > "${T}/${PN}-${SLOT}.conf" \
 			|| die "failed to configure: ${PN}-${SLOT}-tmpfiles.conf"
-		newtmpfiles "${T}/${PN}-${SLOT}-tmpfiles.conf" "${PN}-${SLOT}.conf"
+		dotmpfiles "${T}/${PN}-${SLOT}.conf"
 	else
 		## OpenRC init scripts ##
 		elog "Installing OpenRC init.d files"
