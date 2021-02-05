@@ -352,7 +352,7 @@ src_install() {
 		systemd_dounit "${T}/${PN}-${SLOT}.target"
 
 		sed -e "s|@SLOT@|${SLOT}|g" \
-			"${FILESDIR}/${PN}-tmpfiles.conf" > "${T}/${PN}-${SLOT}.conf" \
+			"${FILESDIR}/${PN}-tmpfiles.conf.${vSYS}" > "${T}/${PN}-${SLOT}.conf" \
 			|| die "failed to configure: ${PN}-${SLOT}-tmpfiles.conf"
 		dotmpfiles "${T}/${PN}-${SLOT}.conf"
 	else
@@ -362,21 +362,19 @@ src_install() {
 
 		use mail_room && mailroom_enabled=true
 
-		local replace_newlines="sed -z 's/\n/\\n/g'"
-		# This sed command will replace the newline(s) with the string "\n".
+		# The inner sed command will replace the newline(s) with the string "\n".
 		# Note: We use this below to replace a matching line of the rcfile by
 		# the contents of another file whose newlines would break the outer sed.
 		rcfile="${FILESDIR}/${PN}.init.${vORC}"
-		sed -i \
-			-e "s|@WEBSERVER_START@|$($replace_newlines ${rcfile}.${webserver})|" \
-			${rcfile} || die "failed to prepare ${rcfile}"
+		sed -e "s|@WEBSERVER_START@|$(sed -z 's/\n/\\n/g' ${rcfile}.${webserver})|" \
+			${rcfile} > ${T}/${PN}.init.${vORC} || die "failed to prepare ${rcfile}"
 		# Note: Continuation characters '\' in ${rcfile}.${webserver} have to be escaped!
+		cp "${FILESDIR}/gitlab-gitaly.init.${vORC}" ${T}/
 
 		for service in ${services}; do
-			rcfile="${FILESDIR}/${service}.init.${vORC}"
+			rcfile="${T}/${service}.init.${vORC}"
 			rc="${service}-${SLOT}.init"
-			sed -i \
-				-e "s|@RAILS_ENV@|${RAILS_ENV}|g" \
+			sed -e "s|@RAILS_ENV@|${RAILS_ENV}|g" \
 				-e "s|@GIT_USER@|${GIT_USER}|g" \
 				-e "s|@GIT_GROUP@|${GIT_GROUP}|g" \
 				-e "s|@SLOT@|${SLOT}|g" \
