@@ -95,9 +95,9 @@ NODE_ENV=${RAILS_ENV:-production}
 BUNDLE="ruby /usr/bin/bundle"
 
 src_prepare() {
-	eapply -p0 "${FILESDIR}/${PN}-${SLOT}-fix-checks-gentoo.patch"
-	eapply -p0 "${FILESDIR}/${PN}-${SLOT}-fix-sidekiq_check.patch"
-	eapply -p0 "${FILESDIR}/${PN}-${SLOT}-fix-sendmail-param.patch"
+	eapply -p0 "${FILESDIR}/${PN}-fix-checks-gentoo.patch"
+	eapply -p0 "${FILESDIR}/${PN}-fix-sidekiq_check.patch"
+	eapply -p0 "${FILESDIR}/${PN}-fix-sendmail-param.patch"
 
 	eapply_user
 	# Update paths for gitlab
