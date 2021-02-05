@@ -1,0 +1,10 @@
+	ebegin "Starting GitLab @SLOT@ web server Puma"
+	start-stop-daemon --start \\
+		$(for env in $gitlab_env ; do echo "--env $env" ; done) \\
+		--chdir "${gitlab_home}" \\
+		--user="${gitlab_user}:${gitlab_group}" \\
+		--pidfile="${gitlab_pids}puma.pid" \\
+		--background -1 "${gitlab_log}puma.log" -2 "${gitlab_log}puma.log" \\
+		--exec /usr/bin/bundle -- exec puma \\
+			-C ${gitlab_config}/puma.rb -e ${rails_env}
+	eend $?

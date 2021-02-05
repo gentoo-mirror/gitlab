@@ -1,0 +1,10 @@
+	ebegin "Starting GitLab @SLOT@ web server Unicorn"
+	start-stop-daemon --start \\
+		$(for env in $gitlab_env ; do echo "--env $env" ; done) \\
+		--chdir "${gitlab_home}" \\
+		--user="${gitlab_user}:${gitlab_group}" \\
+		--pidfile="${gitlab_pids}unicorn.pid" \\
+		--background -1 "${gitlab_log}unicorn.log" -2 "${gitlab_log}unicorn.log" \\
+		--exec /usr/bin/bundle -- exec unicorn_rails \\
+			-c ${gitlab_config}/unicorn.rb -E ${rails_env} -D
+	eend $?

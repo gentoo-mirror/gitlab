@@ -1,0 +1,15 @@
+[Unit]
+Description=GitLab Puma Server
+# Only start service when config/puma.rb exist
+ConditionFileNotEmpty=@CONF_DIR@/puma.rb
+Requires=redis.service
+After=redis.service postgresql-12.service
+PartOf=gitlabhq-@SLOT@.target
+
+[Service]
+User=git
+WorkingDirectory=@DEST_DIR@
+Environment=RAILS_ENV=production
+SyslogIdentifier=gitlab-puma
+PIDFile=@TMP_DIR@/pids/puma.pid
+ExecStart=@DEST_DIR@/bin/bundle exec "puma -C @CONF_DIR@/puma.rb -e ${RAILS_ENV}"
