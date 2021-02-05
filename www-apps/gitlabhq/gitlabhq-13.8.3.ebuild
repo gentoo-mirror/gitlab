@@ -366,7 +366,8 @@ src_install() {
 		# Note: We use this below to replace a matching line of the rcfile by
 		# the contents of another file whose newlines would break the outer sed.
 		rcfile="${FILESDIR}/${PN}.init.${vORC}"
-		sed -e "s|@WEBSERVER_START@|$(sed -z 's/\n/\\n/g' ${rcfile}.${webserver})|" \
+		sed -e "s|@WEBSERVER_START@|$(sed -z 's/\n/\\n/g' ${rcfile}.${webserver} \
+			| head -c -2)|" \
 			${rcfile} > ${T}/${PN}.init.${vORC} || die "failed to prepare ${rcfile}"
 		# Note: Continuation characters '\' in ${rcfile}.${webserver} have to be escaped!
 		cp "${FILESDIR}/gitlab-gitaly.init.${vORC}" ${T}/
