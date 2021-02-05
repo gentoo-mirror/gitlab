@@ -1,0 +1,16 @@
+BDEPEND=virtual/rubygems >=dev-ruby/bundler-2:2 >=dev-vcs/git-1.8.2.1[curl] virtual/pkgconfig
+DEFINED_PHASES=config install postinst prepare unpack
+DEPEND=app-crypt/gpgme dev-libs/icu dev-libs/libxml2 dev-libs/libxslt dev-util/ragel dev-libs/yajl >=net-libs/nodejs-14 dev-db/postgresql:12 net-libs/http-parser || ( dev-lang/ruby:2.7 ) virtual/rubygems acct-user/git[gitlab] acct-group/git dev-lang/ruby[ssl] ~dev-vcs/gitlab-shell-13.13.0 ~dev-vcs/gitlab-gitaly-13.6.6 ~www-servers/gitlab-workhorse-8.54.2 !gitaly_git? ( >=dev-vcs/git-2.29.0[pcre,pcre-jit] ) gitaly_git? ( dev-vcs/gitlab-gitaly[gitaly_git] ) app-eselect/eselect-gitlabhq net-misc/curl virtual/ssh >=sys-apps/yarn-1.15.0 dev-libs/re2
+DESCRIPTION=GitLab is a complete DevOps platform
+EAPI=7
+HOMEPAGE=https://gitlab.com/gitlab-org/gitlab-foss
+IUSE=favicon gitaly_git kerberos -mail_room +puma -unicorn systemd
+KEYWORDS=~amd64 ~x86
+LICENSE=MIT
+PROPERTIES=live
+RDEPEND=app-crypt/gpgme dev-libs/icu dev-libs/libxml2 dev-libs/libxslt dev-util/ragel dev-libs/yajl >=net-libs/nodejs-14 dev-db/postgresql:12 net-libs/http-parser || ( dev-lang/ruby:2.7 ) virtual/rubygems acct-user/git[gitlab] acct-group/git dev-lang/ruby[ssl] ~dev-vcs/gitlab-shell-13.13.0 ~dev-vcs/gitlab-gitaly-13.6.6 ~www-servers/gitlab-workhorse-8.54.2 !gitaly_git? ( >=dev-vcs/git-2.29.0[pcre,pcre-jit] ) gitaly_git? ( dev-vcs/gitlab-gitaly[gitaly_git] ) app-eselect/eselect-gitlabhq net-misc/curl virtual/ssh >=sys-apps/yarn-1.15.0 dev-libs/re2 >=dev-db/redis-5.0 virtual/mta kerberos? ( app-crypt/mit-krb5 ) favicon? ( media-gfx/graphicsmagick ) virtual/tmpfiles
+REQUIRED_USE=^^ ( puma unicorn )
+RESTRICT=network-sandbox splitdebug strip
+SLOT=13.6.6
+_eclasses_=edos2unix	33e347e171066657f91f8b0c72ec8773	eutils	2d5b3f4b315094768576b6799e4f926e	git-r3	3e7ec3d6619213460c85e2aa48398441	l10n	8cdd85e169b835d518bc2fd59f780d8e	multilib	d410501a125f99ffb560b0c523cd3d1e	ruby-single	e6530f43a549f120f9396ccb852288f5	ruby-utils	03dfa7f54d59d740c2964dc7256d2820	systemd	74b223e42834adf09a2d21fe5fe13741	tmpfiles	6170dc7770585fb3f16efdee789a3218	toolchain-funcs	24921b57d6561d87cbef4916a296ada4	user	b0a0d4ca9e3f79c38f8f4143b8d5a2d8	user-info	a2abd4e2f4c3b9b06d64bf1329359a02	wrapper	4251d4c84c25f59094fd557e0063a974
+_md5_=8bcc9c282eead9e4ca1e5fda1012eb46
