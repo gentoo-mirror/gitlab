@@ -368,10 +368,10 @@ src_install() {
 		# Note: Continuation characters '\' in inserted files have to be escaped!
 		webserver_start="$(sed -z 's/\n/\\n/g' ${rcfile}.${webserver}_start | head -c -2)"
 		if use mail_room; then
-			mailroom_vars="$(sed -z 's/\n/\\n/g' ${rcfile}.mailroom_vars | head -c -2)"
-			mailroom_start="$(sed -z 's/\n/\\n/g' ${rcfile}.mailroom_start | head -c -2)"
-			mailroom_stop="$(sed -z 's/\n/\\n/g' ${rcfile}.mailroom_stop | head -c -2)"
-			mailroom_status="$(sed -z 's/\n/\\n/g' ${rcfile}.mailroom_status | head -c -2)"
+			mailroom_vars="\n$(sed -z 's/\n/\\n/g' ${rcfile}.mailroom_vars)"
+			mailroom_start="\n$(sed -z 's/\n/\\n/g' ${rcfile}.mailroom_start)"
+			mailroom_stop="\n$(sed -z 's/\n/\\n/g' ${rcfile}.mailroom_stop)"
+			mailroom_status="\n$(sed -z 's/\n/\\n/g' ${rcfile}.mailroom_status | head -c -2)"
 		fi
 		sed -e "s|@WEBSERVER_START@|${webserver_start}|" \
 			-e "s|@MAILROOM_VARS@|${mailroom_vars}|" \
