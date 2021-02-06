@@ -1,0 +1,6 @@
+	ebegin "Stopping GitLab @SLOT@ MailRoom"
+	start-stop-daemon --stop \
+		--chdir "${gitlab_home}" \
+		--user="${gitlab_user}:${gitlab_group}" \
+		--pidfile="${mailroom_pidfile}" \
+	eend $?

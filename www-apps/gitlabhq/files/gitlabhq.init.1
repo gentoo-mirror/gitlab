@@ -23,12 +23,7 @@ description="GitLab git repository management"
 : ${sidekiq_command:="@DEST_DIR@/bin/sidekiq-cluster"}
 : ${sidekiq_command_args:="-e ${rails_env}"}
 
-: ${mailroom_enabled:=@MAILROOM_ENABLED@}
-: ${mailroom_pidfile:="${gitlab_pids}/mailroom.pid"}
-: ${mailroom_log:="${gitlab_log}/mailroom.log"}
-: ${mailroom_config:="${gitlab_config}/mail_room.yml"}
-: ${mailroom_command:="/usr/bin/bundle"}
-: ${mailroom_command_args:="exec mail_room -q -c ${mailroom_config}"}
+@MAILROOM_VARS@
 
 : ${workhorse_pidfile:="${gitlab_pids}/workhorse.pid"}
 : ${workhorse_log:="${gitlab_log}/workhorse.log"}
@@ -75,31 +70,11 @@ start() {
 		--background -1 "${workhorse_log}" -2 "${workhorse_log}" \
 		--exec ${workhorse_command} -- ${workhorse_command_args}
 	eend $?
-
-	if [ "$mailroom_enabled" = true ]; then
-	ebegin "Starting GitLab @SLOT@ MailRoom"
-	start-stop-daemon --start \
-		$(for env in $gitlab_env ; do echo "--env $env" ; done) \
-		--chdir "${gitlab_home}" \
-		--user="${gitlab_user}:${gitlab_group}" \
-		--pidfile="${mailroom_pidfile}" \
-		--make-pidfile \
-		--background -1 "${mailroom_log}" -2 "${mailroom_log}" \
-		--exec ${mailroom_command} -- ${mailroom_command_args}
-	eend $?
-	fi
+@MAILROOM_START@
 }
 
 stop() {
-	if [ "$mailroom_enabled" = true ]; then
-	ebegin "Stopping GitLab @SLOT@ MailRoom"
-	start-stop-daemon --stop \
-		--chdir "${gitlab_home}" \
-		--user="${gitlab_user}:${gitlab_group}" \
-		--pidfile="${mailroom_pidfile}" \
-	eend $?
-	fi
-
+@MAILROOM_STOP@
 	ebegin "Stopping GitLab @SLOT@ Workhorse"
 	start-stop-daemon --stop \
 		--chdir "${gitlab_home}" \
@@ -122,8 +97,7 @@ stop() {
 	eend $?
 }
 
-do_status()
-{
+do_status() {
 	name="Gitlab @SLOT@ $1"
 	msg=$(pidfile=$2 default_status 2>&1 | awk -F': ' '{print $2}')
 	pidfile=$2 default_status &>/dev/null
@@ -138,8 +112,8 @@ do_status()
 	eend $status
 }
 
-status()
-{
+status() {
+@MAILROOM_STATUSP@
 	do_status "Workhorse" ${workhorse_pidfile}
 	do_status "Sidekiq" ${sidekiq_pidfile}
 	do_status "@WEBSERVER_NAME@" ${webserver_pidfile}

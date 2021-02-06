@@ -358,18 +358,27 @@ src_install() {
 	else
 		## OpenRC init scripts ##
 		elog "Installing OpenRC init.d files"
-		local mailroom_enabled=false service services="${PN} gitlab-gitaly" rc rcfile
+		local service services="${PN} gitlab-gitaly" rc rcfile webserver_start
+		local mailroom_vars='' mailroom_start='' mailroom_stop='' mailroom_status=''
 
-		use mail_room && mailroom_enabled=true
-
-		# The inner sed command will replace the newline(s) with the string "\n".
+		rcfile="${FILESDIR}/${PN}.init.${vORC}"
+		# The sed command will replace the newline(s) with the string "\n".
 		# Note: We use this below to replace a matching line of the rcfile by
 		# the contents of another file whose newlines would break the outer sed.
-		rcfile="${FILESDIR}/${PN}.init.${vORC}"
-		sed -e "s|@WEBSERVER_START@|$(sed -z 's/\n/\\n/g' ${rcfile}.${webserver} \
-			| head -c -2)|" \
+		# Note: Continuation characters '\' in inserted files have to be escaped!
+		webserver_start="$(sed -z 's/\n/\\n/g' ${rcfile}.${webserver}_start | head -c -2)"
+		if use mail_room; then
+			mailroom_vars="$(sed -z 's/\n/\\n/g' ${rcfile}.mailroom_vars | head -c -2)"
+			mailroom_start="$(sed -z 's/\n/\\n/g' ${rcfile}.mailroom_start | head -c -2)"
+			mailroom_stop="$(sed -z 's/\n/\\n/g' ${rcfile}.mailroom_stop | head -c -2)"
+			mailroom_status="$(sed -z 's/\n/\\n/g' ${rcfile}.mailroom_status | head -c -2)"
+		fi
+		sed -e "s|@WEBSERVER_START@|${webserver_start}|" \
+			-e "s|@MAILROOM_VARS@|${mailroom_vars}|" \
+			-e "s|@MAILROOM_START@|${mailroom_start}|" \
+			-e "s|@MAILROOM_STOP@|${mailroom_stop}|" \
+			-e "s|@MAILROOM_STATUS@|${mailroom_status}|" \
 			${rcfile} > ${T}/${PN}.init.${vORC} || die "failed to prepare ${rcfile}"
-		# Note: Continuation characters '\' in ${rcfile}.${webserver} have to be escaped!
 		cp "${FILESDIR}/gitlab-gitaly.init.${vORC}" ${T}/
 
 		for service in ${services}; do
@@ -382,7 +391,6 @@ src_install() {
 				-e "s|@DEST_DIR@|${DEST_DIR}|g" \
 				-e "s|@LOG_DIR@|${DEST_DIR}/log|g" \
 				-e "s|@WORKHORSE_BIN@|${WORKHORSE_BIN}|g" \
-				-e "s|@MAILROOM_ENABLED@|${mailroom_enabled}|g" \
 				-e "s|@GITLAB_GITALY@|${GITLAB_GITALY}|g" \
 				-e "s|@GITALY_CONF@|${GITALY_CONF}|g" \
 				-e "s|@WEBSERVER@|${webserver}|g" \
