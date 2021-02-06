@@ -54,8 +54,7 @@ stop() {
 	eend $?
 }
 
-do_status()
-{
+do_status() {
 	name="Gitlab @SLOT@ $1"
 	msg=$(pidfile=$2 default_status 2>&1 | awk -F': ' '{print $2}')
 	pidfile=$2 default_status &>/dev/null
@@ -70,7 +69,6 @@ do_status()
 	eend $status
 }
 
-status()
-{
+status() {
 	do_status "Gitaly" ${gitaly_pidfile}
 }

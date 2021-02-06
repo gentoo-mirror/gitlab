@@ -297,7 +297,7 @@ src_install() {
 	local gemsdir="${ruby_vpath}/gems"
 	local file gem wwfgems="gitlab-labkit nakayoshi_fork"
 	# If we are using wildcards, the shell fills them without prefixing ${ED}. Thus
-	# we would target a file list from the real system instead from the sandbox.
+	# we would target a file list in the real system instead of in the sandbox.
 	for gem in ${wwfgems}; do
 		for file in $(find_files "d,f" "${DEST_DIR}/${gemsdir}/${gem}-*"); do
 			fperms go-w $file
@@ -534,7 +534,11 @@ pkg_config_do_upgrade_migrate_configuration() {
 			-e "s|/opt/gitlab/gitlab-gitaly-${LATEST_DEST##*-}|${GITLAB_GITALY}|g" \
 			"${DEST_DIR}/config/$conf"
 
-			example="${DEST_DIR}/config/${conf}.example"
+			if [ "$conf" = "database.yml" ]; then
+				example="${DEST_DIR}/config/${conf}.postgresql"
+			else
+				example="${DEST_DIR}/config/${conf}.example"
+			fi
 			test -f "${example}" && \
 				cp -p "${example}" "${DEST_DIR}/config/._cfg0000_${conf}"
 		done
@@ -705,7 +709,7 @@ pkg_config_initialize() {
 	einfo "Checking configuration files ..."
 
 	if [ ! -r "${CONF_DIR}/database.yml" ]; then
-		eerror "Copy \"${CONF_DIR}/database.yml.*\" to \"${CONF_DIR}/database.yml\""
+		eerror "Copy \"${CONF_DIR}/database.yml.postgresql\" to \"${CONF_DIR}/database.yml\""
 		eerror "and edit this file in order to configure your database settings for"
 		eerror "\"${RAILS_ENV}\" environment."
 		die
