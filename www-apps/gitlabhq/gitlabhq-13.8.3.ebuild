@@ -184,16 +184,6 @@ src_install() {
 	keepdir "${GIT_REPOS}"
 	dodir "${DEST_DIR}"
 
-	## Install configs ##
-
-	# Note that we cannot install the config to /etc and symlink
-	# it to ${DEST_DIR} since require_relative in config/application.rb
-	# seems to get confused by symlinks. So let's install the config
-	# to ${DEST_DIR} and create a smylink to /etc/${P}
-	dosym "${DEST_DIR}/config" "${CONF_DIR}"
-
-	echo "export RAILS_ENV=${RAILS_ENV}" > "${D}/${DEST_DIR}/.profile"
-
 	## Install all others ##
 
 	insinto "${DEST_DIR}"
@@ -211,13 +201,6 @@ src_install() {
 	sed -e "s|@LOG_DIR@|${LOG_DIR}|g" \
 		"${FILESDIR}"/gitlab.logrotate > "${D}"/etc/logrotate.d/${PN}-${SLOT} \
 		|| die "failed to filter gitlab.logrotate"
-
-	# env file
-	cat > 42"${PN}-${SLOT}" <<-EOF
-		CONFIG_PROTECT="${DEST_DIR}/config"
-	EOF
-	doenvd 42"${PN}-${SLOT}"
-	rm -f 42"${PN}-${SLOT}"
 
 	## Install gems via bundler ##
 
@@ -401,6 +384,57 @@ src_install() {
 	fi
 }
 
+pkg_preinst(){
+	local configs_to_migrate="database.yml gitlab.yml resque.yml secrets.yml"
+	local initializers_to_migrate="smtp_settings.rb"
+	use puma    && configs_to_migrate+=" puma.rb"
+	use unicorn && configs_to_migrate+=" unicorn.rb"
+	local conf example
+
+	LATEST_DEST=$(test -n "${LATEST_DEST}" && echo ${LATEST_DEST} || \
+		find /opt/gitlab -maxdepth 1 -iname "${PN}"'-*' -and -type d \
+			-and -not -iname "${PN}-${SLOT}" | sort -rV | head -n1)
+	if [ -d "${LATEST_DEST}" ]; then
+		elog  "-- Migrating configuration --"
+
+		elog  "1. Copying your current config from"
+		elog  "   \"${LATEST_DEST}/config\" to \"${CONF_DIR}\"."
+		# Copy the old config
+		cp -a "${LATEST_DEST}/config" "${CONF_DIR}"
+
+		# Update version specific paths
+		elog  "2. Updating version specific paths in ..."
+		for conf in ${configs_to_migrate}; do
+			test -f "${CONF_DIR}/${conf}" || break
+			elog "   $conf"
+			if [ "$conf" = "database.yml" ]; then
+				example="${CONF_DIR}/${conf}.postgresql"
+			else
+				example="${CONF_DIR}/${conf}.example"
+			fi
+			test -f "${example}" || example=''
+			sed -i \
+			-e "s|$(basename $LATEST_DEST)|${PN}-${SLOT}|g" \
+			-e "s|/opt/gitlab/gitlab-gitaly-${LATEST_DEST##*-}|${GITLAB_GITALY}|g" \
+			"${CONF_DIR}/$conf" "${example}"
+		done
+		for conf in ${initializers_to_migrate}; do
+			test -f "${CONF_DIR}/initializers/${conf}" || break
+			elog "   initializers/$conf"
+			example="${CONF_DIR}/initializers/${conf}.sample"
+			test -f "${example}" || example=''
+			sed -i \
+				-e "s|$(basename $LATEST_DEST)|${PN}-${SLOT}|g" \
+				"${CONF_DIR}/initializers/$conf" "${example}"
+		done
+	fi
+
+	elog  "Installing the new upstream config to ${CONF_DIR}."
+	elog  "${WORKDIR}/${P}/config/."
+	insinto "${CONF_DIR}"
+	doins -r ${WORKDIR}/${P}/config/.
+}
+
 pkg_postinst() {
 	tmpfiles_process "${PN}-${SLOT}.conf"
 	if [ ! -e "${GIT_HOME}/.gitconfig" ]; then
@@ -510,80 +544,6 @@ pkg_config_do_upgrade_migrate_data() {
 	fi
 }
 
-pkg_config_do_upgrade_migrate_configuration() {
-	local configs_to_migrate="database.yml gitlab.yml resque.yml secrets.yml"
-	local initializers_to_migrate="smtp_settings.rb"
-	use puma    && configs_to_migrate+=" puma.rb"
-	use unicorn && configs_to_migrate+=" unicorn.rb"
-	local conf example
-
-	einfo  "-- Migrating configuration --"
-
-	einfo  "1. This will move your current config from"
-	einfo  "   \"${LATEST_DEST}/config\" to \"${DEST_DIR}/config\""
-	einfo  "   and prepare the corresponding ._cfg0000_<conf> files."
-	einfon "   (C)ontinue or (s)kip? "
-	local migrate_config=$(continue_or_skip)
-	if [[ $migrate_config ]]; then
-		for conf in ${configs_to_migrate}; do
-			test -f "${LATEST_DEST}/config/${conf}" || break
-			einfo "   Moving config file \"$conf\" ..."
-			cp -p "${LATEST_DEST}/config/${conf}" "${DEST_DIR}/config/"
-			sed -i \
-			-e "s|$(basename $LATEST_DEST)|${PN}-${SLOT}|g" \
-			-e "s|/opt/gitlab/gitlab-gitaly-${LATEST_DEST##*-}|${GITLAB_GITALY}|g" \
-			"${DEST_DIR}/config/$conf"
-
-			if [ "$conf" = "database.yml" ]; then
-				example="${DEST_DIR}/config/${conf}.postgresql"
-			else
-				example="${DEST_DIR}/config/${conf}.example"
-			fi
-			test -f "${example}" && \
-				cp -p "${example}" "${DEST_DIR}/config/._cfg0000_${conf}"
-		done
-		for conf in ${initializers_to_migrate}; do
-			test -f "${LATEST_DEST}/config/initializers/${conf}" || break
-			einfo "   Moving config file \"initializers/$conf\" ..."
-			cp -p "${LATEST_DEST}/config/initializers/${conf}" \
-				"${DEST_DIR}/config/initializers/"
-			sed -i \
-				-e "s|$(basename $LATEST_DEST)|${PN}-${SLOT}|g" \
-				"${DEST_DIR}/config/initializers/$conf"
-
-			example="${DEST_DIR}/config/initializers/${conf}.sample"
-			test -f "${example}" && \
-				cp -p "${example}" "${DEST_DIR}/config/initializers/._cfg0000_${conf}"
-		done
-
-		einfo  "2. This will merge the current config with the new config."
-		einfon "   Use (d)ispatch-conf, (e)tc-update or (q)uit? "
-		while true
-		do
-			read -r merge_config
-			if   [[ $merge_config =~ ^(q|Q)$  ]]; then merge_config=""               && break
-			elif [[ $merge_config =~ ^(d|D|)$ ]]; then merge_config="dispatch-conf"  && break
-			elif [[ $merge_config =~ ^(e|E|)$ ]]; then merge_config="etc-update"     && break
-			else eerror "Please type either \"d\"/\"e\" to continue or \"q\" to quit. "; fi
-		done
-		if [[ $merge_config ]]; then
-			local errmsg="failed to automatically migrate config, run "
-			errmsg+="\"CONFIG_PROTECT=${DEST_DIR}/config ${merge_config}\" by hand, re-run "
-			errmsg+="this routine and skip config migration to proceed."
-			local mmsg="Manually run \"CONFIG_PROTECT=${DEST_DIR}/config ${merge_config}\" "
-			mmsg+="and re-run this routine and skip config migration to proceed."
-			# Set PATH without /usr/lib/portage/python*/ebuild-helpers because
-			# the portageq helper (a bash script) would be executed by etc-update
-			# explicitly with python leading to SyntaxErrors
-			/bin/bash -c "PATH=/usr/sbin:/usr/bin:/sbin:/bin \
-				CONFIG_PROTECT=\"${DEST_DIR}/config\" ${merge_config}" || die "${errmsg}"
-		else
-			echo "${mmsg}"
-			return 1
-		fi
-	fi
-}
-
 pkg_config_do_upgrade_migrate_database() {
 	einfo  "Gitaly must be running for the next step. Execute"
 	if use systemd; then
@@ -690,7 +650,6 @@ pkg_config_do_upgrade() {
 
 		pkg_config_do_upgrade_migrate_data
 
-		pkg_config_do_upgrade_migrate_configuration
 		local ret=$?
 		if [ $ret -ne 0 ]; then return $ret; fi
 
