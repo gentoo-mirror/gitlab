@@ -9,7 +9,7 @@ With the upcoming version 13.8.3 the gitlab overlay will get a grand
 refactoring:
 - www-apps/gitlabhq will be renamed to www-apps/gitlab
 - Since gitlab and gitlay must have necessarily the same version,
-  they wil be merged together in the new www-apps/gitlab package.
+  they will be merged together in the new www-apps/gitlab package.
 - Due to the refactoring slots are no longer required. That means no
   eselect and no version number in the paths anymore.
 - The configs will be installed in /etc/gitlab/ and from then on are
