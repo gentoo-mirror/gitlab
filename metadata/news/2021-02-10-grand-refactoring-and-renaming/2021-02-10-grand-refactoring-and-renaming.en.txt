@@ -1,0 +1,31 @@
+Title: Grand refactoring and renaming
+Author: Horst Prote <prote@fmi.uni-stuttgart.de>
+Posted: 2021-02-10
+Revision: 1
+News-Item-Format: 2.0
+Display-If-Installed: www-apps/gitlabhq
+
+With the upcoming version 13.8.3 the gitlab overlay will get a grand
+refactoring:
+- www-apps/gitlabhq will be renamed to www-apps/gitlab
+- Since gitlab and gitlay must have necessarily the same version,
+  they will be merged together in the new www-apps/gitlab package.
+- Due to the refactoring slots are no longer required. That means no
+  eselect and no version number in the paths anymore.
+- The configs will be installed in /etc/gitlab/ and from then on are
+  managed the standard gentoo way. (1)
+- By means of "Post Deployment Migrations" as described in
+  <gilab-base-dir>/doc/development/post_deployment_migrations.md
+  upgrading will take place without downtime. (2)
+- The ebuild will check if one is on a supported "Upgrade path"
+  (see <gilab-base-dir>/doc/update/README.md) to ensure that the
+  requirements for "Upgrading without downtime" are met.
+
+---
+(1) Nearly: Because gitlab expects the parent directory of the config
+    files to be its base directory, a tool will be added to sync changes
+    made in /etc/gitlab/ into /opt/gitlab/gitlab/config/. Maybe this
+    will be done automatically on service (re)start.
+(2) Nearly: The still required restart needs some time (about 90 secs on
+    my machine e.g.). Also for the gitlabhq -> gitlab migration you'll
+    have to stop gitlab during "emerge --config" for the last time.
