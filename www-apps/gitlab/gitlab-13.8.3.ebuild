@@ -569,6 +569,7 @@ pkg_preinst() {
 			ewarn "  Renaming existing ${CONF_DIR} to ${CONF_DIR}.bak"
 			mv ${CONF_DIR} ${CONF_DIR}.bak
 		fi
+		mdkir -p ${CONF_DIR}/initializers
 		einfo "  ... and fixing version specific paths ..."
 		local configs_to_migrate="database.yml gitlab.yml resque.yml secrets.yml"
 		local initializers_to_migrate="smtp_settings.rb"
@@ -589,7 +590,7 @@ pkg_preinst() {
 			-e "s|gitlab${HQ}|${PN}|g" \
 			${CONF_DIR}/initializers/$conf ${CONF_DIR}/initializers/${conf}.sample
 		done
-		fi
+	fi
 }
 
 pkg_postinst_gitaly() {
