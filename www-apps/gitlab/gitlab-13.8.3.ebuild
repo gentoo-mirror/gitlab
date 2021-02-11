@@ -379,7 +379,7 @@ src_install() {
 	cd "${D}/${GITLAB}"
 
 	local gitlab_dir="${BASE_DIR}/${PN}"
-	[ $HQ ] && gitlab_dir="${gitlab}${HQ}"
+	[ $HQ ] && gitlab_dir="${gitlab_dir}${HQ}"
 
 	if [ -d ${gitlab_dir}/ ]; then
 		einfo "Using parts of the installed gitlab to save time:"
