@@ -21,7 +21,7 @@ BDEPEND="
 DEPEND="
 	acct-user/git[gitlab]
 	acct-group/git
-	|| ( >=dev-vcs/git-2.29.0[pcre,pcre-jit] dev-vcs/gitlab-gitaly[gitaly_git] )
+	|| ( >=dev-vcs/git-2.29.0[pcre,pcre-jit] dev-vcs/gitlab[gitaly_git] )
 	>=dev-lang/go-1.13.9
 	virtual/ssh
 	dev-db/redis"
@@ -39,7 +39,7 @@ REDIS_URL="unix:/run/redis/redis.sock"
 REPO_DIR="${HOME}/repositories"
 AUTH_FILE="${GIT_HOME}/.ssh/authorized_keys"
 KEY_DIR="${GIT_HOME}/.ssh/"
-GITLAB_URL="${BASE_DIR}/gitlabhq/tmp/sockets/gitlab-workhorse.socket"
+GITLAB_URL="${BASE_DIR}/gitlab/tmp/sockets/gitlab-workhorse.socket"
 
 src_prepare() {
 	eapply_user

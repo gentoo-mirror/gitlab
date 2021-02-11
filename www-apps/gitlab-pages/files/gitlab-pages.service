@@ -1,0 +1,16 @@
+[Unit]
+Description=Gitlab-Pages
+PartOf=gitlab.target
+
+[Service]
+Type=exec
+User=git
+EnvironmentFile=/etc/conf.d/gitlab-pages
+WorkingDirectory=@GITLAB@
+ExecStart=@BASE_DIR@/gitlab-pages/gitlab-pages \
+    -root-cert=${PAGES_ROOT_CERT} \
+    -root-key=${PAGES_ROOT_KEY} \
+    -pages-root ${PAGES_ROOT} \
+    -pages-domain ${PAGES_DOMAIN} \
+    -daemon-uid ${PAGES_UID} \
+    -daemon-gid ${PAGES_GID}
