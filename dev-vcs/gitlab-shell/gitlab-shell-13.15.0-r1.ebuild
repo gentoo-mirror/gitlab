@@ -31,7 +31,8 @@ GIT_USER="git"
 GIT_GROUP="git"
 GIT_HOME="/var/lib/gitlab"
 BASE_DIR="/opt/gitlab"
-DEST_DIR="${BASE_DIR}/${PN}"
+GITLAB_SHELL="${BASE_DIR}/${PN}"
+CONF_DIR="/etc/${PN}"
 
 RAILS_ENV=${RAILS_ENV:-production}
 REDIS_URL="unix:/run/redis/redis.sock"
@@ -43,14 +44,16 @@ GITLAB_URL="${BASE_DIR}/gitlab/tmp/sockets/gitlab-workhorse.socket"
 
 src_prepare() {
 	eapply_user
-	cp config.yml.example config.yml
 	local gitlab_url_encoded=$(echo "${GITLAB_URL}" | sed -s 's|/|%2F|g')
 	sed -i \
 		-e "s|\(user:\).*|\1 ${GIT_USER}|" \
 		-e "s|\(gitlab_url:\).*|\1 \"http+unix://${gitlab_url_encoded}\"|" \
 		-e "s|\(auth_file:\).*|\1 \"${AUTH_FILE}\"|" \
 		-e "s|log_level: .*|log_level: WARN|" \
-		config.yml || die "failed to filter config.yml"
+		-e "s|/home/git/|${GIT_HOME}/|g" \
+		config.yml.example || die "failed to filter config.yml.example"
+	insinto "${CONF_DIR}"
+	newins config.yml.example config.yml
 }
 
 src_compile() {
@@ -65,22 +68,25 @@ src_compile() {
 }
 
 src_install() {
+	# the gitlab-shell binary searches config in its base dir
+	dosym "${CONF_DIR}/config.yml" "${GITLAB_SHELL}/config.yml"
+
 	rm -Rf .git .gitignore go_build
 
-	insinto ${DEST_DIR}
+	insinto ${GITLAB_SHELL}
 	touch gitlab-shell.log
 	doins -r . || die
 
 	for bin in $(ls bin) ; do
-		fperms 0755 ${DEST_DIR}/bin/${bin} || die
+		fperms 0755 ${GITLAB_SHELL}/bin/${bin} || die
 	done
 
-	fowners ${GIT_USER} ${DEST_DIR}/gitlab-shell.log
-	fowners ${GIT_USER} ${DEST_DIR} || die
+	fowners ${GIT_USER} ${GITLAB_SHELL}/gitlab-shell.log
+	fowners ${GIT_USER} ${GITLAB_SHELL} || die
 
 	# env file
 	cat > 42"${PN}" <<-EOF
-		CONFIG_PROTECT="${DEST_DIR}/config.yml"
+		CONFIG_PROTECT="${GITLAB_SHELL}/config.yml"
 	EOF
 	doenvd 42"${PN}"
 }
@@ -107,6 +113,6 @@ pkg_postinst() {
 		chown ${GIT_USER}:${GIT_GROUP} "${REPO_DIR}" -R || die
 	fi
 
-	elog "Copy ${DEST_DIR}/config.yml.example to ${DEST_DIR}/config.yml"
+	elog "Copy ${GITLAB_SHELL}/config.yml.example to ${GITLAB_SHELL}/config.yml"
 	elog "and edit this file in order to configure your GitLab-Shell settings."
 }

@@ -345,7 +345,11 @@ src_install() {
 
 	## Install the config ##
 	insinto "${CONF_DIR}"
-	doins -r config/.
+	# install only the new versions of files already existing in ${CONF_DIR}
+	local conf
+	for conf in $(find "${CONF_DIR}" -type f); do
+		doins ${conf#${CONF_DIR}/}
+	done
 
 	## Install all others ##
 
@@ -552,7 +556,7 @@ pkg_preinst() {
 		local old_confdir="${BASE_DIR}/gitlabhq-${vINST}/config"
 		einfo  "Migrating configuration:"
 
-		einfo  "  Copying config from \"${old_confdir}\" to \"${CONF_DIR}\"i ..."
+		einfo  "  Copying config from \"${old_confdir}\" to \"${CONF_DIR}\" ..."
 		if [ -e ${CONF_DIR} ]; then
 			ewarn "  Renaming existing ${CONF_DIR} to ${CONF_DIR}.old"
 			mv ${CONF_DIR} ${CONF_DIR}.old
@@ -702,17 +706,17 @@ pkg_postinst() {
 
 pkg_config_do_upgrade_migrate_data() {
 	einfo  "-- Migrating data --"
-	einfo "Found your latest gitlabhq instance at \"${LATEST_DEST}\"."
+	einfo "Found your latest gitlabhq instance at \"${BASE_DIR}/gitlabhq-${vINST}\"."
 
 	einfo  "1. This will move your public/uploads/ folder from"
-	einfo  "   \"${LATEST_DEST}\" to \"${GITLAB}\"."
+	einfo  "   \"${BASE_DIR}/gitlabhq-${vINST}\" to \"${GITLAB}\"."
 	einfon "   (C)ontinue or (s)kip? "
 	local migrate_uploads=$(continue_or_skip)
 	if [[ $migrate_uploads ]]; then
 		einfo "   Moving the public/uploads/ folder ..."
 		su -l ${GIT_USER} -s /bin/sh -c "
 			rm -rf ${GITLAB}/public/uploads && \
-			mv ${LATEST_DEST}/public/uploads ${GITLAB}/public/uploads" \
+			mv ${BASE_DIR}/gitlabhq-${vINST}/public/uploads ${GITLAB}/public/uploads" \
 			|| die "failed to move the public/uploads/ folder."
 
 		# Fix permissions
@@ -721,14 +725,14 @@ pkg_config_do_upgrade_migrate_data() {
 	fi
 
 	einfo  "2. This will move your shared/ data folder from"
-	einfo  "   \"${LATEST_DEST}\" to \"${GITLAB}\"."
+	einfo  "   \"${BASE_DIR}/gitlabhq-${vINST}\" to \"${GITLAB}\"."
 	einfon "   (C)ontinue or (s)kip? "
 	local migrate_shared=$(continue_or_skip)
 	if [[ $migrate_shared ]]; then
 		einfo "   Moving the shared/ data folder ..."
 		su -l ${GIT_USER} -s /bin/sh -c "
 			rm -rf ${GITLAB}/shared && \
-			mv ${LATEST_DEST}/shared ${GITLAB}/shared" \
+			mv ${BASE_DIR}/gitlabhq-${vINST}/shared ${GITLAB}/shared" \
 			|| die "failed to move the shared/ data folder."
 
 		# Fix permissions
@@ -869,11 +873,11 @@ pkg_config() {
 	einfo "\$ sudo -u ${GIT_USER} ${BUNDLE} exec rake gitlab:check RAILS_ENV=${RAILS_ENV}"
 	einfo
 	einfo "GitLab is prepared now."
-	if [[ $do_upgrade ]]; then
+	if [ "$MODUS" = "patch" ] || [ "$MODUS" = "minor" ] || [ "$MODUS" = "major" ]; then
 		einfo "You should check the example nginx site configurations in the."
 		einfo "${GITLAB}/lib/support/nginx/ folder "
 		einfo "for any updates (e.g by diff with the previous version)."
-	else
+	elif [ "$MODUS" = "new" ]; then
 		einfo "To configure your nginx site have a look at the examples configurations"
 		einfo "in the ${GITLAB}/lib/support/nginx/ folder."
 	fi
