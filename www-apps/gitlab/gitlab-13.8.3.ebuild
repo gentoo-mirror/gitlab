@@ -199,17 +199,17 @@ src_prepare_gitaly() {
 	${BUNDLE} config set --local without "${without}"
 	${BUNDLE} config set --local build.nokogiri --use-system-libraries
 
-	if [ -d ${GITLAB_GITALY}/ ]; then
-		einfo "Using parts of the installed gitlab-gitaly to save time:"
-	fi
 	# Hack: Don't start from scratch, use the installed bundle
 	local gitaly_dir="${GITLAB_GITALY}"
 	[ $HQ ] && gitaly_dir="${gitaly_dir}-${vINST}"
-	mkdir -p vendor/bundle
-	cd vendor
-	if [ -d ${gitaly_dir}/ruby/vendor/bundle/ruby ]; then
-		einfo "   Copying ${gitaly_dir}/ruby/vendor/bundle/ruby/ ..."
-		cp -a ${gitaly_dir}/ruby/vendor/bundle/ruby/ bundle/
+	if [ -d ${gitaly_dir}/ ]; then
+		einfo "Using parts of the installed gitlab-gitaly to save time:"
+		mkdir -p vendor/bundle
+		cd vendor
+		if [ -d ${gitaly_dir}/ruby/vendor/bundle/ruby ]; then
+			einfo "   Copying ${gitaly_dir}/ruby/vendor/bundle/ruby/ ..."
+			cp -a ${gitaly_dir}/ruby/vendor/bundle/ruby/ bundle/
+		fi
 	fi
 }
 
