@@ -109,7 +109,7 @@ pkg_setup() {
 	vINST=$(best_version www-apps/gitlab)
 	if [ -z "$vINST" ]; then
 		vINST=$(best_version www-apps/gitlabhq)
-		[ -n "$vINST" ] && HQ='hq'
+		[ -n "$vINST" ] && HQ="hq-${vINST}"
 	fi
 	vINST=${vINST##*-}
 	# check if upgrade path is supported and qualified for upgrading without downtime
@@ -133,8 +133,8 @@ pkg_setup() {
 		# see /opt/gitlab/gitlab/doc/update/README.md
 		einfo "Checking for background migrations ..."
 		local bm gitlab_dir rails_cmd="'puts Gitlab::BackgroundMigration.remaining'"
-		gitlab_dir=${BASE_DIR}/${PN} 
-		[ $HQ ] && gitlab_dir=${BASE_DIR}/gitlabhq-${vINST}
+		gitlab_dir="${BASE_DIR}/${PN}"
+		[ $HQ ] && gitlab_dir="${BASE_DIR}/gitlab${HQ}"
 		bm=$(su -l ${GIT_USER} -s /bin/sh -c "
 			export LANG=en_US.UTF-8; export LC_ALL=en_US.UTF-8
 			cd ${gitlab_dir}
@@ -202,11 +202,13 @@ src_prepare_gitaly() {
 		einfo "Using parts of the installed gitlab-gitaly to save time:"
 	fi
 	# Hack: Don't start from scratch, use the installed bundle
+	local gitaly_dir="${GITLAB_GITALY}"
+	[ $HQ ] && gitaly_dir="${gitaly_dir}-${vINST}"
 	mkdir -p vendor/bundle
 	cd vendor
-	if [ -d ${GITLAB_GITALY}/ruby/vendor/bundle/ruby ]; then
-		einfo "   Copying ${GITLAB_GITALY}/ruby/vendor/bundle/ruby/ ..."
-		cp -a ${GITLAB_GITALY}/ruby/vendor/bundle/ruby/ bundle/
+	if [ -d ${gitaly_dir}/ruby/vendor/bundle/ruby ]; then
+		einfo "   Copying ${gitaly_dir}/ruby/vendor/bundle/ruby/ ..."
+		cp -a ${gitaly_dir}/ruby/vendor/bundle/ruby/ bundle/
 	fi
 }
 
@@ -345,11 +347,13 @@ src_install() {
 
 	## Install the config ##
 	insinto "${CONF_DIR}"
-	# install only the new versions of files already existing in ${CONF_DIR}
-	local conf
-	for conf in $(find "${CONF_DIR}" -type f); do
-		doins ${conf#${CONF_DIR}/}
-	done
+	if [ ! $HQ ]; then
+		# install only the new versions of files already existing in ${CONF_DIR}
+		local conf
+		for conf in $(find "${CONF_DIR}" -type f); do
+			doins ${conf#${CONF_DIR}/}
+		done
+	fi
 
 	## Install all others ##
 
@@ -373,26 +377,29 @@ src_install() {
 
 	cd "${D}/${GITLAB}"
 
-	if [ -d ${BASE_DIR}/${PN}${HQ}/ ]; then
+	local gitlab_dir="${BASE_DIR}/${PN}"
+	[ $HQ ] && gitlab_dir="${gitlab}${HQ}"
+
+	if [ -d ${gitlab_dir}/ ]; then
 		einfo "Using parts of the installed gitlab to save time:"
 	fi
 	# Hack: Don't start from scratch, use the installed bundle
-	if [ -d ${BASE_DIR}/${PN}${HQ}/vendor/bundle ]; then
+	if [ -d ${gitlab_dir}/vendor/bundle ]; then
 		portageq list_preserved_libs / >/dev/null # returns 1 when no preserved_libs found
 		if [ "$?" = "1" ]; then
-			einfo "   Copying ${BASE_DIR}/${PN}${HQ}/vendor/bundle/ ..."
-			cp -a ${BASE_DIR}/${PN}${HQ}/vendor/bundle/ vendor/
+			einfo "   Copying ${gitlab_dir}/vendor/bundle/ ..."
+			cp -a ${gitlab_dir}/vendor/bundle/ vendor/
 		fi
 	fi
 	# Hack: Don't start from scratch, use the installed node_modules
-	if [ -d ${BASE_DIR}/${PN}${HQ}/node_modules ]; then
-		einfo "   Copying ${BASE_DIR}/${PN}${HQ}/node_modules/ ..."
-		cp -a ${BASE_DIR}/${PN}${HQ}/node_modules/ ./
+	if [ -d ${gitlab_dir}/node_modules ]; then
+		einfo "   Copying ${gitlab_dir}/node_modules/ ..."
+		cp -a ${gitlab_dir}/node_modules/ ./
 	fi
 	# Hack: Don't start from scratch, use the installed public/assets
-	if [ -d ${BASE_DIR}/${PN}${HQ}/public/assets ]; then
-		einfo "   Copying ${BASE_DIR}/${PN}${HQ}/public/assets/ ..."
-		cp -a ${BASE_DIR}/${PN}${HQ}/public/assets/ public/
+	if [ -d ${gitlab_dir}/public/assets ]; then
+		einfo "   Copying ${gitlab_dir}/public/assets/ ..."
+		cp -a ${gitlab_dir}/public/assets/ public/
 	fi
 
 	local without="development test coverage omnibus"
@@ -553,33 +560,33 @@ src_install() {
 
 pkg_preinst() {
 	if [ $HQ ]; then
-		local old_confdir="${BASE_DIR}/gitlabhq-${vINST}/config"
+		local old_confdir="${BASE_DIR}/gitlab${HQ}/config"
 		einfo  "Migrating configuration:"
 
 		einfo  "  Copying config from \"${old_confdir}\" to \"${CONF_DIR}\" ..."
 		if [ -e ${CONF_DIR} ]; then
-			ewarn "  Renaming existing ${CONF_DIR} to ${CONF_DIR}.old"
-			mv ${CONF_DIR} ${CONF_DIR}.old
+			ewarn "  Renaming existing ${CONF_DIR} to ${CONF_DIR}.bak"
+			mv ${CONF_DIR} ${CONF_DIR}.bak
 		fi
-		cp -a ${old_confdir} ${CONF_DIR}
-		einfo "  Fixing version specific paths ..."
+		einfo "  ... and fixing version specific paths ..."
 		local configs_to_migrate="database.yml gitlab.yml resque.yml secrets.yml"
 		local initializers_to_migrate="smtp_settings.rb"
 		use puma    && configs_to_migrate+=" puma.rb"
 		use unicorn && configs_to_migrate+=" unicorn.rb"
 		local conf 
 		for conf in ${configs_to_migrate}; do
-			test -f "${CONF_DIR}/${conf}" || break
+			cp -a ${old_confdir}/${conf} ${old_confdir}/${conf}.example ${CONF_DIR}
 			sed -i \
-			-e "s|gitlabhq-${vINST}|${PN}|g" \
+			-e "s|gitlab${HQ}|${PN}|g" \
 			-e "s|/opt/gitlab/gitlab-gitaly-${vINST}|${GITLAB_GITALY}|g" \
-			"${CONF_DIR}/$conf" "${CONF_DIR}/${conf}.example"
+			${CONF_DIR}/$conf ${CONF_DIR}/${conf}.example
 		done
 		for conf in ${initializers_to_migrate}; do
-			test -f "${CONF_DIR}/initializers/${conf}" || break
+			cp -a ${old_confdir}/initializers/${conf} ${CONF_DIR}
+			cp -a ${old_confdir}/initializers/${conf}.sample ${CONF_DIR}
 			sed -i \
-			-e "s|gitlabhq-${vINST}|${PN}|g" \
-			"${CONF_DIR}/initializers/$conf" "${CONF_DIR}/initializers/${conf}.sample"
+			-e "s|gitlab${HQ}|${PN}|g" \
+			${CONF_DIR}/initializers/$conf ${CONF_DIR}/initializers/${conf}.sample
 		done
 		fi
 }
