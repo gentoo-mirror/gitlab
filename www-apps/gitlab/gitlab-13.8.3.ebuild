@@ -109,9 +109,10 @@ pkg_setup() {
 	vINST=$(best_version www-apps/gitlab)
 	if [ -z "$vINST" ]; then
 		vINST=$(best_version www-apps/gitlabhq)
-		[ -n "$vINST" ] && HQ="hq-${vINST}"
+		[ -n "$vINST" ] && HQ="yes"
 	fi
 	vINST=${vINST##*-}
+	[ $HQ ] && HQ="hq-${vINST}"
 	# check if upgrade path is supported and qualified for upgrading without downtime
 	case "$vINST" in
 		"")			MODUS="new"
