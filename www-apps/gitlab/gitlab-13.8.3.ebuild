@@ -577,18 +577,17 @@ pkg_preinst() {
 		use unicorn && configs_to_migrate+=" unicorn.rb"
 		local conf 
 		for conf in ${configs_to_migrate}; do
-			cp -a ${old_confdir}/${conf} ${old_confdir}/${conf}.example ${CONF_DIR}
+			cp -a ${old_confdir}/${conf}
 			sed -i \
 			-e "s|gitlab${HQ}|${PN}|g" \
 			-e "s|/opt/gitlab/gitlab-gitaly-${vINST}|${GITLAB_GITALY}|g" \
-			${CONF_DIR}/$conf ${CONF_DIR}/${conf}.example
+			${CONF_DIR}/$conf
 		done
 		for conf in ${initializers_to_migrate}; do
 			cp -a ${old_confdir}/initializers/${conf} ${CONF_DIR}
-			cp -a ${old_confdir}/initializers/${conf}.sample ${CONF_DIR}
 			sed -i \
 			-e "s|gitlab${HQ}|${PN}|g" \
-			${CONF_DIR}/initializers/$conf ${CONF_DIR}/initializers/${conf}.sample
+			${CONF_DIR}/initializers/$conf
 		done
 	fi
 }
@@ -674,8 +673,7 @@ pkg_postinst() {
 		fi
 	elif [ "$MODUS" = "patch" ] || [ "$MODUS" = "minor" ] || [ "$MODUS" = "major" ]; then
 		local cfile cfiles
-		for cfile in $(find ${CONF_DIR} -xdev -name ._cfg\*); do
-			cfile=${cfile/._cfg????_/}
+		for cfile in $(find ${CONF_DIR} -type f); do
 			cfile=${cfile/${CONF_DIR}\//}
 			cp -af ${CONF_DIR}/${cfile} ${GITLAB}/config/${cfile}
 		done
