@@ -577,14 +577,16 @@ pkg_preinst() {
 		use unicorn && configs_to_migrate+=" unicorn.rb"
 		local conf 
 		for conf in ${configs_to_migrate}; do
-			cp -a ${old_confdir}/${conf}
+			test -f ${old_confdir}/${conf} || break
+			cp -a ${old_confdir}/${conf} ${CONF_DIR}
 			sed -i \
 			-e "s|gitlab${HQ}|${PN}|g" \
 			-e "s|/opt/gitlab/gitlab-gitaly-${vINST}|${GITLAB_GITALY}|g" \
 			${CONF_DIR}/$conf
 		done
 		for conf in ${initializers_to_migrate}; do
-			cp -a ${old_confdir}/initializers/${conf} ${CONF_DIR}
+			test -f ${old_confdir}/initializers/${conf} || break
+			cp -a ${old_confdir}/initializers/${conf} ${CONF_DIR}/initializers
 			sed -i \
 			-e "s|gitlab${HQ}|${PN}|g" \
 			${CONF_DIR}/initializers/$conf
