@@ -463,7 +463,7 @@ src_install() {
 			fperms go-w $file
 		done
 	done
-	fperms go-w public/assets/webpack/cmaps/ETHK-B5-H.bcmap
+	fperms go-w ${GITLAB}/public/assets/webpack/cmaps/ETHK-B5-H.bcmap
 
 	# remove tmp and log dir of the build process
 	rm -Rf tmp log
@@ -683,13 +683,6 @@ pkg_postinst() {
 			${BUNDLE} exec rake db:migrate RAILS_ENV=${RAILS_ENV}" \
 				|| die "failed to migrate database."
 		if [ $HQ ]; then
-			elog
-			einfo "Stop your old gitlabhq instance now: "
-			if use systemd; then
-				einfo "    systemctl stop gitlabhq.target"
-			else
-				einfo "    rc-service gitlabhq stop"
-			fi
 			elog
 			elog "Adopt your nginx site config to the new /opt/gitlab/gitlab/ path."
 		fi
