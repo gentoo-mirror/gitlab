@@ -847,14 +847,15 @@ pkg_config() {
 	fi
 	ln -s "${GITLAB}/.gitlab_shell_secret" "${GITLAB_SHELL}/.gitlab_shell_secret"
 
-	einfo
-	einfo "Now start ${PN} with"
-	if use systemd; then
-		einfo "\$ systemctl start ${PN}.target"
-	else
+	if [ "$MODUS" = "new" ]; then
+		einfo
+		einfo "Now start ${PN} with"
+		if use systemd; then
+			einfo "\$ systemctl start ${PN}.target"
+		else
 		einfo "\$ rc-service ${PN} start"
-	fi
-	if [ $HQ ]; then
+		fi
+	elif [ $HQ ]; then
 		einfo
 		einfo "You should now disable the old gitlabhq service:"
 		if use systemd; then
