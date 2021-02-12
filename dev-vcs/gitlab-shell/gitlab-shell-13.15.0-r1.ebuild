@@ -107,6 +107,5 @@ pkg_postinst() {
 		chown ${GIT_USER}:${GIT_GROUP} "${REPO_DIR}" -R || die
 	fi
 
-	elog "Copy ${GITLAB_SHELL}/config.yml.example to ${GITLAB_SHELL}/config.yml"
-	elog "and edit this file in order to configure your GitLab-Shell settings."
+	elog "Edit ${GITLAB_SHELL}/config.yml to configure your GitLab-Shell settings."
 }
