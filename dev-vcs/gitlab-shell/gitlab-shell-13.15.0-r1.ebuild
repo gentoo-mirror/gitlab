@@ -10,7 +10,7 @@ USE_RUBY="ruby26 ruby27"
 inherit eutils git-r3 ruby-single user
 
 DESCRIPTION="SSH access for GitLab"
-HOMEPAGE="https://github.com/gitlabhq/gitlab-shell"
+HOMEPAGE="https://gitlab.com/gitlab-org/gitlab-shell"
 LICENSE="MIT"
 SLOT="0"
 KEYWORDS="~amd64 ~x86 ~arm"
@@ -52,8 +52,6 @@ src_prepare() {
 		-e "s|log_level: .*|log_level: WARN|" \
 		-e "s|/home/git/|${GIT_HOME}/|g" \
 		config.yml.example || die "failed to filter config.yml.example"
-	insinto "${CONF_DIR}"
-	newins config.yml.example config.yml
 }
 
 src_compile() {
@@ -68,6 +66,8 @@ src_compile() {
 }
 
 src_install() {
+	insinto "${CONF_DIR}"
+	newins config.yml.example config.yml
 	# the gitlab-shell binary searches config in its base dir
 	dosym "${CONF_DIR}/config.yml" "${GITLAB_SHELL}/config.yml"
 
@@ -83,12 +83,6 @@ src_install() {
 
 	fowners ${GIT_USER} ${GITLAB_SHELL}/gitlab-shell.log
 	fowners ${GIT_USER} ${GITLAB_SHELL} || die
-
-	# env file
-	cat > 42"${PN}" <<-EOF
-		CONFIG_PROTECT="${GITLAB_SHELL}/config.yml"
-	EOF
-	doenvd 42"${PN}"
 }
 
 pkg_postinst() {
