@@ -30,11 +30,11 @@ src_install() {
 	doins README.md
 	if use systemd; then
 		insinto /etc/systemd/system/${PN}.d
-		newins "${FILESDIR}/${PN}.conf_old" ${PN}.conf
-		systemd_dounit "${FILESDIR}/${PN}.service_old"
+		doins "${FILESDIR}/${PN}.conf"
+		systemd_dounit "${FILESDIR}/${PN}.service"
 	else
-		newconfd "${FILESDIR}"/${PN}.confd_old ${PN}.confd
-		newinitd "${FILESDIR}"/${PN}.initd_old ${PN}.initd
+		doconfd "${FILESDIR}"/${PN}.confd
+		doinitd "${FILESDIR}"/${PN}.initd
 	fi
 }
 
@@ -44,7 +44,7 @@ pkg_postinst() {
 	elog "the binary /opt/gitlab/${PN}/gitlab-pages and was never tested/used"
 	elog "by the overlay maintainer. -- Good Luck!"
 	elog
-	elog "Read <gitlabhq-base-dir>/doc/administration/pages/source.md and "
+	elog "Read <gitlab-base-dir>/doc/administration/pages/source.md and "
 	elog "/opt/gitlab/${PN}/README.md on how to set up GitLab Pages."
 	elog
 	if use systemd; then

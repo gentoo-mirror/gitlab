@@ -1,0 +1,71 @@
+Title: The gitlabhq -> gitlab migration
+Author: Horst Prote <prote@fmi.uni-stuttgart.de>
+Posted: 2021-02-12
+Revision: 1
+News-Item-Format: 2.0
+Display-If-Installed: www-apps/gitlabhq
+
+With version 13.8.3 the gitlab overlay got a grand refactoring:
+- www-apps/gitlabhq was renamed to www-apps/gitlab
+- Since gitlab and gitlay must have necessarily the same version,
+  they were be merged together in the new www-apps/gitlab package.
+- Due to the refactoring slots are no longer required. That means no
+  eselect and no version number in the paths anymore.
+- The configs are now installed to /etc/gitlab/ and from then on are
+  managed the standard gentoo way. (1)
+- By means of "Post Deployment Migrations" as described in
+  <gilab-base-dir>/doc/development/post_deployment_migrations.md
+  upgrading will take place without downtime. (2)
+- The ebuild will check if one is on a supported "Upgrade path"
+  (see <gilab-base-dir>/doc/update/README.md) to ensure that the
+  requirements for "Upgrading without downtime" are met.
+
+Before you emerge the new www-apps/gitlab some preparations are needed:
+1. Adopt your portage package.use and package.accept_keywords files to
+   the new package name without the 'hq'.
+2. Stop your running gitlabhq instance.
+3. Remove the eselect symlinks:
+    eselect gitlab-gitaly unset
+    eselect gitlabhq unset
+4. Now run
+     emerge www-apps/gitlab
+   which updates dev-vcs/gitlab-shell-13.15.0 to revision r1 (with the
+   new 'hq'-less paths) and installs the new www-apps/gitlab package
+   (which includes gitlab-gitaly now).
+   This will copy your current /opt/gitlab/gitlabhq-13.8.2/config to
+   /etc/gitlab and update the version specific paths in database.yml,
+   gitlab.yml, resque.yml, secrets.yml, puma.rb (resp. unicorn.rb) and
+   initializers/smtp_settings.rb (if you use it). If you changed more
+   than these "standard" configs add them to /etc/gitlab, too.
+5. Run etc-update or dispatch-conf if required. If you changed/added
+   anything in/to /etc/gitlab then run
+    rsync -aHAX /etc/gitlab/ /opt/gitlab/gitlab/config/
+   to sync the changes back to /opt/gitlab/gitlab/config/.
+   NOTE: The trailing slashes are important in this rsync command!
+6. Adopt your nginx site config to the new /opt/gitlab/gitlab/ path
+   and restart nginx.
+7. To complete the gitlabhq -> gitlab migration run
+    emerge --config "=www-apps/gitlab-13.8.3"
+
+With the www-apps/gitlabhq -> www-apps/gitlab migration finished
+the following packages become obsolete:
+  app-eselect/eselect-gitlab-gitaly
+  app-eselect/eselect-gitlabhq
+  dev-vcs/gitlab-gitaly
+  www-apps/gitlabhq
+After unmerging these clean up the leftovers:
+  /opt/gitlab/gitlabhq-13.8.2/
+  /var/tmp/gitlabhq-13.8.2/
+  /var/log/gitlabhq-13.8.2/
+
+Do you have a backup service or init script?
+Don't forget to adopt it to the new paths, then!
+
+---
+(1) Nearly: Because gitlab expects the parent directory of the config
+    files to be its base directory, a tool will be added to sync changes
+    made in /etc/gitlab/ into /opt/gitlab/gitlab/config/. Maybe this
+    will be done automatically on service (re)start.
+(2) Nearly: The still required restart needs some time (about 90 secs on
+    my machine e.g.). Also for this gitlabhq -> gitlab migration you
+    have to stop gitlab during "emerge --config" for the last time.

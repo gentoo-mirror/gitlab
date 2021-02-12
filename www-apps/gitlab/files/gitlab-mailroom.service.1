@@ -1,0 +1,13 @@
+[Unit]
+Description=Gitlab MailRoom
+Requires=gitlab-@WEBSERVER@.service
+After=gitlab-@WEBSERVER@.service
+PartOf=gitlab.target
+
+[Service]
+User=git
+Environment=RAILS_ENV=production
+WorkingDirectory=@GITLAB@
+SyslogIdentifier=gitlab-mailroom
+PIDFile=@TMP_DIR@/pids/gitlab-mailroom.pid
+ExecStart=@GITLAB@/bin/bundle exec "mail_room -q -c @CONF_DIR@/mail_room.yml"
