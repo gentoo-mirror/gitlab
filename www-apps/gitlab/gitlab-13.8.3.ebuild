@@ -290,11 +290,13 @@ src_compile() {
 	einfo "Compiling source in $PWD ..."
 	emake || die "Compiling gitaly failed"
 
-	# Hack: Reusing gitaly's bundler cache for gitlab
-	local rubyV=$(ls ruby/vendor/bundle/ruby)
-	local ruby_vpath=vendor/bundle/ruby/${rubyV}
-	mkdir -p ${WORKDIR}/gitlab-${PV}/${ruby_vpath}
-	mv ruby/${ruby_vpath}/cache ${WORKDIR}/gitlab-${PV}/${ruby_vpath}
+	if [ -d ruby/${ruby_vpath}/cache ]; then
+		# Hack: Reusing gitaly's bundler cache for gitlab
+		local rubyV=$(ls ruby/vendor/bundle/ruby)
+		local ruby_vpath=vendor/bundle/ruby/${rubyV}
+		mkdir -p ${WORKDIR}/gitlab-${PV}/${ruby_vpath}
+		mv ruby/${ruby_vpath}/cache ${WORKDIR}/gitlab-${PV}/${ruby_vpath}
+	fi
 }
 
 src_install_gitaly() {
