@@ -463,6 +463,7 @@ src_install() {
 			fperms go-w $file
 		done
 	done
+	fperms go-w public/assets/webpack/cmaps/ETHK-B5-H.bcmap
 
 	# remove tmp and log dir of the build process
 	rm -Rf tmp log
