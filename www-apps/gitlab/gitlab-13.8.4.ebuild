@@ -875,8 +875,7 @@ pkg_config() {
 	einfo "GitLab is prepared now."
 	if [ "$MODUS" = "patch" ] || [ "$MODUS" = "minor" ] || [ "$MODUS" = "major" ]; then
 		einfo "You should check the example nginx site configurations in the."
-		einfo "${GITLAB}/lib/support/nginx/ folder "
-		einfo "for any updates (e.g by diff with the previous version)."
+		einfo "${GITLAB}/lib/support/nginx/ folder for any updates."
 	elif [ "$MODUS" = "new" ]; then
 		einfo "To configure your nginx site have a look at the examples configurations"
 		einfo "in the ${GITLAB}/lib/support/nginx/ folder."
