@@ -348,7 +348,7 @@ src_install() {
 
 	## Install the config ##
 	insinto "${CONF_DIR}"
-	doins -r config
+	doins -r config/.
 
 	## Install all others ##
 
@@ -663,9 +663,9 @@ pkg_postinst() {
 		elog "Update the config in /etc/gitlab and then run"
 		elog "     rsync -aHAX /etc/gitlab/ /opt/gitlab/gitlab/config/"
 		if use systemd; then
-			elog"     systemctl restart gitlab.target"
+			elog "     systemctl restart gitlab.target"
 		else
-			elog"     rc-service gitlab restart"
+			elog "     rc-service gitlab restart"
 		fi
 	elif [ "$MODUS" = "patch" ] || [ "$MODUS" = "minor" ] || [ "$MODUS" = "major" ]; then
 		local cfile cfiles
@@ -696,9 +696,9 @@ pkg_postinst() {
 		elog "Update the config in /etc/gitlab and then run"
 		elog "     rsync -aHAX /etc/gitlab/ /opt/gitlab/gitlab/config/"
 		if use systemd; then
-			elog"     systemctl restart gitlab.target"
+			elog "     systemctl restart gitlab.target"
 		else
-			elog"     rc-service gitlab restart"
+			elog "     rc-service gitlab restart"
 		fi
 		elog
 		elog "To complete the upgrade of your GitLab instance, run:"
