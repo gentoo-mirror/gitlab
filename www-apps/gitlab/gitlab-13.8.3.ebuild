@@ -348,13 +348,7 @@ src_install() {
 
 	## Install the config ##
 	insinto "${CONF_DIR}"
-	if [ ! $HQ ]; then
-		# install only the new versions of files already existing in ${CONF_DIR}
-		local conf
-		for conf in $(find "${CONF_DIR}" -type f); do
-			doins ${conf#${CONF_DIR}/}
-		done
-	fi
+	doins -r config
 
 	## Install all others ##
 
@@ -889,5 +883,19 @@ pkg_config() {
 	elif [ "$MODUS" = "new" ]; then
 		einfo "To configure your nginx site have a look at the examples configurations"
 		einfo "in the ${GITLAB}/lib/support/nginx/ folder."
+	fi
+
+	if [ $HQ ]; then
+		einfo
+		einfo "With the www-apps/gitlabhq -> www-apps/gitlab migration finished"
+		einfo "the following packages become obsolete:"
+		einfo "  app-eselect/eselect-gitlab-gitaly"
+		einfo "  app-eselect/eselect-gitlabhq"
+		einfo "  dev-vcs/gitlab-gitaly"
+		einfo "  www-apps/gitlabhq"
+		einfo "After unmerging these clean up the leftovers:"
+		einfo "  /opt/gitlab/gitlabhq-13.8.2/"
+		einfo "  /var/tmp/gitlabhq-13.8.2/"
+		einfo "  /var/log/gitlabhq-13.8.2/"
 	fi
 }
