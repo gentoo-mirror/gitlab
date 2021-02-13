@@ -625,16 +625,16 @@ pkg_postinst() {
 		elog "For this new installation, proceed with the following steps:"
 		elog
 		elog "  1. Create a database user for GitLab."
-		elog "     On your database server (local ore remote), just copy&run:"
-		elog "       su -l postgres"
-		elog "       psql -d template1 -c \"CREATE USER gitlab CREATEDB PASSWORD 'gitlab'\""
-		elog "     Note: You should change your password to something more random ..."
-		elog
+		elog "     On your database server (local ore remote):"
 		elog "     GitLab needs two PostgreSQL extensions: pg_trgm and btree_gist."
 		elog "     To create the extensions if they are missing do:"
 		elog "       su -l postgres"
 		elog "       psql -d template1 -c \"CREATE EXTENSION IF NOT EXISTS pg_trgm;\""
 		elog "       psql -d template1 -c \"CREATE EXTENSION IF NOT EXISTS btree_gist;\""
+		elog "     Then create the database:"
+		elog "       su -l postgres"
+		elog "       psql -d template1 -c \"CREATE USER gitlab CREATEDB PASSWORD 'gitlab'\""
+		elog "     Note: You should change your password to something more random ..."
 		elog
 		elog "  2. Edit ${CONF_DIR}/database.yml in order to configure"
 		elog "     database settings for \"${RAILS_ENV}\" environment."
