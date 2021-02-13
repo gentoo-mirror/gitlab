@@ -633,7 +633,7 @@ pkg_postinst() {
 		elog "       psql -d template1 -c \"CREATE EXTENSION IF NOT EXISTS btree_gist;\""
 		elog "     Then create the database:"
 		elog "       su -l postgres"
-		elog "       psql -d template1 -c \"CREATE USER gitlab CREATEDB PASSWORD 'gitlab'\""
+		elog "       psql -c \"CREATE USER gitlab CREATEDB PASSWORD 'gitlab'\""
 		elog "     Note: You should change your password to something more random ..."
 		elog
 		elog "  2. Edit ${CONF_DIR}/database.yml in order to configure"
