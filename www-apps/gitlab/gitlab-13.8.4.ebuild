@@ -350,6 +350,15 @@ src_install() {
 
 	## Install the config ##
 	insinto "${CONF_DIR}"
+	if [ "$MODUS" = "new" ]; then
+		cp config/resque.yml.example config/resque.yml
+		if use unicorn; then
+			cp config/unicorn.rb.example config/unicorn.rb
+		fi
+		if use puma; then
+			cp config/puma.rb.example config/puma.rb
+		fi
+	fi
 	doins -r config/.
 
 	## Install all others ##
@@ -625,16 +634,17 @@ pkg_postinst() {
 		elog "For this new installation, proceed with the following steps:"
 		elog
 		elog "  1. Create a database user for GitLab."
-		elog "     On your database server (local ore remote):"
+		elog "     On your database server (local ore remote) become user postgres:"
+		elog "       su -l postgres"
 		elog "     GitLab needs two PostgreSQL extensions: pg_trgm and btree_gist."
 		elog "     To create the extensions if they are missing do:"
-		elog "       su -l postgres"
 		elog "       psql -d template1 -c \"CREATE EXTENSION IF NOT EXISTS pg_trgm;\""
 		elog "       psql -d template1 -c \"CREATE EXTENSION IF NOT EXISTS btree_gist;\""
-		elog "     Then create the database:"
-		elog "       su -l postgres"
+		elog "     Create the database user:"
 		elog "       psql -c \"CREATE USER gitlab CREATEDB PASSWORD 'gitlab'\""
 		elog "     Note: You should change your password to something more random ..."
+		elog "     You may need to add configs for the new 'gitlab' user to the"
+		elog "     pg_hba.conf and pg_ident.conf files of your database server."
 		elog
 		elog "  2. Edit ${CONF_DIR}/database.yml in order to configure"
 		elog "     database settings for \"${RAILS_ENV}\" environment."
@@ -642,25 +652,25 @@ pkg_postinst() {
 		elog "  3. Edit ${CONF_DIR}/gitlab.yml"
 		elog "     in order to configure your GitLab settings."
 		elog
-		elog "  4. Copy ${CONF_DIR}/resque.yml.example to ${CONF_DIR}/resque.yml"
-		elog "     and edit this file in order to configure your Redis settings"
-		elog "     for \"${RAILS_ENV}\" environment."
+		elog "  4. GitLab expects the parent directory of the config files to"
+		elog "     be its base directory, so you have to sync changes made in"
+		elog "     /etc/gitlab/ back to /opt/gitlab/gitlab/config/ by running"
+		elog "       rsync -aHAX /etc/gitlab/ /opt/gitlab/gitlab/config/"
 		elog
-		if use unicorn; then
-			elog "  5. Copy ${CONF_DIR}/unicorn.rb.example to ${CONF_DIR}/unicorn.rb"
-		fi
-		if use puma; then
-			elog "  5. Copy ${CONF_DIR}/puma.rb.example to ${CONF_DIR}/puma.rb"
-		fi
-		elog
-		elog "  6. You need to configure redis to have a UNIX socket and you may"
-		elog "     adjust the maxmemory settings. Change /etc/redis/conf to"
+		elog "  5. You need to configure redis to have a UNIX socket and you may"
+		elog "     adjust the maxmemory settings. Change /etc/redis.conf to"
 		elog "       unixsocket /var/run/redis/redis.sock"
 		elog "       unixsocketperm 770"
 		elog "       maxmemory 1024MB"
 		elog "       maxmemory-policy volatile-lru"
 		elog
-		elog "  7. Make sure the Redis server is running and execute:"
+		elog "  6. Gitaly must be running for the \"emerge --config\". Execute"
+		if use systemd; then
+			einfo "     systemctl --job-mode=ignore-dependencies start ${PN}-gitaly.service"
+		else
+			einfo "     rc-service ${PN}-gitaly start"
+		fi
+		elog "     Make sure the Redis server is running and execute:"
 		elog "         emerge --config \"=${CATEGORY}/${PF}\""
 	elif [ "$MODUS" = "rebuild" ]; then
 		elog "Update the config in /etc/gitlab and then run"
@@ -809,15 +819,7 @@ pkg_config_initialize() {
 		die
 	fi
 
-	einfo  "Gitaly must be running for the next step. Execute"
-	if use systemd; then
-		einfo "\$ systemctl --job-mode=ignore-dependencies start ${PN}-gitaly.service"
-	else
-		einfo "\$ rc-service ${PN}-gitaly start"
-	fi
-	einfon "Hit <Enter> to continue "
-	local answer pw email
-	read -r answer
+	local pw email
 	einfon "Set the Administrator/root password: "
 	read -sr pw
 	einfo
@@ -833,6 +835,12 @@ pkg_config_initialize() {
 }
 
 pkg_config() {
+	## (Re-)Link gitlab_shell_secret into gitlab-shell
+	if [ -L "${GITLAB_SHELL}/.gitlab_shell_secret" ]; then
+		rm "${GITLAB_SHELL}/.gitlab_shell_secret"
+	fi
+	ln -s "${GITLAB}/.gitlab_shell_secret" "${GITLAB_SHELL}/.gitlab_shell_secret"
+
 	if [ "$MODUS" = "new" ]; then
 		pkg_config_initialize
 	elif [ "$MODUS" = "rebuild" ]; then
@@ -842,12 +850,6 @@ pkg_config() {
 		local ret=$?
 		if [ $ret -ne 0 ]; then return $ret; fi
 	fi
-
-	## (Re-)Link gitlab_shell_secret into gitlab-shell
-	if [ -L "${GITLAB_SHELL}/.gitlab_shell_secret" ]; then
-		rm "${GITLAB_SHELL}/.gitlab_shell_secret"
-	fi
-	ln -s "${GITLAB}/.gitlab_shell_secret" "${GITLAB_SHELL}/.gitlab_shell_secret"
 
 	if [ "$MODUS" = "new" ]; then
 		einfo
