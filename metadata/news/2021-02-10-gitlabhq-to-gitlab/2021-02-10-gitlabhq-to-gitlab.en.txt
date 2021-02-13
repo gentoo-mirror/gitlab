@@ -1,7 +1,7 @@
 Title: The gitlabhq -> gitlab migration
 Author: Horst Prote <prote@fmi.uni-stuttgart.de>
 Posted: 2021-02-12
-Revision: 1
+Revision: 2
 News-Item-Format: 2.0
 Display-If-Installed: www-apps/gitlabhq
 
@@ -14,10 +14,10 @@ With version 13.8.3 the gitlab overlay got a grand refactoring:
 - The configs are now installed to /etc/gitlab/ and from then on are
   managed the standard gentoo way. (1)
 - By means of "Post Deployment Migrations" as described in
-  <gilab-base-dir>/doc/development/post_deployment_migrations.md
+  <gitlab-base-dir>/doc/development/post_deployment_migrations.md
   upgrading will take place without downtime. (2)
 - The ebuild will check if one is on a supported "Upgrade path"
-  (see <gilab-base-dir>/doc/update/README.md) to ensure that the
+  (see <gitlab-base-dir>/doc/update/README.md) to ensure that the
   requirements for "Upgrading without downtime" are met.
 
 Before you emerge the new www-apps/gitlab some preparations are needed:
