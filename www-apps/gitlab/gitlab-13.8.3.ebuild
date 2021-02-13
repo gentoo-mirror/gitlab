@@ -666,9 +666,9 @@ pkg_postinst() {
 		elog
 		elog "  6. Gitaly must be running for the \"emerge --config\". Execute"
 		if use systemd; then
-			einfo "\$ systemctl --job-mode=ignore-dependencies start ${PN}-gitaly.service"
+			einfo "     systemctl --job-mode=ignore-dependencies start ${PN}-gitaly.service"
 		else
-			einfo "\$ rc-service ${PN}-gitaly start"
+			einfo "     rc-service ${PN}-gitaly start"
 		fi
 		elog "     Make sure the Redis server is running and execute:"
 		elog "         emerge --config \"=${CATEGORY}/${PF}\""
