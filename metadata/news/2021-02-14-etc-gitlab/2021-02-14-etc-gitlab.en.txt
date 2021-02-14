@@ -6,12 +6,12 @@ News-Item-Format: 2.0
 Display-If-Installed: =www-apps/gitlab-13.8*
 
 The first variants of the www-apps/gitlab-13.8.[34] ebuilds missed
-the promised feature to install only the changed configs into
+the promised feature to install only the "standard" configs into
 /etc/gitlab and also created needless ._cfg_0000_* files in the
 /opt/gitlab/gitlab/config directory. This is fixed now but I didn't
-create new -r1 revisions of the ebuild as this would trigger a
+create new -r1 revisions of the ebuilds as this would trigger a
 rebuild for those who already installed www-apps/gitlab-13.8.[34]
-but the rebuild wouldn't change the situation in /etc/gitlab.
+but that rebuild wouldn't change the situation in /etc/gitlab.
 
 Although the extra files in /etc/gitlab and /opt/gitlab/gitlab/config
 don't hamper the functioning of GitLab you should repair this by
