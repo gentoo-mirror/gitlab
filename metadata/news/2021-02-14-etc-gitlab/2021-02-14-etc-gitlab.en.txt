@@ -3,7 +3,7 @@ Author: Horst Prote <prote@fmi.uni-stuttgart.de>
 Posted: 2021-02-14
 Revision: 1
 News-Item-Format: 2.0
-Display-If-Installed: =www-apps/gitlab-13.8.*
+Display-If-Installed: =www-apps/gitlab-13.8*
 
 The first variants of the www-apps/gitlab-13.8.[34] ebuilds missed
 the promised feature to install only the changed configs into
