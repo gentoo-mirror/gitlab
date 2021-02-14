@@ -132,7 +132,7 @@ pkg_setup() {
 	if [ "$MODUS" = "patch" ] || [ "$MODUS" = "minor" ] || [ "$MODUS" = "major" ]; then
 		# ensure that any background migrations have been fully completed
 		# see /opt/gitlab/gitlab/doc/update/README.md
-		einfo "Checking for background migrations ..."
+		elog "Checking for background migrations ..."
 		local bm gitlab_dir rails_cmd="'puts Gitlab::BackgroundMigration.remaining'"
 		gitlab_dir="${BASE_DIR}/${PN}"
 		[ $HQ ] && gitlab_dir="${BASE_DIR}/gitlab${HQ}"
@@ -150,6 +150,51 @@ pkg_setup() {
 			die "Background migrations from previous upgrade not finished yet."
 		else
 			elog "OK: No remainig background migrations found."
+		fi
+	fi
+
+	if [ $HQ ]; then
+		local old_confdir="${BASE_DIR}/gitlab${HQ}/config"
+		elog  "Saving current configuration:"
+
+		elog  "  Copying configs from \"${old_confdir}\" to \"${T}/etc-config\" ..."
+		mkdir -p ${T}/etc-config/initializers
+		elog "  ... and fixing version specific paths ..."
+		local configs_to_migrate="database.yml gitlab.yml resque.yml secrets.yml"
+		local initializers_to_migrate="smtp_settings.rb"
+		use puma    && configs_to_migrate+=" puma.rb"
+		use unicorn && configs_to_migrate+=" unicorn.rb"
+		local conf 
+		for conf in ${configs_to_migrate}; do
+			test -f ${old_confdir}/${conf} || break
+			cp -a ${old_confdir}/${conf} ${T}/etc-config
+			sed -i \
+			-e "s|gitlab${HQ}|${PN}|g" \
+			-e "s|/opt/gitlab/gitlab-gitaly-${vINST}|${GITLAB_GITALY}|g" \
+			${T}/etc-config/$conf
+		done
+		for conf in ${initializers_to_migrate}; do
+			test -f ${old_confdir}/initializers/${conf} || break
+			cp -a ${old_confdir}/initializers/${conf} ${T}/etc-config/initializers
+			sed -i \
+			-e "s|gitlab${HQ}|${PN}|g" \
+			${T}/etc-config/initializers/$conf
+		done
+	elif [ "$MODUS" = "rebuild" ] || \
+		 [ "$MODUS" = "patch" ] || [ "$MODUS" = "minor" ] || [ "$MODUS" = "major" ]; then
+		elog  "Saving current configuration"
+		cp -a ${CONF_DIR} ${T}/etc-config
+	elif [ "$MODUS" = "new" ]; then
+		# initialize our source for ${CONF_DIR}
+		cp config/database.yml.postgresql ${T}/etc-config/database.yml
+		cp config/gitlab.yml.example ${T}/etc-config/gitlab.yml
+		cp config/resque.yml.example ${T}/etc-config/config/resque.yml
+		cp config/secrets.yml.example ${T}/etc-config/config/secrets.yml
+		if use unicorn; then
+			cp config/unicorn.rb.example ${T}/etc-config/config/unicorn.rb
+		fi
+		if use puma; then
+			cp config/puma.rb.example ${T}/etc-config/config/puma.rb
 		fi
 	fi
 }
@@ -350,16 +395,18 @@ src_install() {
 
 	## Install the config ##
 	insinto "${CONF_DIR}"
-	if [ "$MODUS" = "new" ]; then
-		cp config/resque.yml.example config/resque.yml
-		if use unicorn; then
-			cp config/unicorn.rb.example config/unicorn.rb
+	local cfile cfiles
+	# we just want the folder structure; most files will be overwritten in for loop
+	cp -a ${T}/etc-config ${T}/config
+	for cfile in $(find ${T}/etc-config -type f); do
+		cfile=${cfile/${T}\/etc-config\//}
+		if [ -f config/${cfile} ]; then
+			cp -f config/${cfile} ${T}/config/${cfile}
+			cp -f ${T}/etc-config/${cfile} config/${cfile}
 		fi
-		if use puma; then
-			cp config/puma.rb.example config/puma.rb
-		fi
-	fi
-	doins -r config/.
+	done
+	# pkg_preinst() will copy ${T}/etc-config to ${CONF_DIR}
+	doins -r ${T}/config/.
 
 	## Install all others ##
 
@@ -567,36 +614,8 @@ src_install() {
 
 pkg_preinst() {
 	if [ $HQ ]; then
-		local old_confdir="${BASE_DIR}/gitlab${HQ}/config"
-		einfo  "Migrating configuration:"
-
-		einfo  "  Copying config from \"${old_confdir}\" to \"${CONF_DIR}\" ..."
-		if [ -e ${CONF_DIR} ]; then
-			ewarn "  Renaming existing ${CONF_DIR} to ${CONF_DIR}.bak"
-			mv ${CONF_DIR} ${CONF_DIR}.bak
-		fi
-		mkdir -p ${CONF_DIR}/initializers
-		einfo "  ... and fixing version specific paths ..."
-		local configs_to_migrate="database.yml gitlab.yml resque.yml secrets.yml"
-		local initializers_to_migrate="smtp_settings.rb"
-		use puma    && configs_to_migrate+=" puma.rb"
-		use unicorn && configs_to_migrate+=" unicorn.rb"
-		local conf 
-		for conf in ${configs_to_migrate}; do
-			test -f ${old_confdir}/${conf} || break
-			cp -a ${old_confdir}/${conf} ${CONF_DIR}
-			sed -i \
-			-e "s|gitlab${HQ}|${PN}|g" \
-			-e "s|/opt/gitlab/gitlab-gitaly-${vINST}|${GITLAB_GITALY}|g" \
-			${CONF_DIR}/$conf
-		done
-		for conf in ${initializers_to_migrate}; do
-			test -f ${old_confdir}/initializers/${conf} || break
-			cp -a ${old_confdir}/initializers/${conf} ${CONF_DIR}/initializers
-			sed -i \
-			-e "s|gitlab${HQ}|${PN}|g" \
-			${CONF_DIR}/initializers/$conf
-		done
+		[ -e ${CONF_DIR} ] || mkdir ${CONF_DIR}
+		cp -r --preserve=mode,timestamps ${T}/etc-config/* ${CONF_DIR}/
 	fi
 }
 
@@ -681,11 +700,6 @@ pkg_postinst() {
 			elog "     rc-service gitlab restart"
 		fi
 	elif [ "$MODUS" = "patch" ] || [ "$MODUS" = "minor" ] || [ "$MODUS" = "major" ]; then
-		local cfile cfiles
-		for cfile in $(find ${CONF_DIR} -type f); do
-			cfile=${cfile/${CONF_DIR}\//}
-			cp -af ${CONF_DIR}/${cfile} ${GITLAB}/config/${cfile}
-		done
 		elog
 		elog "Migrating database without post deployment migrations ..."
 		su -l ${GIT_USER} -s /bin/sh -c "
