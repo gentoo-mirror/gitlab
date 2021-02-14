@@ -1,0 +1,30 @@
+Title: The new /etc/gitlab
+Author: Horst Prote <prote@fmi.uni-stuttgart.de>
+Posted: 2021-02-14
+Revision: 1
+News-Item-Format: 2.0
+Display-If-Installed: ~www-apps/gitlab-13.8.[34]
+
+The first variants of the www-apps/gitlab-13.8.[34] ebuilds missed
+the promised feature to install only the changed configs into
+/etc/gitlab and also created needless ._cfg_0000_* files in the
+/opt/gitlab/gitlab/config directory. This is fixed now but I didn't
+create new -r1 revisions of the ebuild as this would trigger a
+rebuild for those who already installed www-apps/gitlab-13.8.[34]
+but the rebuild wouldn't change the situation in /etc/gitlab.
+
+Although the extra files in /etc/gitlab and /opt/gitlab/gitlab/config
+don't hamper the functioning of GitLab you should repair this by
+- Removing the needless /opt/gitlab/gitlab/config/._cfg_0000_* files.
+- Create a new /etc/gitlab folder containing only the configs you
+  changed. For example you could do:
+    mv /etc/gitlab /etc/gitlab.old
+    mkdir /etc/gitlab
+    cp -a /etc/gitlab.old/database.yml /etc/gitlab/
+    cp -a /etc/gitlab.old/gitlab.yml /etc/gitlab/
+    cp -a /etc/gitlab.old/puma.rb /etc/gitlab/
+  or if you still use unicorn
+    cp -a /etc/gitlab.old/unicorn.rb /etc/gitlab/
+  and only if you changed resque.yml from the default
+    cp -a /etc/gitlab.old/resque.yml /etc/gitlab/
+  and any other config file you changed.

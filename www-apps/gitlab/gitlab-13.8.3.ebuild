@@ -160,7 +160,7 @@ pkg_setup() {
 		elog  "  Copying configs from \"${old_confdir}\" to \"${T}/etc-config\" ..."
 		mkdir -p ${T}/etc-config/initializers
 		elog "  ... and fixing version specific paths ..."
-		local configs_to_migrate="database.yml gitlab.yml resque.yml secrets.yml"
+		local configs_to_migrate="database.yml gitlab.yml"
 		local initializers_to_migrate="smtp_settings.rb"
 		use puma    && configs_to_migrate+=" puma.rb"
 		use unicorn && configs_to_migrate+=" unicorn.rb"
@@ -188,8 +188,6 @@ pkg_setup() {
 		# initialize our source for ${CONF_DIR}
 		cp config/database.yml.postgresql ${T}/etc-config/database.yml
 		cp config/gitlab.yml.example ${T}/etc-config/gitlab.yml
-		cp config/resque.yml.example ${T}/etc-config/config/resque.yml
-		cp config/secrets.yml.example ${T}/etc-config/config/secrets.yml
 		if use unicorn; then
 			cp config/unicorn.rb.example ${T}/etc-config/config/unicorn.rb
 		fi
