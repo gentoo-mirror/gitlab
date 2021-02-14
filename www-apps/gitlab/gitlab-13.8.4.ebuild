@@ -603,7 +603,7 @@ src_install() {
 				-e "s|@WEBSERVER@|${webserver}|g" \
 				-e "s|@WEBSERVER_NAME@|${webserver_name}|g" \
 				"${rcfile}" > "${T}/${rc}" || die "failed to configure: ${rc}"
-			doinitd "${T}/${rc}"
+			newinitd "${T}/${rc}" "${service}"
 		done
 	fi
 
