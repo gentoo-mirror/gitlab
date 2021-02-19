@@ -118,13 +118,13 @@ pkg_setup() {
 	case "$vINST" in
 		"")			MODUS="new"
 					elog "This is a new installation.";;
-		13.8.3)		MODUS="rebuild"
+		13.6.7)		MODUS="rebuild"
 					elog "This is a rebuild of $PV.";;
-		13.8.*)		MODUS="patch"
+		13.6.*)		MODUS="patch"
 					elog "This is a patch upgrade from $vINST to $PV.";;
-		13.7.*)		MODUS="minor"
+		13.5.*)		MODUS="minor"
 					elog "This is a minor upgrade from $vINST to $PV.";;
-		13.[0-6].*)	die "Please do minor upgrades step by step.";;
+		13.[0-4].*)	die "Please do minor upgrades step by step.";;
 		12.10.14)	die "Please upgrade to 13.0.0 first.";;
 		12.*.*)		die "Please upgrade to 12.10.14 first.";;
 		*)			die "Upgrading from $vINST isn't supported. Do it manual.";;
