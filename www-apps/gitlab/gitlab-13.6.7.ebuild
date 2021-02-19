@@ -23,7 +23,7 @@ LICENSE="MIT"
 RESTRICT="network-sandbox splitdebug strip"
 SLOT="0"
 KEYWORDS="~amd64 ~x86"
-IUSE="favicon gitaly_git kerberos -mail_room +puma -unicorn systemd"
+IUSE="favicon gitaly_git kerberos -mail_room -pages +puma -unicorn systemd"
 REQUIRED_USE="
 	^^ ( puma unicorn )"
 # USE flags that affect the --without option below
@@ -62,6 +62,7 @@ DEPEND="
 	dev-lang/ruby[ssl]
 	=dev-vcs/gitlab-shell-13.13.1
 	~www-servers/gitlab-workhorse-8.54.2
+	pages? ( ~www-apps/gitlab-pages-1.30.2 )
 	!gitaly_git? ( >=dev-vcs/git-2.29.0[pcre,pcre-jit] )
 	gitaly_git? ( dev-vcs/gitlab-gitaly[gitaly_git] )
 	net-misc/curl
