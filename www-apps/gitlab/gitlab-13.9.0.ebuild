@@ -60,9 +60,9 @@ DEPEND="
 	acct-user/git[gitlab]
 	acct-group/git
 	dev-lang/ruby[ssl]
-	=dev-vcs/gitlab-shell-13.15.0-r1
-	~www-servers/gitlab-workhorse-8.59.0
-	pages? ( ~www-apps/gitlab-pages-1.34.0 )
+	~dev-vcs/gitlab-shell-13.16.1
+	~www-servers/gitlab-workhorse-8.63.0
+	pages? ( ~www-apps/gitlab-pages-1.35.0 )
 	!gitaly_git? ( >=dev-vcs/git-2.29.0[pcre,pcre-jit] )
 	gitaly_git? ( dev-vcs/gitlab-gitaly[gitaly_git] )
 	net-misc/curl
@@ -118,13 +118,13 @@ pkg_setup() {
 	case "$vINST" in
 		"")			MODUS="new"
 					elog "This is a new installation.";;
-		13.8.3)		MODUS="rebuild"
+		13.9.0)		MODUS="rebuild"
 					elog "This is a rebuild of $PV.";;
-		13.8.*)		MODUS="patch"
+		13.9.*)		MODUS="patch"
 					elog "This is a patch upgrade from $vINST to $PV.";;
-		13.7.*)		MODUS="minor"
+		13.8.*)		MODUS="minor"
 					elog "This is a minor upgrade from $vINST to $PV.";;
-		13.[0-6].*)	die "Please do minor upgrades step by step.";;
+		13.[0-7].*)	die "Please do minor upgrades step by step.";;
 		12.10.14)	die "Please upgrade to 13.0.0 first.";;
 		12.*.*)		die "Please upgrade to 12.10.14 first.";;
 		*)			die "Upgrading from $vINST isn't supported. Do it manual.";;

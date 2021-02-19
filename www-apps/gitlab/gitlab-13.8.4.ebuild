@@ -23,7 +23,7 @@ LICENSE="MIT"
 RESTRICT="network-sandbox splitdebug strip"
 SLOT="0"
 KEYWORDS="~amd64 ~x86"
-IUSE="favicon gitaly_git kerberos -mail_room +puma -unicorn systemd"
+IUSE="favicon gitaly_git kerberos -mail_room -pages +puma -unicorn systemd"
 REQUIRED_USE="
 	^^ ( puma unicorn )"
 # USE flags that affect the --without option below
@@ -62,6 +62,7 @@ DEPEND="
 	dev-lang/ruby[ssl]
 	~dev-vcs/gitlab-shell-13.15.1
 	~www-servers/gitlab-workhorse-8.59.0
+	pages? ( ~www-apps/gitlab-pages-1.34.0 )
 	!gitaly_git? ( >=dev-vcs/git-2.29.0[pcre,pcre-jit] )
 	gitaly_git? ( dev-vcs/gitlab-gitaly[gitaly_git] )
 	net-misc/curl
@@ -218,7 +219,6 @@ src_prepare() {
 	eapply -p0 "${FILESDIR}/${PN}-fix-sidekiq_check.patch"
 	eapply -p0 "${FILESDIR}/${PN}-fix-sendmail-param.patch"
 
-	mkdir -p ${T}/etc-config/initializers
 	if [ $HQ ]; then
 		local old_confdir="${BASE_DIR}/gitlab${HQ}/config"
 		elog  "Saving current configuration:"
@@ -230,6 +230,7 @@ src_prepare() {
 		use puma    && configs_to_migrate+=" puma.rb"
 		use unicorn && configs_to_migrate+=" unicorn.rb"
 		local conf 
+		mkdir -p ${T}/etc-config/initializers
 		for conf in ${configs_to_migrate}; do
 			test -f ${old_confdir}/${conf} || break
 			cp -a ${old_confdir}/${conf} ${T}/etc-config
@@ -251,6 +252,7 @@ src_prepare() {
 		cp -a ${CONF_DIR} ${T}/etc-config
 	elif [ "$MODUS" = "new" ]; then
 		# initialize our source for ${CONF_DIR}
+		mkdir -p ${T}/etc-config
 		cp config/database.yml.postgresql ${T}/etc-config/database.yml
 		cp config/gitlab.yml.example ${T}/etc-config/gitlab.yml
 		if use unicorn; then
