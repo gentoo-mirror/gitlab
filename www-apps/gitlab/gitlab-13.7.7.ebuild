@@ -219,7 +219,6 @@ src_prepare() {
 	eapply -p0 "${FILESDIR}/${PN}-fix-sidekiq_check.patch"
 	eapply -p0 "${FILESDIR}/${PN}-fix-sendmail-param.patch"
 
-	mkdir -p ${T}/etc-config/initializers
 	if [ $HQ ]; then
 		local old_confdir="${BASE_DIR}/gitlab${HQ}/config"
 		elog  "Saving current configuration:"
@@ -231,6 +230,7 @@ src_prepare() {
 		use puma    && configs_to_migrate+=" puma.rb"
 		use unicorn && configs_to_migrate+=" unicorn.rb"
 		local conf 
+		mkdir -p ${T}/etc-config/initializers
 		for conf in ${configs_to_migrate}; do
 			test -f ${old_confdir}/${conf} || break
 			cp -a ${old_confdir}/${conf} ${T}/etc-config
@@ -252,6 +252,7 @@ src_prepare() {
 		cp -a ${CONF_DIR} ${T}/etc-config
 	elif [ "$MODUS" = "new" ]; then
 		# initialize our source for ${CONF_DIR}
+		mkdir -p ${T}/etc-config
 		cp config/database.yml.postgresql ${T}/etc-config/database.yml
 		cp config/gitlab.yml.example ${T}/etc-config/gitlab.yml
 		if use unicorn; then
