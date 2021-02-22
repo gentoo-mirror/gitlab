@@ -585,7 +585,7 @@ src_install() {
 	else
 		## OpenRC init scripts ##
 		elog "Installing OpenRC init.d files"
-		local service services="${PN} gitlab-gitaly" rc rcfile webserver_start
+		local service services="${PN} gitlab-gitaly" rc rcfile update_config webserver_start
 		local mailroom_vars='' mailroom_start='' mailroom_stop='' mailroom_status=''
 
 		rcfile="${FILESDIR}/${PN}.init.${vORC}"
@@ -599,9 +599,15 @@ src_install() {
 			mailroom_start="\n$(sed -z 's/\n/\\n/g' ${rcfile}.mailroom_start)"
 			mailroom_stop="\n$(sed -z 's/\n/\\n/g' ${rcfile}.mailroom_stop)"
 			mailroom_status="\n$(sed -z 's/\n/\\n/g' ${rcfile}.mailroom_status | head -c -2)"
+		fi 
+		if use gitlab-config; then
+			update_config=""
+		else
+			update_config="su -l ${GIT_USER} -c \"rsync -aHAX /etc/gitlab/ ${GITLAB_CONFIG}\""
 		fi
 		sed -e "s|@WEBSERVER_START@|${webserver_start}|" \
 			-e "s|@MAILROOM_VARS@|${mailroom_vars}|" \
+			-e "s|@UPDATE_CONFIG@|${update_config}|" \
 			-e "s|@MAILROOM_START@|${mailroom_start}|" \
 			-e "s|@MAILROOM_STOP@|${mailroom_stop}|" \
 			-e "s|@MAILROOM_STATUS@|${mailroom_status}|" \

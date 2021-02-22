@@ -1,0 +1,44 @@
+Title: The new /etc/gitlab - Update
+Author: Horst Prote <prote@fmi.uni-stuttgart.de>
+Posted: 2021-02-22
+Revision: 1
+News-Item-Format: 2.0
+Display-If-Installed: >=www-apps/gitlab-13.9.0
+
+There were legitimate complaints about the error-prone syncing of
+/etc/gitlab to /opt/gitlab/gitlab/config and the question arose
+"What's the point of it?"
+
+I had three reasons for this setup:
+
+- I wanted to use the standard Gentoo way for config placement and
+  management.
+- The /opt/gitlab/gitlab/config directory contains hundreds of files
+  but normaly one will only change three or four of them. I wanted to
+  have only the changed ones in /etc/config.
+- Last but not least: I use sys-apps/etckeeper to always have a backup
+  and the complete change history of the configs under /etc. With
+  /etc/gitlab beeing a symlink to /opt/gitlab/gitlab/config my changes
+  in /etc/gitlab weren't captured by etckeeper.
+
+Also note that we cannot install the config to /etc/gitlab and symlink
+/opt/gitlab/gitlab/config to it since 'require_relative' in
+/opt/gitlab/gitlab/config/application.rb gets confused by symlinks.
+
+I changed two things:
+1. The /etc/gitlab to /opt/gitlab/gitlab/config sync is now done
+   automatically on (re)start of GitLab. And if you change the config
+   you always have to restart.
+2. As "Gentoo is all about choices." I added the 'gitlab-config' USE
+   flag. When set
+   - /etc/gibtlab isn't used.
+   - The aforementioned automatic sync isn't installed.
+   - /etc/env.d/42gentoo is installed which CONFIG_PROTECTs
+     /opt/gitlab/gitlab/config to protect changes made in there
+     to be overwritten on package updates.
+
+NOTE: The /etc/env.d/42gentoo file doesn't have an effect on the emerge
+      that installs it the first time. So on the first installation of
+      gitlab with the 'gitlab-config' USE flag activated, the config
+      in /opt/gitlab/gitlab/config will be overwritten. So keep a copy
+      of your changes at another place.
