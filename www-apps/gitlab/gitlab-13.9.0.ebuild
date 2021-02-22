@@ -722,7 +722,6 @@ pkg_postinst() {
 		elog "         emerge --config \"=${CATEGORY}/${PF}\""
 	elif [ "$MODUS" = "rebuild" ]; then
 		elog "Update the config in /etc/gitlab and then run"
-		elog "     rsync -aHAX /etc/gitlab/ /opt/gitlab/gitlab/config/"
 		if use systemd; then
 			elog "     systemctl restart gitlab.target"
 		else
@@ -743,7 +742,6 @@ pkg_postinst() {
 		fi
 		elog
 		elog "Update the config in /etc/gitlab and then run"
-		elog "     rsync -aHAX /etc/gitlab/ /opt/gitlab/gitlab/config/"
 		if use systemd; then
 			elog "     systemctl restart gitlab.target"
 		else
