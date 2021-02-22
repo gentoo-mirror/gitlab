@@ -23,7 +23,7 @@ LICENSE="MIT"
 RESTRICT="network-sandbox splitdebug strip"
 SLOT="0"
 KEYWORDS="~amd64 ~x86"
-IUSE="favicon gitaly_git kerberos -mail_room -pages +puma -unicorn systemd"
+IUSE="favicon gitaly_git -gitlab-config kerberos -mail_room -pages +puma -unicorn systemd"
 REQUIRED_USE="
 	^^ ( puma unicorn )"
 # USE flags that affect the --without option below
@@ -394,19 +394,34 @@ src_install() {
 	dodir "${GITLAB}"
 
 	## Install the config ##
-	insinto "${CONF_DIR}"
-	local cfile cfiles
-	# we just want the folder structure; most files will be overwritten in for loop
-	cp -a ${T}/etc-config ${T}/config
-	for cfile in $(find ${T}/etc-config -type f); do
-		cfile=${cfile/${T}\/etc-config\//}
-		if [ -f config/${cfile} ]; then
-			cp -f config/${cfile} ${T}/config/${cfile}
-			cp -f ${T}/etc-config/${cfile} config/${cfile}
-		fi
-	done
-	# pkg_preinst() will copy ${T}/etc-config to ${CONF_DIR}
-	doins -r ${T}/config/.
+	if use gitlab-config; then
+		# env file to protect configs in $GITLAB/config
+		cat > ${T}/42${PN} <<-EOF
+			CONFIG_PROTECT="${GITLAB}/config"
+		EOF
+		doenvd ${T}/42${PN}
+		insinto "${CONF_DIR}"
+		cat > ${T}/README <<-EOF
+			The gitlab-config USE flag is activated.
+			Configs are installed to ${GITLAB}/config only.
+			See news 2021-02-22-etc-gitlab for details.
+		EOF
+		doins ${T}/README
+	else
+		insinto "${CONF_DIR}"
+		local cfile cfiles
+		# pkg_preinst() prepared config in ${T}/etc-config
+		# we just want the folder structure; most files will be overwritten in for loop
+		cp -a ${T}/etc-config ${T}/config
+		for cfile in $(find ${T}/etc-config -type f); do
+			cfile=${cfile/${T}\/etc-config\//}
+			if [ -f config/${cfile} ]; then
+				cp -f config/${cfile} ${T}/config/${cfile}
+				cp -f ${T}/etc-config/${cfile} config/${cfile}
+			fi
+		done
+		doins -r ${T}/config/.
+	fi
 
 	## Install all others ##
 
@@ -614,8 +629,10 @@ src_install() {
 
 pkg_preinst() {
 	if [ $HQ ]; then
-		[ -e ${CONF_DIR} ] || mkdir ${CONF_DIR}
-		cp -r --preserve=mode,timestamps ${T}/etc-config/* ${CONF_DIR}/
+		if ! use gitlab-config; then
+			[ -e ${CONF_DIR} ] || mkdir ${CONF_DIR}
+			cp -r --preserve=mode,timestamps ${T}/etc-config/* ${CONF_DIR}/
+		fi
 	fi
 }
 
