@@ -225,7 +225,7 @@ src_prepare() {
 
 		elog  "  Copying configs from \"${old_confdir}\" to \"${T}/etc-config\" ..."
 		elog "  ... and fixing version specific paths ..."
-		local configs_to_migrate="database.yml gitlab.yml"
+		local configs_to_migrate="database.yml gitlab.yml secrets.yml"
 		local initializers_to_migrate="smtp_settings.rb"
 		use puma    && configs_to_migrate+=" puma.rb"
 		use unicorn && configs_to_migrate+=" unicorn.rb"
