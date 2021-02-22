@@ -23,7 +23,7 @@ LICENSE="MIT"
 RESTRICT="network-sandbox splitdebug strip"
 SLOT="0"
 KEYWORDS="~amd64 ~x86"
-IUSE="favicon gitaly_git kerberos -mail_room -pages +puma -unicorn systemd"
+IUSE="favicon gitaly_git -gitlab-config kerberos -mail_room -pages +puma -unicorn systemd"
 REQUIRED_USE="
 	^^ ( puma unicorn )"
 # USE flags that affect the --without option below
@@ -60,7 +60,7 @@ DEPEND="
 	acct-user/git[gitlab]
 	acct-group/git
 	dev-lang/ruby[ssl]
-	=dev-vcs/gitlab-shell-13.14.1
+	~dev-vcs/gitlab-shell-13.14.1
 	~www-servers/gitlab-workhorse-8.58.2
 	pages? ( ~www-apps/gitlab-pages-1.34.0 )
 	!gitaly_git? ( >=dev-vcs/git-2.29.0[pcre,pcre-jit] )
@@ -84,6 +84,7 @@ GIT_HOME="/var/lib/gitlab"
 BASE_DIR="/opt/gitlab"
 GITLAB="${BASE_DIR}/${PN}"
 CONF_DIR="/etc/${PN}"
+GITLAB_CONFIG="${GITLAB}/config"
 CONF_DIR_GITALY="/etc/gitlab-gitaly"
 LOG_DIR="/var/log/${PN}"
 TMP_DIR="/var/tmp/${PN}"
@@ -394,19 +395,34 @@ src_install() {
 	dodir "${GITLAB}"
 
 	## Install the config ##
-	insinto "${CONF_DIR}"
-	local cfile cfiles
-	# we just want the folder structure; most files will be overwritten in for loop
-	cp -a ${T}/etc-config ${T}/config
-	for cfile in $(find ${T}/etc-config -type f); do
-		cfile=${cfile/${T}\/etc-config\//}
-		if [ -f config/${cfile} ]; then
-			cp -f config/${cfile} ${T}/config/${cfile}
-			cp -f ${T}/etc-config/${cfile} config/${cfile}
-		fi
-	done
-	# pkg_preinst() will copy ${T}/etc-config to ${CONF_DIR}
-	doins -r ${T}/config/.
+	if use gitlab-config; then
+		# env file to protect configs in $GITLAB/config
+		cat > ${T}/42${PN} <<-EOF
+			CONFIG_PROTECT="${GITLAB}/config"
+		EOF
+		doenvd ${T}/42${PN}
+		insinto "${CONF_DIR}"
+		cat > ${T}/README <<-EOF
+			The gitlab-config USE flag is activated.
+			Configs are installed to ${GITLAB}/config only.
+			See news 2021-02-22-etc-gitlab for details.
+		EOF
+		doins ${T}/README
+	else
+		insinto "${CONF_DIR}"
+		local cfile cfiles
+		# pkg_preinst() prepared config in ${T}/etc-config
+		# we just want the folder structure; most files will be overwritten in for loop
+		cp -a ${T}/etc-config ${T}/config
+		for cfile in $(find ${T}/etc-config -type f); do
+			cfile=${cfile/${T}\/etc-config\//}
+			if [ -f config/${cfile} ]; then
+				cp -f config/${cfile} ${T}/config/${cfile}
+				cp -f ${T}/etc-config/${cfile} config/${cfile}
+			fi
+		done
+		doins -r ${T}/config/.
+	fi
 
 	## Install all others ##
 
@@ -543,12 +559,13 @@ src_install() {
 		elog "Installing systemd unit files"
 		local service services="gitaly sidekiq workhorse ${webserver}" unit unitfile
 		use mail_room && services+=" mailroom"
+		use gitlab-config || services+=" update-config"
 		for service in ${services}; do
 			unitfile="${FILESDIR}/${PN}-${service}.service.${vSYS}"
 			unit="${PN}-${service}.service"
 			sed -e "s|@BASE_DIR@|${BASE_DIR}|g" \
 				-e "s|@GITLAB@|${GITLAB}|g" \
-				-e "s|@CONF_DIR@|${GITLAB}/config|g" \
+				-e "s|@CONF_DIR@|${GITLAB_CONFIG}|g" \
 				-e "s|@TMP_DIR@|${TMP_DIR}|g" \
 				-e "s|@WORKHORSE_BIN@|${WORKHORSE_BIN}|g" \
 				-e "s|@WEBSERVER@|${webserver}|g" \
@@ -568,7 +585,7 @@ src_install() {
 	else
 		## OpenRC init scripts ##
 		elog "Installing OpenRC init.d files"
-		local service services="${PN} gitlab-gitaly" rc rcfile webserver_start
+		local service services="${PN} gitlab-gitaly" rc rcfile update_config webserver_start
 		local mailroom_vars='' mailroom_start='' mailroom_stop='' mailroom_status=''
 
 		rcfile="${FILESDIR}/${PN}.init.${vORC}"
@@ -582,9 +599,15 @@ src_install() {
 			mailroom_start="\n$(sed -z 's/\n/\\n/g' ${rcfile}.mailroom_start)"
 			mailroom_stop="\n$(sed -z 's/\n/\\n/g' ${rcfile}.mailroom_stop)"
 			mailroom_status="\n$(sed -z 's/\n/\\n/g' ${rcfile}.mailroom_status | head -c -2)"
+		fi 
+		if use gitlab-config; then
+			update_config=""
+		else
+			update_config="su -l ${GIT_USER} -c \"rsync -aHAX /etc/gitlab/ ${GITLAB_CONFIG}\""
 		fi
 		sed -e "s|@WEBSERVER_START@|${webserver_start}|" \
 			-e "s|@MAILROOM_VARS@|${mailroom_vars}|" \
+			-e "s|@UPDATE_CONFIG@|${update_config}|" \
 			-e "s|@MAILROOM_START@|${mailroom_start}|" \
 			-e "s|@MAILROOM_STOP@|${mailroom_stop}|" \
 			-e "s|@MAILROOM_STATUS@|${mailroom_status}|" \
@@ -614,18 +637,22 @@ src_install() {
 
 pkg_preinst() {
 	if [ $HQ ]; then
-		[ -e ${CONF_DIR} ] || mkdir ${CONF_DIR}
-		cp -r --preserve=mode,timestamps ${T}/etc-config/* ${CONF_DIR}/
+		if ! use gitlab-config; then
+			[ -e ${CONF_DIR} ] || mkdir ${CONF_DIR}
+			cp -r --preserve=mode,timestamps ${T}/etc-config/* ${CONF_DIR}/
+		fi
 	fi
 }
 
 pkg_postinst_gitaly() {
 	if use gitaly_git; then
+		local conf_dir="${CONF_DIR}"
+		use gitlab-gitaly && conf_dir="${GITLAB_CONFIG}"
 		elog  ""
 		einfo "Note: With gitaly_git USE flag enabled the included git was installed to"
 		einfo "      ${GITLAB_GITALY}/bin/. In order to use it one has to set the"
 		einfo "      git \"bin_path\" variable in \"${CONF_DIR_GITALY}/config.toml\" and in"
-		einfo "      \"${CONF_DIR}/gitlab.yml\" to \"${GITLAB_GITALY}/bin/git\""
+		einfo "      \"${conf_dir}/gitlab.yml\" to \"${GITLAB_GITALY}/bin/git\""
 	fi
 }
 
@@ -649,6 +676,8 @@ pkg_postinst() {
 		|| die "failed to Configure Git global settings for git user"
 
 	if [ "$MODUS" = "new" ]; then
+		local conf_dir="${CONF_DIR}"
+		use gitlab-gitaly && conf_dir="${GITLAB_CONFIG}"
 		elog
 		elog "For this new installation, proceed with the following steps:"
 		elog
@@ -665,10 +694,10 @@ pkg_postinst() {
 		elog "     You may need to add configs for the new 'gitlab' user to the"
 		elog "     pg_hba.conf and pg_ident.conf files of your database server."
 		elog
-		elog "  2. Edit ${CONF_DIR}/database.yml in order to configure"
+		elog "  2. Edit ${conf_dir}/database.yml in order to configure"
 		elog "     database settings for \"${RAILS_ENV}\" environment."
 		elog
-		elog "  3. Edit ${CONF_DIR}/gitlab.yml"
+		elog "  3. Edit ${conf_dir}/gitlab.yml"
 		elog "     in order to configure your GitLab settings."
 		elog
 		elog "  4. GitLab expects the parent directory of the config files to"
@@ -817,17 +846,19 @@ pkg_config_do_upgrade() {
 
 pkg_config_initialize() {
 	# check config and initialize database
+	local conf_dir="${CONF_DIR}"
+	use gitlab-gitaly && conf_dir="${GITLAB_CONFIG}"
+
 	## Check config files existence ##
 	einfo "Checking configuration files ..."
-
-	if [ ! -r "${CONF_DIR}/database.yml" ]; then
-		eerror "Copy \"${CONF_DIR}/database.yml.postgresql\" to \"${CONF_DIR}/database.yml\""
+	if [ ! -r "${conf_dir}/database.yml" ]; then
+		eerror "Copy \"${GITLAB_CONFIG}/database.yml.postgresql\" to \"${conf_dir}/database.yml\""
 		eerror "and edit this file in order to configure your database settings for"
 		eerror "\"${RAILS_ENV}\" environment."
 		die
 	fi
-	if [ ! -r "${CONF_DIR}/gitlab.yml" ]; then
-		eerror "Copy \"${CONF_DIR}/gitlab.yml.example\" to \"${CONF_DIR}/gitlab.yml\""
+	if [ ! -r "${conf_dir}/gitlab.yml" ]; then
+		eerror "Copy \"${GITLAB_CONFIG}/gitlab.yml.example\" to \"${conf_dir}/gitlab.yml\""
 		eerror "and edit this file in order to configure your GitLab settings"
 		eerror "for \"${RAILS_ENV}\" environment."
 		die

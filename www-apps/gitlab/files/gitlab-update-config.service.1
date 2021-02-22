@@ -1,0 +1,11 @@
+[Unit]
+Description=Sync /etc/gitlab to @CONF_DIR@
+
+[Service]
+Type=oneshot
+User=@GIT_USER@
+SyslogIdentifier=gitlab-update-config
+ExecStart=rsync -aHAX /etc/gitlab/ @CONF_DIR@/
+
+[Install]
+WantedBy=multi-user.target
