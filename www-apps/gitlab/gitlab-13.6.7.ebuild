@@ -154,6 +154,51 @@ pkg_setup() {
 			elog "OK: No remainig background migrations found."
 		fi
 	fi
+
+	# this needs root privilege to read secrets.yml
+	if [ $HQ ]; then
+		local old_confdir="${BASE_DIR}/gitlab${HQ}/config"
+		elog  "Saving current configuration:"
+
+		elog  "  Copying configs from \"${old_confdir}\" to \"${T}/etc-config\" ..."
+		elog "  ... and fixing version specific paths ..."
+		local configs_to_migrate="database.yml gitlab.yml secrets.yml"
+		local initializers_to_migrate="smtp_settings.rb"
+		use puma    && configs_to_migrate+=" puma.rb"
+		use unicorn && configs_to_migrate+=" unicorn.rb"
+		local conf 
+		mkdir -p ${T}/etc-config/initializers
+		for conf in ${configs_to_migrate}; do
+			test -f ${old_confdir}/${conf} || break
+			cp -a ${old_confdir}/${conf} ${T}/etc-config
+			sed -i \
+			-e "s|gitlab${HQ}|${PN}|g" \
+			-e "s|/opt/gitlab/gitlab-gitaly-${vINST}|${GITLAB_GITALY}|g" \
+			${T}/etc-config/$conf
+		done
+		for conf in ${initializers_to_migrate}; do
+			test -f ${old_confdir}/initializers/${conf} || break
+			cp -a ${old_confdir}/initializers/${conf} ${T}/etc-config/initializers
+			sed -i \
+			-e "s|gitlab${HQ}|${PN}|g" \
+			${T}/etc-config/initializers/$conf
+		done
+	elif [ "$MODUS" = "rebuild" ] || \
+		 [ "$MODUS" = "patch" ] || [ "$MODUS" = "minor" ] || [ "$MODUS" = "major" ]; then
+		elog  "Saving current configuration"
+		cp -a ${CONF_DIR} ${T}/etc-config
+	elif [ "$MODUS" = "new" ]; then
+		# initialize our source for ${CONF_DIR}
+		mkdir -p ${T}/etc-config
+		cp config/database.yml.postgresql ${T}/etc-config/database.yml
+		cp config/gitlab.yml.example ${T}/etc-config/gitlab.yml
+		if use unicorn; then
+			cp config/unicorn.rb.example ${T}/etc-config/unicorn.rb
+		fi
+		if use puma; then
+			cp config/puma.rb.example ${T}/etc-config/puma.rb
+		fi
+	fi
 }
 
 src_unpack_gitaly() {
@@ -219,50 +264,6 @@ src_prepare() {
 	eapply -p0 "${FILESDIR}/${PN}-fix-checks-gentoo.patch"
 	eapply -p0 "${FILESDIR}/${PN}-fix-sidekiq_check.patch"
 	eapply -p0 "${FILESDIR}/${PN}-fix-sendmail-param.patch"
-
-	if [ $HQ ]; then
-		local old_confdir="${BASE_DIR}/gitlab${HQ}/config"
-		elog  "Saving current configuration:"
-
-		elog  "  Copying configs from \"${old_confdir}\" to \"${T}/etc-config\" ..."
-		elog "  ... and fixing version specific paths ..."
-		local configs_to_migrate="database.yml gitlab.yml secrets.yml"
-		local initializers_to_migrate="smtp_settings.rb"
-		use puma    && configs_to_migrate+=" puma.rb"
-		use unicorn && configs_to_migrate+=" unicorn.rb"
-		local conf 
-		mkdir -p ${T}/etc-config/initializers
-		for conf in ${configs_to_migrate}; do
-			test -f ${old_confdir}/${conf} || break
-			cp -a ${old_confdir}/${conf} ${T}/etc-config
-			sed -i \
-			-e "s|gitlab${HQ}|${PN}|g" \
-			-e "s|/opt/gitlab/gitlab-gitaly-${vINST}|${GITLAB_GITALY}|g" \
-			${T}/etc-config/$conf
-		done
-		for conf in ${initializers_to_migrate}; do
-			test -f ${old_confdir}/initializers/${conf} || break
-			cp -a ${old_confdir}/initializers/${conf} ${T}/etc-config/initializers
-			sed -i \
-			-e "s|gitlab${HQ}|${PN}|g" \
-			${T}/etc-config/initializers/$conf
-		done
-	elif [ "$MODUS" = "rebuild" ] || \
-		 [ "$MODUS" = "patch" ] || [ "$MODUS" = "minor" ] || [ "$MODUS" = "major" ]; then
-		elog  "Saving current configuration"
-		cp -a ${CONF_DIR} ${T}/etc-config
-	elif [ "$MODUS" = "new" ]; then
-		# initialize our source for ${CONF_DIR}
-		mkdir -p ${T}/etc-config
-		cp config/database.yml.postgresql ${T}/etc-config/database.yml
-		cp config/gitlab.yml.example ${T}/etc-config/gitlab.yml
-		if use unicorn; then
-			cp config/unicorn.rb.example ${T}/etc-config/unicorn.rb
-		fi
-		if use puma; then
-			cp config/puma.rb.example ${T}/etc-config/puma.rb
-		fi
-	fi
 
 	eapply_user
 	# Update paths for gitlab
