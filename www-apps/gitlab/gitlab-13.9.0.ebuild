@@ -573,9 +573,13 @@ src_install() {
 			systemd_dounit "${T}/${unit}"
 		done
 
-		local optional_wants=""
+		local optional_wants="" optional_requires="" optional_after=""
 		use mail_room && optional_wants+="Wants=gitlab-mailroom.service"
+		use gitlab-config || optional_requires+="Requires=gitlab-update-config.service"
+		use gitlab-config || optional_after+="After=gitlab-update-config.service"
 		sed -e "s|@WEBSERVER@|${webserver}|g" \
+			-e "s|@OPTIONAL_REQUIRES@|${optional_requires}|" \
+			-e "s|@OPTIONAL_AFTER@|${optional_after}|" \
 			-e "s|@OPTIONAL_WANTS@|${optional_wants}|" \
 			"${FILESDIR}/${PN}.target.${vSYS}" > "${T}/${PN}.target" \
 			|| die "failed to configure: ${PN}.target"
