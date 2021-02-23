@@ -578,7 +578,7 @@ src_install() {
 		use gitlab-config || optional_requires+="Requires=gitlab-update-config.service"
 		use gitlab-config || optional_after+="After=gitlab-update-config.service"
 		sed -e "s|@WEBSERVER@|${webserver}|g" \
-			-e "s|@OPTIONAL_REQUIRES@|${optional_after}|" \
+			-e "s|@OPTIONAL_REQUIRES@|${optional_requires}|" \
 			-e "s|@OPTIONAL_AFTER@|${optional_after}|" \
 			-e "s|@OPTIONAL_WANTS@|${optional_wants}|" \
 			"${FILESDIR}/${PN}.target.${vSYS}" > "${T}/${PN}.target" \
