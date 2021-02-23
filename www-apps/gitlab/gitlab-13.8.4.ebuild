@@ -419,8 +419,8 @@ src_install() {
 			cfile=${cfile/${T}\/etc-config\//}
 			if [ -f config/${cfile} ]; then
 				cp -f config/${cfile} ${T}/config/${cfile}
-				cp -f ${T}/etc-config/${cfile} config/${cfile}
 			fi
+			cp -f ${T}/etc-config/${cfile} config/${cfile}
 		done
 		doins -r ${T}/config/.
 	fi
@@ -526,6 +526,7 @@ src_install() {
 
 	fowners -R ${GIT_USER}:$GIT_GROUP $GITLAB $CONF_DIR $TMP_DIR $LOG_DIR $GIT_REPOS
 	fperms o+Xr "${TMP_DIR}" # Let nginx access the puma/unicorn socket
+	fperms 600 "${CONF_DIR}/secrets.yml" "${GITLAB_CONFIG}/secrets.yml"
 
 	# fix QA Security Notice: world writable file(s)
 	elog "Fixing permissions of world writable files"
