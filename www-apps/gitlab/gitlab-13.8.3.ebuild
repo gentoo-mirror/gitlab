@@ -662,7 +662,7 @@ pkg_preinst() {
 pkg_postinst_gitaly() {
 	if use gitaly_git; then
 		local conf_dir="${CONF_DIR}"
-		use gitlab-gitaly && conf_dir="${GITLAB_CONFIG}"
+		use gitlab-config && conf_dir="${GITLAB_CONFIG}"
 		elog  ""
 		einfo "Note: With gitaly_git USE flag enabled the included git was installed to"
 		einfo "      ${GITLAB_GITALY}/bin/. In order to use it one has to set the"
@@ -692,7 +692,7 @@ pkg_postinst() {
 
 	if [ "$MODUS" = "new" ]; then
 		local conf_dir="${CONF_DIR}"
-		use gitlab-gitaly && conf_dir="${GITLAB_CONFIG}"
+		use gitlab-config && conf_dir="${GITLAB_CONFIG}"
 		elog
 		elog "For this new installation, proceed with the following steps:"
 		elog
@@ -860,7 +860,7 @@ pkg_config_do_upgrade() {
 pkg_config_initialize() {
 	# check config and initialize database
 	local conf_dir="${CONF_DIR}"
-	use gitlab-gitaly && conf_dir="${GITLAB_CONFIG}"
+	use gitlab-config && conf_dir="${GITLAB_CONFIG}"
 
 	## Check config files existence ##
 	einfo "Checking configuration files ..."
