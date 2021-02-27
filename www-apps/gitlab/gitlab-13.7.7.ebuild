@@ -403,12 +403,12 @@ src_install() {
 		EOF
 		doenvd ${T}/42${PN}
 		insinto "${CONF_DIR}"
-		cat > ${T}/README <<-EOF
-			The gitlab-config USE flag is activated.
+		cat > ${T}/README_GENTOO <<-EOF
+			The gitlab-config USE flag is on.
 			Configs are installed to ${GITLAB}/config only.
 			See news 2021-02-22-etc-gitlab for details.
 		EOF
-		doins ${T}/README
+		doins ${T}/README_GENTOO
 	else
 		insinto "${CONF_DIR}"
 		local cfile cfiles
@@ -423,6 +423,13 @@ src_install() {
 			cp -f ${T}/etc-config/${cfile} config/${cfile}
 		done
 		doins -r ${T}/config/.
+		cat > ${T}/README_GENTOO <<-EOF
+			The gitlab-config USE flag is off.
+			Configs are installed to ${CONF_DIR} and automatically
+			synced to ${GITLAB}/config on (re)start of GitLab.
+			See news 2021-02-22-etc-gitlab for details.
+		EOF
+		doins ${T}/README_GENTOO
 	fi
 
 	## Install all others ##
@@ -567,7 +574,8 @@ src_install() {
 			unit="${PN}-${service}.service"
 			sed -e "s|@BASE_DIR@|${BASE_DIR}|g" \
 				-e "s|@GITLAB@|${GITLAB}|g" \
-				-e "s|@CONF_DIR@|${GITLAB_CONFIG}|g" \
+				-e "s|@CONF_DIR@|${CONF_DIR}|g" \
+				-e "s|@GITLAB_CONFIG@|${GITLAB_CONFIG}|g" \
 				-e "s|@TMP_DIR@|${TMP_DIR}|g" \
 				-e "s|@WORKHORSE_BIN@|${WORKHORSE_BIN}|g" \
 				-e "s|@WEBSERVER@|${webserver}|g" \
@@ -609,7 +617,7 @@ src_install() {
 		if use gitlab-config; then
 			update_config=""
 		else
-			update_config="su -l ${GIT_USER} -c \"rsync -aHAX /etc/gitlab/ ${GITLAB_CONFIG}\""
+			update_config="su -l ${GIT_USER} -c \"rsync -aHAX ${CONF_DIR}/ ${GITLAB_CONFIG}/\""
 		fi
 		sed -e "s|@WEBSERVER_START@|${webserver_start}|" \
 			-e "s|@MAILROOM_VARS@|${mailroom_vars}|" \

@@ -617,7 +617,7 @@ src_install() {
 		if use gitlab-config; then
 			update_config=""
 		else
-			update_config="su -l ${GIT_USER} -c \"rsync -aHAX --exclude=README_GENTOO ${CONF_DIR} ${GITLAB_CONFIG}\""
+			update_config="su -l ${GIT_USER} -c \"rsync -aHAX ${CONF_DIR}/ ${GITLAB_CONFIG}/\""
 		fi
 		sed -e "s|@WEBSERVER_START@|${webserver_start}|" \
 			-e "s|@MAILROOM_VARS@|${mailroom_vars}|" \
