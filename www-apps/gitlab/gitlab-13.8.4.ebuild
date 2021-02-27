@@ -533,7 +533,8 @@ src_install() {
 
 	fowners -R ${GIT_USER}:$GIT_GROUP $GITLAB $CONF_DIR $TMP_DIR $LOG_DIR $GIT_REPOS
 	fperms o+Xr "${TMP_DIR}" # Let nginx access the puma/unicorn socket
-	fperms 600 "${CONF_DIR}/secrets.yml" "${GITLAB_CONFIG}/secrets.yml"
+	use gitlab-config || fperms 600 "${CONF_DIR}/secrets.yml"
+	fperms 600 "${GITLAB_CONFIG}/secrets.yml"
 
 	# fix QA Security Notice: world writable file(s)
 	elog "Fixing permissions of world writable files"
