@@ -1,7 +1,7 @@
 [Unit]
 Description=GitLab Unicorn Server
 # Only start service when config/unicorn.rb exist
-ConditionFileNotEmpty=@CONF_DIR@/unicorn.rb
+ConditionFileNotEmpty=@GITLAB_CONFIG@/unicorn.rb
 Requires=redis.service
 After=redis.service postgresql-12.service
 PartOf=gitlab.target
@@ -12,4 +12,4 @@ WorkingDirectory=@GITLAB@
 Environment=RAILS_ENV=production
 SyslogIdentifier=gitlab-unicorn
 PIDFile=@TMP_DIR@/pids/unicorn.pid
-ExecStart=@GITLAB@/bin/bundle exec "unicorn_rails -c @CONF_DIR@/unicorn.rb -E ${RAILS_ENV}"
+ExecStart=@GITLAB@/bin/bundle exec "unicorn_rails -c @GITLAB_CONFIG@/unicorn.rb -E ${RAILS_ENV}"
