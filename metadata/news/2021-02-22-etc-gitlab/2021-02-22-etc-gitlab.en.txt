@@ -1,7 +1,7 @@
 Title: The new /etc/gitlab - Update
 Author: Horst Prote <prote@fmi.uni-stuttgart.de>
 Posted: 2021-02-22
-Revision: 1
+Revision: 2
 News-Item-Format: 2.0
 Display-If-Installed: >=www-apps/gitlab-13.9.0
 
@@ -36,9 +36,3 @@ I changed two things:
    - /etc/env.d/42gentoo is installed which CONFIG_PROTECTs
      /opt/gitlab/gitlab/config to protect changes made in there
      to be overwritten on package updates.
-
-NOTE: The /etc/env.d/42gentoo file doesn't have an effect on the emerge
-      that installs it the first time. So on the first installation of
-      gitlab with the 'gitlab-config' USE flag activated, the config
-      in /opt/gitlab/gitlab/config will be overwritten. So keep a copy
-      of your changes at another place.

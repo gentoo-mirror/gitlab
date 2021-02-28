@@ -199,6 +199,21 @@ pkg_setup() {
 			cp config/puma.rb.example ${T}/etc-config/puma.rb
 		fi
 	fi
+	if use gitlab-config; then
+		if [ ! -f /etc/env.d/42${PN} ]; then
+			cat > /etc/env.d/99${PN}_temp <<-EOF
+				CONFIG_PROTECT="${GITLAB_CONFIG}"
+			EOF
+			env-update
+			# will be removed again in pkg_postinst()
+		fi
+	fi
+	if [ -f /etc/env.d/42${PN} ]; then
+		if ! use gitlab-config; then
+			rm -f /etc/env.d/42${PN}
+			env-update
+		fi
+	fi
 }
 
 src_unpack_gitaly() {
@@ -399,13 +414,13 @@ src_install() {
 	if use gitlab-config; then
 		# env file to protect configs in $GITLAB/config
 		cat > ${T}/42${PN} <<-EOF
-			CONFIG_PROTECT="${GITLAB}/config"
+			CONFIG_PROTECT="${GITLAB_CONFIG}"
 		EOF
 		doenvd ${T}/42${PN}
 		insinto "${CONF_DIR}"
 		cat > ${T}/README_GENTOO <<-EOF
 			The gitlab-config USE flag is on.
-			Configs are installed to ${GITLAB}/config only.
+			Configs are installed to ${GITLAB_CONFIG} only.
 			See news 2021-02-22-etc-gitlab for details.
 		EOF
 		doins ${T}/README_GENTOO
@@ -422,11 +437,12 @@ src_install() {
 			fi
 			cp -f ${T}/etc-config/${cfile} config/${cfile}
 		done
+		chown -R ${GIT_USER}:${GIT_GROUP} ${T}/config
 		doins -r ${T}/config/.
 		cat > ${T}/README_GENTOO <<-EOF
 			The gitlab-config USE flag is off.
 			Configs are installed to ${CONF_DIR} and automatically
-			synced to ${GITLAB}/config on (re)start of GitLab.
+			synced to ${GITLAB_CONFIG} on (re)start of GitLab.
 			See news 2021-02-22-etc-gitlab for details.
 		EOF
 		doins ${T}/README_GENTOO
@@ -514,7 +530,7 @@ src_install() {
 	# Correct the gitlab-shell path we fooled lib/gitlab/shell.rb with.
 	sed -i \
 		-e "s|${D}${GITLAB_SHELL}|${GITLAB_SHELL}|g" \
-		${D}/${GITLAB}/config/gitlab.yml || die "failed to change back gitlab-shell path"
+		${D}/${GITLAB_CONFIG}/gitlab.yml || die "failed to change back gitlab-shell path"
 	# Remove the ${GITLAB_SHELL} we fooled lib/gitlab/shell.rb with.
 	rm -rf ${D}/${GITLAB_SHELL}
 
@@ -528,13 +544,6 @@ src_install() {
 
 	# remove gems cache
 	rm -Rf ${ruby_vpath}/cache
-
-	# fix permissions
-
-	fowners -R ${GIT_USER}:$GIT_GROUP $GITLAB $CONF_DIR $TMP_DIR $LOG_DIR $GIT_REPOS
-	fperms o+Xr "${TMP_DIR}" # Let nginx access the puma/unicorn socket
-	test -f "${CONF_DIR}/secrets.yml" && fperms 600 "${CONF_DIR}/secrets.yml"
-	test -f "${GITLAB_CONFIG}/secrets.yml" && fperms 600 "${GITLAB_CONFIG}/secrets.yml"
 
 	# fix QA Security Notice: world writable file(s)
 	elog "Fixing permissions of world writable files"
@@ -575,6 +584,7 @@ src_install() {
 			unit="${PN}-${service}.service"
 			sed -e "s|@BASE_DIR@|${BASE_DIR}|g" \
 				-e "s|@GITLAB@|${GITLAB}|g" \
+				-e "s|@GIT_USER@|${GIT_USER}|g" \
 				-e "s|@CONF_DIR@|${CONF_DIR}|g" \
 				-e "s|@GITLAB_CONFIG@|${GITLAB_CONFIG}|g" \
 				-e "s|@TMP_DIR@|${TMP_DIR}|g" \
@@ -647,6 +657,13 @@ src_install() {
 		done
 	fi
 
+	# fix permissions
+
+	fowners -R ${GIT_USER}:${GIT_GROUP} $GITLAB $CONF_DIR $TMP_DIR $LOG_DIR $GIT_REPOS
+	fperms o+Xr "${TMP_DIR}" # Let nginx access the puma/unicorn socket
+	[ -f "${D}/${CONF_DIR}/secrets.yml" ]      && fperms 600 "${CONF_DIR}/secrets.yml"
+	[ -f "${D}/${GITLAB_CONFIG}/secrets.yml" ] && fperms 600 "${GITLAB_CONFIG}/secrets.yml"
+
 	src_install_gitaly
 }
 
@@ -672,6 +689,10 @@ pkg_postinst_gitaly() {
 }
 
 pkg_postinst() {
+	if [ -f /etc/env.d/99${PN}_temp ]; then
+		rm -f /etc/env.d/99${PN}_temp
+		env-update
+	fi
 	tmpfiles_process "${PN}.conf"
 	if [ ! -e "${GIT_HOME}/.gitconfig" ]; then
 		einfo "Setting git user/email in ${GIT_HOME}/.gitconfig,"
