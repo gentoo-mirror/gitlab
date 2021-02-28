@@ -199,6 +199,21 @@ pkg_setup() {
 			cp config/puma.rb.example ${T}/etc-config/puma.rb
 		fi
 	fi
+	if use gitlab-config; then
+		if [ ! -f /etc/env.d/42${PN} ]; then
+			cat > /etc/env.d/99${PN}_temp <<-EOF
+				CONFIG_PROTECT="${GITLAB}/config"
+			EOF
+			env-update
+			# will be removed again in pkg_postinst()
+		fi
+	fi
+	if [ -f /etc/env.d/42${PN} ]; then
+		if ! use gitlab-config; then
+			rm -f /etc/env.d/42${PN}
+			env-update
+		fi
+	fi
 }
 
 src_unpack_gitaly() {
@@ -529,13 +544,6 @@ src_install() {
 	# remove gems cache
 	rm -Rf ${ruby_vpath}/cache
 
-	# fix permissions
-
-	fowners -R ${GIT_USER}:$GIT_GROUP $GITLAB $CONF_DIR $TMP_DIR $LOG_DIR $GIT_REPOS
-	fperms o+Xr "${TMP_DIR}" # Let nginx access the puma/unicorn socket
-	test -f "${CONF_DIR}/secrets.yml" && fperms 600 "${CONF_DIR}/secrets.yml"
-	test -f "${GITLAB_CONFIG}/secrets.yml" && fperms 600 "${GITLAB_CONFIG}/secrets.yml"
-
 	# fix QA Security Notice: world writable file(s)
 	elog "Fixing permissions of world writable files"
 	local gemsdir="${ruby_vpath}/gems"
@@ -648,6 +656,13 @@ src_install() {
 		done
 	fi
 
+	# fix permissions
+
+	fowners -R ${GIT_USER}:$GIT_GROUP $GITLAB $CONF_DIR $TMP_DIR $LOG_DIR $GIT_REPOS
+	fperms o+Xr "${TMP_DIR}" # Let nginx access the puma/unicorn socket
+	[ -f "${D}/${CONF_DIR}/secrets.yml" ]      && fperms 600 "${CONF_DIR}/secrets.yml"
+	[ -f "${D}/${GITLAB_CONFIG}/secrets.yml" ] && fperms 600 "${GITLAB_CONFIG}/secrets.yml"
+
 	src_install_gitaly
 }
 
@@ -673,6 +688,10 @@ pkg_postinst_gitaly() {
 }
 
 pkg_postinst() {
+	if [ -f /etc/env.d/99${PN}_temp ]; then
+		rm -f /etc/env.d/99${PN}_temp
+		env-update
+	fi
 	tmpfiles_process "${PN}.conf"
 	if [ ! -e "${GIT_HOME}/.gitconfig" ]; then
 		einfo "Setting git user/email in ${GIT_HOME}/.gitconfig,"
