@@ -575,6 +575,7 @@ src_install() {
 			unit="${PN}-${service}.service"
 			sed -e "s|@BASE_DIR@|${BASE_DIR}|g" \
 				-e "s|@GITLAB@|${GITLAB}|g" \
+				-e "s|@GIT_USER@|${GIT_USER}|g" \
 				-e "s|@CONF_DIR@|${CONF_DIR}|g" \
 				-e "s|@GITLAB_CONFIG@|${GITLAB_CONFIG}|g" \
 				-e "s|@TMP_DIR@|${TMP_DIR}|g" \
