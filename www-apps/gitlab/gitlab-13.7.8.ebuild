@@ -119,7 +119,7 @@ pkg_setup() {
 	case "$vINST" in
 		"")			MODUS="new"
 					elog "This is a new installation.";;
-		13.7.7)		MODUS="rebuild"
+		13.7.8)		MODUS="rebuild"
 					elog "This is a rebuild of $PV.";;
 		13.7.*)		MODUS="patch"
 					elog "This is a patch upgrade from $vINST to $PV.";;
