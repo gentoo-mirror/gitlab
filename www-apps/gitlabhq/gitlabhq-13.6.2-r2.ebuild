@@ -146,6 +146,13 @@ each_ruby_prepare() {
 	fi
 }
 
+find_files() {
+	local f t="${1}"
+	for f in $(find ${ED}${2} -type ${t}) ; do
+		echo $f | sed "s#${ED}##"
+	done
+}
+
 src_install() {
 	# DO NOT REMOVE - without this, the package won't install
 	ruby-ng_src_install
@@ -196,9 +203,6 @@ each_ruby_install() {
 	# to ${dest} and create a smylink to /etc/${P}
 	dosym "${dest}/config" "${conf}"
 
-	insinto "${dest}/.ssh"
-	newins "${FILESDIR}/config.ssh" config
-
 	echo "export RAILS_ENV=production" > "${D}/${dest}/.profile"
 
 	## Install all others ##
@@ -248,18 +252,29 @@ each_ruby_install() {
 
 	## Clean ##
 
-	local gemsdir=vendor/bundle/ruby/$(ruby_rbconfig_value 'ruby_version')
+	local ruby_vpath=$(ruby_rbconfig_value 'ruby_version')
 
 	# remove gems cache
-	rm -Rf ${gemsdir}/cache
+	rm -Rf vendor/bundle/ruby/${ruby_vpath}/cache
 
 	# fix permissions
 	fowners -R ${GIT_USER}:${GIT_GROUP} "${dest}" "${conf}" "${temp}" "${logs}"
 	fperms o+Xr "${temp}" # Let nginx access the unicorn socket
+
 	# fix QA Security Notice: world writable file(s)
-	local wwfgems="attr_required gitlab-labkit nakayoshi_fork"
-	local gem; for gem in ${wwfgems}; do
-		fperms go-w -R ${dest}/${gemsdir}/gems/${gem}-*
+	elog "Fixing permissions of world writable files"
+	local gemsdir="vendor/bundle/ruby/${ruby_vpath}/gems"
+	local wwfgems="gitlab-labkit nakayoshi_fork"
+	# If we are using wildcards, the shell fills them without prefixing ${ED}. Thus
+	# we would target a file list from the real system instead from the sandbox.
+	for gem in ${wwfgems}; do
+		for file in $(find_files "d,f" "${DEST_DIR}/${gemsdir}/${gem}-*") ; do
+			fperms go-w $file
+		done
+	done
+	# in the nakayoshi_fork gem all files are also executable
+	for file in $(find_files "f" "${DEST_DIR}/${gemsdir}/nakayoshi_fork-*") ; do
+		fperms a-x $file
 	done
 
 	## RC scripts ##
