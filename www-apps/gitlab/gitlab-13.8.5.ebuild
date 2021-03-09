@@ -115,25 +115,8 @@ pkg_setup() {
 	fi
 	vINST=${vINST##*-}
 	[ $HQ ] && HQ="hq-${vINST}"
-	# check if upgrade path is supported and qualified for upgrading without downtime
-	case "$vINST" in
-		"")			MODUS="new"
-					elog "This is a new installation.";;
-		13.8.5)		MODUS="rebuild"
-					elog "This is a rebuild of $PV.";;
-		13.8.[0-4])	MODUS="patch"
-					elog "This is a patch upgrade from $vINST to $PV.";;
-		13.8.*)		MODUS="downgrade"
-					elog "This is a downgrade from $vINST to $PV.";;
-		13.7.*)		MODUS="minor"
-					elog "This is a minor upgrade from $vINST to $PV.";;
-		13.[0-6].*)	die "Please do minor upgrades step by step.";;
-		12.10.14)	die "Please upgrade to 13.0.0 first.";;
-		12.*.*)		die "Please upgrade to 12.10.14 first.";;
-		*)			die "Upgrading from $vINST isn't supported. Do it manual.";;
-	esac
-
-	if [ "$MODUS" = "downgrade" ]; then
+	if ver_test "$PV" -lt "$vINST"; then
+		# do downgrades on explicit user request only
 		ewarn "You are going to downgrade from $vINST to $PV."
 		ewarn "Note that the maintainer of the GitLab overlay never tested this."
 		ewarn "Extra actions may be neccessary, like the ones described in"
@@ -141,7 +124,24 @@ pkg_setup() {
 		if [ "$GITLAB_DOWNGRADE" != "true" ]; then
 			die "Set GITLAB_DOWNGRADE=\"true\" to really do the downgrade."
 		fi
+	else
+		# check if upgrade path is supported and qualified for upgrading without downtime
+		case "$vINST" in
+			"")			MODUS="new"
+						elog "This is a new installation.";;
+			13.8.5)		MODUS="rebuild"
+						elog "This is a rebuild of $PV.";;
+			13.8.*)		MODUS="patch"
+						elog "This is a patch upgrade from $vINST to $PV.";;
+			13.7.*)		MODUS="minor"
+						elog "This is a minor upgrade from $vINST to $PV.";;
+			13.[0-6].*)	die "Please do minor upgrades step by step.";;
+			12.10.14)	die "Please upgrade to 13.0.0 first.";;
+			12.*.*)		die "Please upgrade to 12.10.14 first.";;
+			*)			die "Upgrading from $vINST isn't supported. Do it manual.";;
+		esac
 	fi
+
 	if [ "$MODUS" = "patch" ] || [ "$MODUS" = "minor" ] || [ "$MODUS" = "major" ]; then
 		# ensure that any background migrations have been fully completed
 		# see /opt/gitlab/gitlab/doc/update/README.md
