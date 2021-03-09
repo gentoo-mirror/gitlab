@@ -121,8 +121,10 @@ pkg_setup() {
 					elog "This is a new installation.";;
 		13.8.3)		MODUS="rebuild"
 					elog "This is a rebuild of $PV.";;
-		13.8.*)		MODUS="patch"
+		13.8.[0-2])	MODUS="patch"
 					elog "This is a patch upgrade from $vINST to $PV.";;
+		13.8.*)		MODUS="downgrade"
+					elog "This is a downgrade from $vINST to $PV.";;
 		13.7.*)		MODUS="minor"
 					elog "This is a minor upgrade from $vINST to $PV.";;
 		13.[0-6].*)	die "Please do minor upgrades step by step.";;
@@ -131,6 +133,15 @@ pkg_setup() {
 		*)			die "Upgrading from $vINST isn't supported. Do it manual.";;
 	esac
 
+	if [ "$MODUS" = "downgrade" ]; then
+		ewarn "You are going to downgrade from $vINST to $PV."
+		ewarn "Note that the maintainer of the GitLab overlay never tested this."
+		ewarn "Extra actions may be neccessary, like the ones described in"
+		ewarn "https://docs.gitlab.com/ee/update/restore_after_failure.html"
+		if [ "$GITLAB_DOWNGRADE" != "true" ]; then
+			die "Set GITLAB_DOWNGRADE=\"true\" to really do the downgrade."
+		fi
+	fi
 	if [ "$MODUS" = "patch" ] || [ "$MODUS" = "minor" ] || [ "$MODUS" = "major" ]; then
 		# ensure that any background migrations have been fully completed
 		# see /opt/gitlab/gitlab/doc/update/README.md

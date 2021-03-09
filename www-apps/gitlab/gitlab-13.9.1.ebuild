@@ -138,11 +138,8 @@ pkg_setup() {
 		ewarn "Note that the maintainer of the GitLab overlay never tested this."
 		ewarn "Extra actions may be neccessary, like the ones described in"
 		ewarn "https://docs.gitlab.com/ee/update/restore_after_failure.html"
-		einfon "Do you really want to continue? (yes/NO)"
-		local answer=""
-		read -r answer
-		if [[ ! $answer =~ ^yes$ ]]; then
-			die "Downgrade terminted by user input."
+		if [ "$GITLAB_DOWNGRADE" != "true" ]; then
+			die "Set GITLAB_DOWNGRADE=\"true\" to really do the downgrade."
 		fi
 	fi
 	if [ "$MODUS" = "patch" ] || [ "$MODUS" = "minor" ] || [ "$MODUS" = "major" ]; then
