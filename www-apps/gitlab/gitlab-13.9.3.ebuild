@@ -60,8 +60,8 @@ DEPEND="
 	acct-user/git[gitlab]
 	acct-group/git
 	dev-lang/ruby[ssl]
-	~dev-vcs/gitlab-shell-13.16.1
-	~www-servers/gitlab-workhorse-8.63.0
+	~dev-vcs/gitlab-shell-13.17.0
+	~www-servers/gitlab-workhorse-8.63.2
 	pages? ( ~www-apps/gitlab-pages-1.35.0 )
 	!gitaly_git? ( >=dev-vcs/git-2.29.0[pcre,pcre-jit] )
 	gitaly_git? ( dev-vcs/gitlab-gitaly[gitaly_git] )
@@ -119,8 +119,10 @@ pkg_setup() {
 	case "$vINST" in
 		"")			MODUS="new"
 					elog "This is a new installation.";;
-		13.9.0)		MODUS="rebuild"
+		13.9.3)		MODUS="rebuild"
 					elog "This is a rebuild of $PV.";;
+		13.9.[0-2])	MODUS="patch"
+					elog "This is a patch upgrade from $vINST to $PV.";;
 		13.9.*)		MODUS="downgrade"
 					elog "This is a downgrade from $vINST to $PV.";;
 		13.8.*)		MODUS="minor"
