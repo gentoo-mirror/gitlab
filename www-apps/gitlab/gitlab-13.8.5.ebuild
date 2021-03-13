@@ -758,19 +758,21 @@ pkg_postinst() {
 		elog "  3. Edit ${conf_dir}/gitlab.yml"
 		elog "     in order to configure your GitLab settings."
 		elog
-		elog "  4. GitLab expects the parent directory of the config files to"
-		elog "     be its base directory, so you have to sync changes made in"
-		elog "     /etc/gitlab/ back to /opt/gitlab/gitlab/config/ by running"
-		elog "       rsync -aHAX /etc/gitlab/ /opt/gitlab/gitlab/config/"
-		elog
-		elog "  5. You need to configure redis to have a UNIX socket and you may"
+		if use gitlab-config; then
+			elog "     GitLab expects the parent directory of the config files to"
+			elog "     be its base directory, so you have to sync changes made in"
+			elog "     /etc/gitlab/ back to /opt/gitlab/gitlab/config/ by running"
+			elog "       rsync -aHAX /etc/gitlab/ /opt/gitlab/gitlab/config/"
+			elog
+		fi
+		elog "  4. You need to configure redis to have a UNIX socket and you may"
 		elog "     adjust the maxmemory settings. Change /etc/redis.conf to"
 		elog "       unixsocket /var/run/redis/redis.sock"
 		elog "       unixsocketperm 770"
 		elog "       maxmemory 1024MB"
 		elog "       maxmemory-policy volatile-lru"
 		elog
-		elog "  6. Gitaly must be running for the \"emerge --config\". Execute"
+		elog "  5. Gitaly must be running for the \"emerge --config\". Execute"
 		if use systemd; then
 			einfo "     systemctl --job-mode=ignore-dependencies start ${PN}-gitaly.service"
 		else
