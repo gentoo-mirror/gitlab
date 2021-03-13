@@ -139,10 +139,17 @@ pkg_setup() {
 								elog "This is a patch upgrade from $vINST to $PV.";;
 			${eM}.${em1}.*)		MODUS="minor"
 								elog "This is a minor upgrade from $vINST to $PV.";;
-			${eM}.[0-${em2}].*) die "Please do minor upgrades step by step.";;
-			${eM1}.*.*)			die "Please upgrade to latest ${eM1}.x.x version"\
+			${eM}.[0-${em2}].*) die "You should do minor upgrades step by step.";;
+			${eM1}.*.*)			die "You should upgrade to latest ${eM1}.x.x version"\
 									"and then to ${eM}.1.0 first.";;
-			*)					die "Upgrading from $vINST isn't supported. Do it manual.";;
+			12.10.14)			die "You should upgrade to 13.1.0 first.";;
+			12.*.*)				die "You should upgrade to 12.10.14 first.";;
+			*)					if ver_test $vINST -lt 12.0.0 ; then
+									die "Upgrading from $vINST isn't supported. Do it manual."
+								else
+									die "Do step by step upgrades or each minor version in"\
+										"each major version until ${eM}.${em}.x is reached."
+								fi;;
 		esac
 	fi
 
