@@ -125,20 +125,24 @@ pkg_setup() {
 			die "Set GITLAB_DOWNGRADE=\"true\" to really do the downgrade."
 		fi
 	else
+		local eM eM1 em em1 em2 ep
+		eM=$(ver_cut 1); eM1=$(($eM - 1))
+		em=$(ver_cut 2); em1=$(($em - 1)); em2=$(($em - 2))
+		ep=$(ver_cut 3)
 		# check if upgrade path is supported and qualified for upgrading without downtime
 		case "$vINST" in
-			"")			MODUS="new"
-						elog "This is a new installation.";;
-			13.9.2)		MODUS="rebuild"
-						elog "This is a rebuild of $PV.";;
-			13.9.*)		MODUS="patch"
-						elog "This is a patch upgrade from $vINST to $PV.";;
-			13.8.*)		MODUS="minor"
-						elog "This is a minor upgrade from $vINST to $PV.";;
-			13.[0-7].*)	die "Please do minor upgrades step by step.";;
-			12.10.14)	die "Please upgrade to 13.0.0 first.";;
-			12.*.*)		die "Please upgrade to 12.10.14 first.";;
-			*)			die "Upgrading from $vINST isn't supported. Do it manual.";;
+			"")					MODUS="new"
+								elog "This is a new installation.";;
+			${PV})				MODUS="rebuild"
+								elog "This is a rebuild of $PV.";;
+			${eM}.${em}.*)		MODUS="patch"
+								elog "This is a patch upgrade from $vINST to $PV.";;
+			${eM}.${em1}.*)		MODUS="minor"
+								elog "This is a minor upgrade from $vINST to $PV.";;
+			${eM}.[0-${em2}].*) die "Please do minor upgrades step by step.";;
+			${eM1}.*.*)			die "Please upgrade to latest ${eM1}.x.x version"\
+									"and then to ${eM}.1.0 first.";;
+			*)					die "Upgrading from $vINST isn't supported. Do it manual.";;
 		esac
 	fi
 
