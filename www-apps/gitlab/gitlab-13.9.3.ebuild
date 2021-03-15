@@ -115,7 +115,7 @@ pkg_setup() {
 	fi
 	vINST=${vINST##*-}
 	[ $HQ ] && HQ="hq-${vINST}"
-	if ver_test "$PV" -lt "$vINST"; then
+	if [ -n "$vINST" ] && ver_test "$PV" -lt "$vINST"; then
 		# do downgrades on explicit user request only
 		ewarn "You are going to downgrade from $vINST to $PV."
 		ewarn "Note that the maintainer of the GitLab overlay never tested this."
