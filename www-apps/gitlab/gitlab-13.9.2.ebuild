@@ -209,17 +209,6 @@ pkg_setup() {
 		 [ "$MODUS" = "patch" ] || [ "$MODUS" = "minor" ] || [ "$MODUS" = "major" ]; then
 		elog  "Saving current configuration"
 		cp -a ${CONF_DIR} ${T}/etc-config
-	elif [ "$MODUS" = "new" ]; then
-		# initialize our source for ${CONF_DIR}
-		mkdir -p ${T}/etc-config
-		cp config/database.yml.postgresql ${T}/etc-config/database.yml
-		cp config/gitlab.yml.example ${T}/etc-config/gitlab.yml
-		if use unicorn; then
-			cp config/unicorn.rb.example ${T}/etc-config/unicorn.rb
-		fi
-		if use puma; then
-			cp config/puma.rb.example ${T}/etc-config/puma.rb
-		fi
 	fi
 	if use gitlab-config; then
 		if [ ! -f /etc/env.d/42${PN} ]; then
@@ -343,6 +332,19 @@ src_prepare() {
 	#       src_install() - i.e. inside  sandbox.
 	# But yarn still wants to create/read /usr/local/share/.yarnrc
 	addwrite /usr/local/share/
+
+	if [ "$MODUS" = "new" ]; then
+		# initialize our source for ${CONF_DIR}
+		mkdir -p ${T}/etc-config
+		cp config/database.yml.postgresql ${T}/etc-config/database.yml
+		cp config/gitlab.yml.example ${T}/etc-config/gitlab.yml
+		if use unicorn; then
+			cp config/unicorn.rb.example ${T}/etc-config/unicorn.rb
+		fi
+		if use puma; then
+			cp config/puma.rb.example ${T}/etc-config/puma.rb
+		fi
+	fi
 
 	src_prepare_gitaly
 }
