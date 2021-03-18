@@ -485,9 +485,11 @@ src_install() {
 
 	## Install workhorse ##
 
-	local all_exe=$(grep "EXE_ALL *:= *" workhorse/Makefile)
+	local exe all_exe=$(grep "EXE_ALL *:= *" workhorse/Makefile)
 	into "${WORKHORSE}"
-	dobin ${all_exe#EXE_ALL *:= *}
+	for exe in ${all_exe#EXE_ALL *:= *}; do
+		dobin workhorse/${exe}
+	done
 	# Remove workhorse/ dir because of the "doins -r ./" below!
 	rm -rf workhorse
 
