@@ -54,10 +54,12 @@ GITALY_DEPEND="
 	>=dev-lang/go-1.13.9
 	dev-util/cmake"
 WORKHORSE_DEPEND="
+	dev-lang/go
 	media-libs/exiftool"
 DEPEND="
 	${GEMS_DEPEND}
 	${GITALY_DEPEND}
+	${WORKHORSE_DEPEND}
 	${RUBY_DEPS}
 	acct-user/git[gitlab]
 	acct-group/git
@@ -71,6 +73,7 @@ DEPEND="
 	>=sys-apps/yarn-1.15.0
 	dev-libs/re2"
 RDEPEND="${DEPEND}
+	!www-servers/workhorse
 	>=dev-db/redis-5.0
 	virtual/mta
 	kerberos? ( app-crypt/mit-krb5 )
