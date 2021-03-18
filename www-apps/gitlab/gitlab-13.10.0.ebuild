@@ -377,6 +377,11 @@ src_compile() {
 	# Nothing to do for gitlab
 	einfo "Nothing to do for gitlab."
 
+	# Compile workhorse
+	cd workhorse
+	einfo "Compiling source in $PWD ..."
+	emake || die "Compiling workhorse failed"
+
 	# Compile gitaly
 	cd ${WORKDIR}/gitlab-gitaly-${PV}
 	einfo "Compiling source in $PWD ..."
@@ -389,11 +394,6 @@ src_compile() {
 		mkdir -p ${WORKDIR}/gitlab-${PV}/${ruby_vpath}
 		mv ruby/${ruby_vpath}/cache ${WORKDIR}/gitlab-${PV}/${ruby_vpath}
 	fi
-
-	# Compile workhorse
-	cd ${WORKDIR}/workhorse
-	einfo "Compiling source in $PWD ..."
-	emake || die "Compiling workhorse failed"
 }
 
 src_install_gitaly() {
