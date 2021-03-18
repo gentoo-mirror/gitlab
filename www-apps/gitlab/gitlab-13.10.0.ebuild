@@ -73,7 +73,7 @@ DEPEND="
 	>=sys-apps/yarn-1.15.0
 	dev-libs/re2"
 RDEPEND="${DEPEND}
-	!www-servers/workhorse
+	!www-servers/gitlab-workhorse
 	>=dev-db/redis-5.0
 	virtual/mta
 	kerberos? ( app-crypt/mit-krb5 )
@@ -593,7 +593,7 @@ src_install() {
 	# fix QA Security Notice: world writable file(s)
 	elog "Fixing permissions of world writable files"
 	local gemsdir="${ruby_vpath}/gems"
-	local file gem wwfgems="gitlab-labkit"
+	local file gem wwfgems="gitlab-dangerfiles gitlab-labkit"
 	# If we are using wildcards, the shell fills them without prefixing ${ED}. Thus
 	# we would target a file list in the real system instead of in the sandbox.
 	for gem in ${wwfgems}; do
