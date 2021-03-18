@@ -1,0 +1,13 @@
+Title: Workhorse is part of GitLab now
+Author: Horst Prote <prote@fmi.uni-stuttgart.de>
+Posted: 2021-03-18
+Revision: 1
+News-Item-Format: 2.0
+Display-If-Installed: www-apps/gitlab
+
+With version 13.10.0 upstream abandoned the workhorse project and moved
+it's code to the workhorse/ folder inside the gitlab project.
+
+So, starting with www-apps/gitlab-13.10.0, there will be no package
+www-servers/gitlab-workhorse anymore and the workhorse code will be
+installed by www-apps/gitlab, too.
