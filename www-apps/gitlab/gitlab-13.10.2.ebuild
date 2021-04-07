@@ -306,6 +306,12 @@ src_prepare() {
 		-e "s|/home/git|${GIT_HOME}|g" \
 		config/gitlab.yml.example || die "failed to filter gitlab.yml.example"
 
+	# Already use the ruby-magic version that'll come with 13.11
+	sed -i \
+		-e "s/gem 'ruby-magic-static', '~> 0.3.4'/gem 'ruby-magic', '~> 0.3.2'/" \
+		Gemfile
+	${BUNDLE} lock
+
 	# remove needless files
 	rm .foreman .gitignore
 	use puma     || rm config/puma*
@@ -549,6 +555,7 @@ src_install() {
 	${BUNDLE} config set --local build.gpgm --use-system-libraries
 	${BUNDLE} config set --local build.nokogiri --use-system-libraries
 	${BUNDLE} config set --local build.yajl-ruby --use-system-libraries
+	${BUNDLE} config set --local build.ruby-magic --use-system-libraries
 
 	#einfo "Current ruby version is \"$(ruby --version)\""
 
