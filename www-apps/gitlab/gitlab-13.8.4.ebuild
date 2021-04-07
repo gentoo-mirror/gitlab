@@ -983,7 +983,7 @@ pkg_config() {
 	if [ "$MODUS" = "patch" ] || [ "$MODUS" = "minor" ] || [ "$MODUS" = "major" ]; then
 		einfo "Ensure you're still up-to-date with the latest NGINX configuration changes:"
 		einfo "\$ cd /opt/gitlab/gitlab"
-		einfo "\$ git diff ${vINST}:lib/support/nginx/ ${PV}:lib/support/nginx/"
+		einfo "\$ git -P diff v${vINST}:lib/support/nginx/ v${PV}:lib/support/nginx/"
 	elif [ "$MODUS" = "new" ]; then
 		einfo "To configure your nginx site have a look at the examples configurations"
 		einfo "in the ${GITLAB}/lib/support/nginx/ folder."

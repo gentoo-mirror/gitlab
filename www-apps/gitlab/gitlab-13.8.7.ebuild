@@ -60,8 +60,8 @@ DEPEND="
 	acct-user/git[gitlab]
 	acct-group/git
 	dev-lang/ruby[ssl]
-	~dev-vcs/gitlab-shell-13.15.0-r1
-	~www-servers/gitlab-workhorse-8.59.0
+	~dev-vcs/gitlab-shell-13.15.1
+	~www-servers/gitlab-workhorse-8.59.2
 	pages? ( ~www-apps/gitlab-pages-1.34.0 )
 	!gitaly_git? ( >=dev-vcs/git-2.29.0[pcre,pcre-jit] )
 	gitaly_git? ( dev-vcs/gitlab-gitaly[gitaly_git] )
@@ -302,6 +302,12 @@ src_prepare() {
 		-e "s|/home/git|${GIT_HOME}|g" \
 		config/gitlab.yml.example || die "failed to filter gitlab.yml.example"
 
+	# Already use the ruby-magic version that'll come with 13.11
+	sed -i \
+		-e "s/gem 'ruby-magic-static', '~> 0.3.4'/gem 'ruby-magic', '~> 0.3.2'/" \
+		Gemfile
+	${BUNDLE} lock
+
 	# remove needless files
 	rm .foreman .gitignore
 	use puma     || rm config/puma*
@@ -528,6 +534,7 @@ src_install() {
 	${BUNDLE} config set --local build.gpgm --use-system-libraries
 	${BUNDLE} config set --local build.nokogiri --use-system-libraries
 	${BUNDLE} config set --local build.yajl-ruby --use-system-libraries
+	${BUNDLE} config set --local build.ruby-magic --use-system-libraries
 
 	#einfo "Current ruby version is \"$(ruby --version)\""
 

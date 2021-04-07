@@ -53,16 +53,19 @@ GEMS_DEPEND="
 GITALY_DEPEND="
 	>=dev-lang/go-1.13.9
 	dev-util/cmake"
+WORKHORSE_DEPEND="
+	dev-lang/go
+	media-libs/exiftool"
 DEPEND="
 	${GEMS_DEPEND}
 	${GITALY_DEPEND}
+	${WORKHORSE_DEPEND}
 	${RUBY_DEPS}
 	acct-user/git[gitlab]
 	acct-group/git
 	dev-lang/ruby[ssl]
-	~dev-vcs/gitlab-shell-13.15.0-r1
-	~www-servers/gitlab-workhorse-8.59.0
-	pages? ( ~www-apps/gitlab-pages-1.34.0 )
+	~dev-vcs/gitlab-shell-13.17.0
+	pages? ( ~www-apps/gitlab-pages-1.36.0 )
 	!gitaly_git? ( >=dev-vcs/git-2.29.0[pcre,pcre-jit] )
 	gitaly_git? ( dev-vcs/gitlab-gitaly[gitaly_git] )
 	net-misc/curl
@@ -70,6 +73,7 @@ DEPEND="
 	>=sys-apps/yarn-1.15.0
 	dev-libs/re2"
 RDEPEND="${DEPEND}
+	!www-servers/gitlab-workhorse
 	>=dev-db/redis-5.0
 	virtual/mta
 	kerberos? ( app-crypt/mit-krb5 )
@@ -88,7 +92,8 @@ GITLAB_CONFIG="${GITLAB}/config"
 CONF_DIR_GITALY="/etc/gitlab-gitaly"
 LOG_DIR="/var/log/${PN}"
 TMP_DIR="/var/tmp/${PN}"
-WORKHORSE_BIN="${BASE_DIR}/gitlab-workhorse/bin"
+WORKHORSE="${BASE_DIR}/gitlab-workhorse"
+WORKHORSE_BIN="${WORKHORSE}/bin"
 vSYS=1 # version of SYStemd service files used by this ebuild
 vORC=1 # version of OpenRC init files used by this ebuild
 
@@ -288,7 +293,6 @@ src_prepare_gitaly() {
 
 src_prepare() {
 	eapply -p0 "${FILESDIR}/${PN}-fix-checks-gentoo.patch"
-	eapply -p0 "${FILESDIR}/${PN}-fix-sidekiq_check.patch"
 	eapply -p0 "${FILESDIR}/${PN}-fix-sendmail-param.patch"
 
 	eapply_user
@@ -301,6 +305,12 @@ src_prepare() {
 		-e "s|/home/git/gitaly|${GITLAB_GITALY}|g" \
 		-e "s|/home/git|${GIT_HOME}|g" \
 		config/gitlab.yml.example || die "failed to filter gitlab.yml.example"
+
+	# Already use the ruby-magic version that'll come with 13.11
+	sed -i \
+		-e "s/gem 'ruby-magic-static', '~> 0.3.4'/gem 'ruby-magic', '~> 0.3.2'/" \
+		Gemfile
+	${BUNDLE} lock
 
 	# remove needless files
 	rm .foreman .gitignore
@@ -370,8 +380,15 @@ continue_or_skip() {
 }
 
 src_compile() {
-	# Nothing to do for gitlab; only gitaly compiles here
+	# Nothing to do for gitlab
 	einfo "Nothing to do for gitlab."
+
+	# Compile workhorse
+	cd workhorse
+	einfo "Compiling source in $PWD ..."
+	emake || die "Compiling workhorse failed"
+
+	# Compile gitaly
 	cd ${WORKDIR}/gitlab-gitaly-${PV}
 	einfo "Compiling source in $PWD ..."
 	emake || die "Compiling gitaly failed"
@@ -472,6 +489,16 @@ src_install() {
 		doins ${T}/README_GENTOO
 	fi
 
+	## Install workhorse ##
+
+	local exe all_exe=$(grep "EXE_ALL *:= *" workhorse/Makefile)
+	into "${WORKHORSE}"
+	for exe in ${all_exe#EXE_ALL *:= *}; do
+		dobin workhorse/${exe}
+	done
+	# Remove workhorse/ dir because of the "doins -r ./" below!
+	rm -rf workhorse
+
 	## Install all others ##
 
 	insinto "${GITLAB}"
@@ -528,6 +555,7 @@ src_install() {
 	${BUNDLE} config set --local build.gpgm --use-system-libraries
 	${BUNDLE} config set --local build.nokogiri --use-system-libraries
 	${BUNDLE} config set --local build.yajl-ruby --use-system-libraries
+	${BUNDLE} config set --local build.ruby-magic --use-system-libraries
 
 	#einfo "Current ruby version is \"$(ruby --version)\""
 
@@ -572,7 +600,7 @@ src_install() {
 	# fix QA Security Notice: world writable file(s)
 	elog "Fixing permissions of world writable files"
 	local gemsdir="${ruby_vpath}/gems"
-	local file gem wwfgems="gitlab-labkit"
+	local file gem wwfgems="gitlab-dangerfiles gitlab-labkit"
 	# If we are using wildcards, the shell fills them without prefixing ${ED}. Thus
 	# we would target a file list in the real system instead of in the sandbox.
 	for gem in ${wwfgems}; do
