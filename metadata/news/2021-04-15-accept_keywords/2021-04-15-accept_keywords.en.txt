@@ -1,0 +1,27 @@
+Title: Accepted Keywords Updates 
+Author: Horst Prote <prote@fmi.uni-stuttgart.de>
+Posted: 2021-04-15
+Revision: 1
+News-Item-Format: 2.0
+
+In old intructions (here and on https://wiki.gentoo.org/wiki/GitLab)
+you were told to add
+  =dev-ruby/rubygems-3.1.4 ~amd64
+and
+  =dev-vcs/git-2.29.2 ~amd64
+to a /etc/portage/package.accept_keywords/... file but meanwhile these
+exact versions aren't in the prtage tree any more and their follow ups
+aren't installed because they are still unstable.
+
+You should change these settings to
+  =dev-ruby/rubygems-3.1* ~amd64
+and
+  =dev-vcs/git-2.29* ~amd64
+
+Note that you also have to change
+  =dev-vcs/git-2.29.2 -pcre-jit
+in /etc/portage/profile/package.use.mask to
+=dev-vcs/git-2.29* -pcre-jit
+
+After these changes do an
+  emerge -u1a dev-vcs/git dev-ruby/rubygems
