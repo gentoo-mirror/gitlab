@@ -19,7 +19,10 @@ description="GitLab git repository management"
 
 : ${sidekiq_pidfile:="${gitlab_pids}/sidekiq.pid"}
 : ${sidekiq_log:="${gitlab_log}/sidekiq.log"}
-: ${sidekiq_processes:="* * * * *"}
+# We didn't find a working definition for this variable (see
+# https://gitlab.awesome-it.de/overlays/gitlab/-/issues/120)
+#: ${sidekiq_processes:="* * * * *"}
+# So we have to add this sidekiq arg directly to the service start below.
 : ${sidekiq_command:="@GITLAB@/bin/sidekiq-cluster"}
 : ${sidekiq_command_args:="-e ${rails_env}"}
 @MAILROOM_VARS@
@@ -50,7 +53,7 @@ start() {
 		--user="${gitlab_user}:${gitlab_group}" \
 		--pidfile="${sidekiq_pidfile}" \
 		-1 "${sidekiq_log}" -2 "${sidekiq_log}" \
-		${sidekiq_command} -- "${sidekiq_processes}" ${sidekiq_command_args}
+		${sidekiq_command} -- "*" "*" "*" "*" "*" ${sidekiq_command_args}
 	eend $?
 
 	ebegin "Starting GitLab Workhorse"
