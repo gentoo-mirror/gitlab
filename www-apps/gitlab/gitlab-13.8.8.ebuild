@@ -67,7 +67,6 @@ DEPEND="
 	~dev-vcs/gitlab-shell-13.15.1
 	pages? ( ~www-apps/gitlab-pages-1.34.0 )
 	!gitaly_git? ( >=dev-vcs/git-2.29.0[pcre,pcre-jit] )
-	gitaly_git? ( dev-vcs/gitlab-gitaly[gitaly_git] )
 	net-misc/curl
 	virtual/ssh
 	>=sys-apps/yarn-1.15.0
