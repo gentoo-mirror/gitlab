@@ -66,7 +66,7 @@ DEPEND="
 	dev-lang/ruby[ssl]
 	~dev-vcs/gitlab-shell-13.17.0
 	pages? ( ~www-apps/gitlab-pages-1.38.0 )
-	!gitaly_git? ( >=dev-vcs/git-2.31.0[pcre,pcre-jit] )
+	!gitaly_git? ( >=dev-vcs/git-2.31.0[pcre] )
 	net-misc/curl
 	virtual/ssh
 	>=sys-apps/yarn-1.15.0
