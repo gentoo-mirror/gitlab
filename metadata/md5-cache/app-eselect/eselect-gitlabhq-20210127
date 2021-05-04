@@ -1,8 +1,0 @@
-DEFINED_PHASES=install unpack
-DESCRIPTION=Manages multiple gitlabhq versions
-EAPI=7
-KEYWORDS=~amd64 ~x86
-LICENSE=GPL-2
-RDEPEND=>=app-admin/eselect-1.0.2
-SLOT=0
-_md5_=117e9dbd6b78c24fbea9b059052d430c

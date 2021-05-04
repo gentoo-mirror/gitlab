@@ -5,7 +5,6 @@
 acct-user/git:gitea - Set home directory for git hosting via www-apps/gitea.
 acct-user/git:gitlab - Set home directory for gitlab hosting via www-apps/gitlabhq.
 acct-user/git:gitolite - Set home directory for git hosting via dev-vcs/gitolite or dev-vcs/gitolite-gentoo.
-dev-vcs/gitlab-gitaly:gitaly_git - Use the Git version provided by Gitaly.
 www-apps/gitlab:favicon - For the Custom Favicon to work, GraphicsMagick needs to be installed
 www-apps/gitlab:gitaly_git - Use the Git version provided by Gitaly
 www-apps/gitlab:gitlab-config - Config in /opt/gitlab/gitlab/config instead of /etc/gitlab (s. news 2021-02-22-etc-gitlab)
@@ -13,8 +12,3 @@ www-apps/gitlab:mail_room - Enables support for GitLab MailRoom
 www-apps/gitlab:pages - Pulls in the compatible version of www-apps/gitlab-pages
 www-apps/gitlab:puma - Enables support for the puma HTTP server
 www-apps/gitlab:unicorn - Enables support for the unicorn HTTP server
-www-apps/gitlabhq:favicon - For the Custom Favicon to work, GraphicsMagick needs to be installed
-www-apps/gitlabhq:gitaly_git - Use the Git version provided by Gitaly
-www-apps/gitlabhq:mail_room - Enables support for GitLab MailRoom
-www-apps/gitlabhq:puma - Enables support for the puma HTTP server
-www-apps/gitlabhq:unicorn - Enables support for the unicorn HTTP server

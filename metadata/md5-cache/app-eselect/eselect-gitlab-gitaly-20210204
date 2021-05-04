@@ -1,8 +1,0 @@
-DEFINED_PHASES=install unpack
-DESCRIPTION=Manages multiple gitlab-gitaly versions
-EAPI=7
-KEYWORDS=~amd64 ~x86
-LICENSE=GPL-2
-RDEPEND=>=app-admin/eselect-1.0.2
-SLOT=0
-_md5_=77de7fcd25049c09c152fe0c1c58a4b2
