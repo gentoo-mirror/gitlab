@@ -813,6 +813,7 @@ pkg_postinst() {
 		elog "    emerge --config \"=${CATEGORY}/${PF}\""
 		elog
 	fi
+	pkg_postinst_gitaly
 }
 
 pkg_config_do_upgrade_migrate_data() {
