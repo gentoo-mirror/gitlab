@@ -706,7 +706,7 @@ pkg_postinst_gitaly() {
 		elog  ""
 		einfo "Note: With gitaly_git USE flag enabled the included git was installed to"
 		einfo "      ${GITLAB_GITALY}/bin/. In order to use it one has to set the"
-		einfo "      git \"bin_path\" variable in \"${CONF_DIR_GITALY}/config.toml\" and in"
+		einfo "      [git] \"bin_path\" variable in \"${CONF_DIR_GITALY}/config.toml\" and in"
 		einfo "      \"${conf_dir}/gitlab.yml\" to \"${GITLAB_GITALY}/bin/git\""
 	fi
 }
@@ -813,6 +813,7 @@ pkg_postinst() {
 		elog "    emerge --config \"=${CATEGORY}/${PF}\""
 		elog
 	fi
+	pkg_postinst_gitaly
 }
 
 pkg_config_do_upgrade_migrate_data() {

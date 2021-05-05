@@ -1,0 +1,31 @@
+Title: Use the Git provided by Gitaly 
+Author: Horst Prote <prote@fmi.uni-stuttgart.de>
+Posted: 2021-05-05
+Revision: 1
+News-Item-Format: 2.0
+
+Upstream recommends to use the Git provided by Gitaly
+(cited from /opt/gitlab/gitlab/doc/install/installation.md)
+  From GitLab 13.6, we recommend you use the [Git version provided by
+  Gitaly](https://gitlab.com/gitlab-org/gitaly/-/issues/2729)
+  that:
+
+  - Is always at the version required by GitLab.
+  - May contain custom patches required for proper operation.
+
+Currently GitLab requires Git version >= 2.31.0 but the stable version
+in the portage tree still is dev-vcs/git-2.26.3.
+
+The www-apps/gitlab ebuild has the "gitaly_git" USE flag to select
+which Git to use. Up to now this USE flag is off by default and
+/usr/bin/git from dev-vcs/git is used.
+
+With the next updates this will be changed to "on by default", i.e.
+the Git provided by Gitaly will be installed into
+  /opt/gitlab/gitlab-gitaly/bin/
+and the ebuild will write out a "Note" about the config changes
+needed to use this Git with GitLab. 
+
+You may then remove the package.accept_keywords and package.use
+settings required by GitLab and downgrade dev-vcs/git to the stable
+version 2.26.3.
