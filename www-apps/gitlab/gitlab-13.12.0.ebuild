@@ -260,6 +260,11 @@ src_prepare_gitaly() {
 		-e "s|^# \[logging\]|\[logging\]|" \
 		-e "s|^# level = .*|level = \"warn\"|" \
 		config.toml.example || die "failed to filter config.toml.example"
+	if use gitaly_git ; then
+		sed -i \
+			-e "s|bin_path = .*|bin_path = \"/opt/gitlab/gitlab-gitaly/bin/git\"|" \
+			config.toml.example || die "failed to filter config.toml.example"
+	fi
 
 	sed -i \
 		-e "s|\$GITALY_BIN_DIR|${GITLAB_GITALY}/bin|" \
@@ -304,6 +309,11 @@ src_prepare() {
 		-e "s|/home/git/gitaly|${GITLAB_GITALY}|g" \
 		-e "s|/home/git|${GIT_HOME}|g" \
 		config/gitlab.yml.example || die "failed to filter gitlab.yml.example"
+	if use gitaly_git ; then
+		sed -i \
+			-e "s|bin_path: /usr/bin/git|bin_path: /opt/gitlab/gitlab-gitaly/bin/git|" \
+			config/gitlab.yml.example || die "failed to filter gitlab.yml.example"
+	fi
 
 	# Already use the ruby-magic version that'll come with 13.11
 	sed -i \
