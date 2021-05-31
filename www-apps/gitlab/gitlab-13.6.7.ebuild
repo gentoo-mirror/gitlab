@@ -59,7 +59,7 @@ DEPEND="
 	${RUBY_DEPS}
 	acct-user/git[gitlab]
 	acct-group/git
-	dev-lang/ruby[ssl]
+	>dev-lang/ruby-2.7.2:2.7[ssl]
 	~dev-vcs/gitlab-shell-13.13.1
 	~www-servers/gitlab-workhorse-8.54.2
 	pages? ( ~www-apps/gitlab-pages-1.30.2 )
