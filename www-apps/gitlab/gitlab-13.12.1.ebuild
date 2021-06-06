@@ -309,11 +309,15 @@ src_prepare() {
 		-e "s|/home/git/gitaly|${GITLAB_GITALY}|g" \
 		-e "s|/home/git|${GIT_HOME}|g" \
 		config/gitlab.yml.example || die "failed to filter gitlab.yml.example"
-	if use gitaly_git ; then
+	if use gitaly_git && \
+		[ "$MODUS" != "new" ] && \
+		has_version "www-apps/gitlab[gitaly_git]"
+	then
 		sed -i \
 			-e "s|bin_path: /usr/bin/git|bin_path: /opt/gitlab/gitlab-gitaly/bin/git|" \
 			config/gitlab.yml.example || die "failed to filter gitlab.yml.example"
 	fi
+	cp config/resque.yml.example config/resque.yml
 
 	# Already use the ruby-magic version that'll come with 13.11
 	sed -i \
@@ -399,6 +403,7 @@ src_compile() {
 
 	# Compile gitaly
 	cd ${WORKDIR}/gitlab-gitaly-${PV}
+	export RUBYOPT=--disable-did_you_mean
 	einfo "Compiling source in $PWD ..."
 	emake || die "Compiling gitaly failed"
 
@@ -609,7 +614,7 @@ src_install() {
 	# fix QA Security Notice: world writable file(s)
 	elog "Fixing permissions of world writable files"
 	local gemsdir="${ruby_vpath}/gems"
-	local file gem wwfgems="gitlab-dangerfiles gitlab-labkit"
+	local file gem wwfgems="gitlab-dangerfiles gitlab-experiment gitlab-labkit"
 	# If we are using wildcards, the shell fills them without prefixing ${ED}. Thus
 	# we would target a file list in the real system instead of in the sandbox.
 	for gem in ${wwfgems}; do
@@ -666,8 +671,6 @@ src_install() {
 			"${FILESDIR}/${PN}.target.${vSYS}" > "${T}/${PN}.target" \
 			|| die "failed to configure: ${PN}.target"
 		systemd_dounit "${T}/${PN}.target"
-
-		newtmpfiles "${FILESDIR}/${PN}-tmpfiles.conf" ${PN}.conf
 	else
 		## OpenRC init scripts ##
 		elog "Installing OpenRC init.d files"
@@ -717,6 +720,8 @@ src_install() {
 			newinitd "${T}/${rc}" "${service}"
 		done
 	fi
+
+	newtmpfiles "${FILESDIR}/${PN}-tmpfiles.conf" ${PN}.conf
 
 	# fix permissions
 
@@ -797,15 +802,28 @@ pkg_postinst() {
 		elog "  3. Edit ${conf_dir}/gitlab.yml"
 		elog "     in order to configure your GitLab settings."
 		elog
+		if use gitaly_git; then
+			einfo "     With gitaly_git USE flag enabled the included git was installed to"
+			einfo "     ${GITLAB_GITALY}/bin/. In order to use it one has to set the"
+			einfo "     [git] \"bin_path\" variable in \"${CONF_DIR_GITALY}/config.toml\" and in"
+			einfo "     \"${conf_dir}/gitlab.yml\" to \"${GITLAB_GITALY}/bin/git\""
+			elog  ""
+		fi
 		if use gitlab-config; then
+			elog "     With the \"gitlab-config\" USE flag on you have to edit the"
+			elog "     config files in the /opt/gitlab/gitlab/config/ folder!"
+			elog "     "
+		else
 			elog "     GitLab expects the parent directory of the config files to"
-			elog "     be its base directory, so you have to sync changes made in"
-			elog "     /etc/gitlab/ back to /opt/gitlab/gitlab/config/ by running"
+			elog "     be its base directory, so we have to sync changes made in"
+			elog "     /etc/gitlab/ back to /opt/gitlab/gitlab/config/."
+			elog "     This is done automatically on start/restart of gitlab"
+			elog "     but sometimes it is neccessary to do it manually by"
 			elog "       rsync -aHAX /etc/gitlab/ /opt/gitlab/gitlab/config/"
 			elog
 		fi
 		elog "  4. You need to configure redis to have a UNIX socket and you may"
-		elog "     adjust the maxmemory settings. Change /etc/redis.conf to"
+		elog "     adjust the maxmemory settings. Change /etc/redis/redis.conf to"
 		elog "       unixsocket /var/run/redis/redis.sock"
 		elog "       unixsocketperm 770"
 		elog "       maxmemory 1024MB"
@@ -813,8 +831,10 @@ pkg_postinst() {
 		elog
 		elog "  5. Gitaly must be running for the \"emerge --config\". Execute"
 		if use systemd; then
+			einfo "     systemctl start gitlab-update-config.service"
 			einfo "     systemctl --job-mode=ignore-dependencies start ${PN}-gitaly.service"
 		else
+			einfo "     rsync -aHAX /etc/gitlab/ /opt/gitlab/gitlab/config/"
 			einfo "     rc-service ${PN}-gitaly start"
 		fi
 		elog "     Make sure the Redis server is running and execute:"
