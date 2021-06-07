@@ -289,8 +289,11 @@ src_prepare_gitaly() {
 		mkdir -p vendor/bundle
 		cd vendor
 		if [ -d ${gitaly_dir}/ruby/vendor/bundle/ruby ]; then
-			einfo "   Copying ${gitaly_dir}/ruby/vendor/bundle/ruby/ ..."
-			cp -a ${gitaly_dir}/ruby/vendor/bundle/ruby/ bundle/
+			portageq list_preserved_libs / >/dev/null # returns 1 when no preserved_libs found
+			if [ "$?" = "1" ]; then
+				einfo "   Copying ${gitaly_dir}/ruby/vendor/bundle/ruby/ ..."
+				cp -a ${gitaly_dir}/ruby/vendor/bundle/ruby/ bundle/
+			fi
 		fi
 	fi
 }
