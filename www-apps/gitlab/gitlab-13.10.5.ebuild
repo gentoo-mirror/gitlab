@@ -165,7 +165,7 @@ pkg_setup() {
 		gitlab_dir="${BASE_DIR}/${PN}"
 		[ $HQ ] && gitlab_dir="${BASE_DIR}/gitlab${HQ}"
 		bm=$(su -l ${GIT_USER} -s /bin/sh -c "
-			export LANG=en_US.UTF-8; export LC_ALL=en_US.UTF-8
+			export RUBYOPT=--disable-did_you_mean LANG=en_US.UTF-8 LC_ALL=en_US.UTF-8
 			cd ${gitlab_dir}
 			${BUNDLE} exec rails runner -e ${RAILS_ENV} ${rails_cmd}" \
 				|| die "failed to check for background migrations")
