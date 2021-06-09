@@ -806,16 +806,16 @@ pkg_postinst() {
 		elog "     in order to configure your GitLab settings."
 		elog
 		if use gitaly_git; then
-			einfo "     With gitaly_git USE flag enabled the included git was installed to"
-			einfo "     ${GITLAB_GITALY}/bin/. In order to use it one has to set the"
-			einfo "     [git] \"bin_path\" variable in \"${CONF_DIR_GITALY}/config.toml\" and in"
-			einfo "     \"${conf_dir}/gitlab.yml\" to \"${GITLAB_GITALY}/bin/git\""
-			elog  ""
+			elog "     With gitaly_git USE flag enabled the included git was installed to"
+			elog "     ${GITLAB_GITALY}/bin/. In order to use it one has to set the"
+			elog "     [git] \"bin_path\" variable in \"${CONF_DIR_GITALY}/config.toml\" and in"
+			elog "     \"${conf_dir}/gitlab.yml\" to \"${GITLAB_GITALY}/bin/git\""
+			elog
 		fi
 		if use gitlab-config; then
 			elog "     With the \"gitlab-config\" USE flag on you have to edit the"
 			elog "     config files in the /opt/gitlab/gitlab/config/ folder!"
-			elog "     "
+			elog
 		else
 			elog "     GitLab expects the parent directory of the config files to"
 			elog "     be its base directory, so we have to sync changes made in"
@@ -834,11 +834,11 @@ pkg_postinst() {
 		elog
 		elog "  5. Gitaly must be running for the \"emerge --config\". Execute"
 		if use systemd; then
-			einfo "     systemctl start gitlab-update-config.service"
-			einfo "     systemctl --job-mode=ignore-dependencies start ${PN}-gitaly.service"
+			elog "     systemctl start gitlab-update-config.service"
+			elog "     systemctl --job-mode=ignore-dependencies start ${PN}-gitaly.service"
 		else
-			einfo "     rsync -aHAX /etc/gitlab/ /opt/gitlab/gitlab/config/"
-			einfo "     rc-service ${PN}-gitaly start"
+			elog "     rsync -aHAX /etc/gitlab/ /opt/gitlab/gitlab/config/"
+			elog "     rc-service ${PN}-gitaly start"
 		fi
 		elog "     Make sure the Redis server is running and execute:"
 		elog "         emerge --config \"=${CATEGORY}/${PF}\""
