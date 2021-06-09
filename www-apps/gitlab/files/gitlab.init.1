@@ -40,8 +40,6 @@ depend() {
 }
 
 start() {
-	checkpath -d -o "${gitlab_user}:${gitlab_group}" -m750 "${gitlab_pids}"
-	checkpath -d -o "${gitlab_user}:${gitlab_group}" -m755 "${gitlab_sockets}"
 @UPDATE_CONFIG@
 
 @WEBSERVER_START@
