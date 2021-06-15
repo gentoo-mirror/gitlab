@@ -577,7 +577,15 @@ src_install() {
 	#einfo "Current ruby version is \"$(ruby --version)\""
 
 	einfo "Running bundle install ..."
-	${BUNDLE} install --jobs=$(nproc) || die "bundle install failed"
+	# Cleanup args to extract only JOBS.
+	# Because bundler does not know anything else.
+	local jobs=1
+	grep -Eo '(\-j|\-\-jobs)(=?|[[:space:]]*)[[:digit:]]+' <<< "${MAKEOPTS}" > /dev/null
+	if [[ $? -eq 0 ]] ; then
+		jobs=$(grep -Eo '(\-j|\-\-jobs)(=?|[[:space:]]*)[[:digit:]]+' <<< "${MAKEOPTS}" \
+			| tail -n1 | grep -Eo '[[:digit:]]+')
+	fi
+	${BUNDLE} install --jobs=${jobs} || die "bundle install failed"
 
 	## Install GetText PO files, yarn, assets via bundler ##
 
