@@ -1092,17 +1092,17 @@ pkg_config() {
 		einfo "in the ${GITLAB}/lib/support/nginx/ folder."
 		if use relative_url; then
 			einfo "For a relative URL installation several modifications must be made to nginx"
-			einfo "\s Move everything in the top-level 'server' block to top-level nginx.conf"
-			einfo "\s Remove the top-level 'server' block"
-			einfo "\s Add a 'location /gitlab at the top where the server block was"
-			einfo "\s Change 'location /' to 'location /gitlab/'"
-			einfo "\s Symlink <htdocs>/gitlab to ${GITLAB}/public"
+			einfo "\t Move everything in the top-level 'server' block to top-level nginx.conf"
+			einfo "\t Remove the top-level 'server' block"
+			einfo "\t Add a 'location /gitlab at the top where the server block was"
+			einfo "\t Change 'location /' to 'location /gitlab/'"
+			einfo "\t Symlink <htdocs>/gitlab to ${GITLAB}/public"
+			einfo "In order for the Backround Jobs page to work, add"
+			einfo "\t 'location ~ ^/gitlab/admin/sidekiq/* {"
+			einfo "\t proxy_pass http://gitlab-workhorse;"
+			einfo "\t }"
+			einfo "under the main gitlab location block"
 		fi
-		einfo "In order for the Backround Jobs page to work, add"
-		einfo "\s 'location ~ ^/gitlab/admin/sidekiq/* {"
-		einfo "\s proxy_pass http://gitlab-workhorse;"
-		einfo "}"
-		einfo "under the main gitlab location block"
 	fi
 
 	if [ $HQ ]; then
