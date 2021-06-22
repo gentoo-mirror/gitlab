@@ -14,6 +14,7 @@ HOMEPAGE="https://gitlab.com/gitlab-org/gitlab-shell"
 LICENSE="MIT"
 SLOT="0"
 KEYWORDS="~amd64 ~x86 ~arm"
+IUSE="-relative_url"
 RESTRICT="network-sandbox"
 BDEPEND="
 	${RUBY_DEPS}
@@ -52,6 +53,11 @@ src_prepare() {
 		-e "s|log_level: .*|log_level: WARN|" \
 		-e "s|/home/git/|${GIT_HOME}/|g" \
 		config.yml.example || die "failed to filter config.yml.example"
+		if use relative_url; then
+			sed -i \
+				-e "s|^# gitlab_relative_url_root: \"/\"|gitlab_relative_url_root: \"/gitlab\"|" \
+				config.yml.example || die "failet to filter config.yml.example"
+		fi
 }
 
 src_compile() {
