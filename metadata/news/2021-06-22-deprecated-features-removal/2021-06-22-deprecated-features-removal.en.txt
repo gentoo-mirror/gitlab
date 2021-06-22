@@ -1,0 +1,13 @@
+Title: Removal of deprecated features 
+Author: Horst Prote <prote@fmi.uni-stuttgart.de>
+Posted: 2021-06-22
+Revision: 1
+News-Item-Format: 2.0
+
+Upstream removed several deprecated features in the upcoming annual major release
+14.0.0.
+
+It is strongly advised to work through the upstream website about
+"information about deprecations and removals for self-managed instances" at
+https://about.gitlab.com/blog/2021/06/04/gitlab-moving-to-14-breaking-changes/
+before upgrading to version 14!

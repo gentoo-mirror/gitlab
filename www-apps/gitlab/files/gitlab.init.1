@@ -30,7 +30,7 @@ description="GitLab git repository management"
 : ${workhorse_log:="${gitlab_log}/workhorse.log"}
 : ${workhorse_socket:="${gitlab_sockets}/gitlab-workhorse.socket"}
 : ${workhorse_command:="@WORKHORSE_BIN@/gitlab-workhorse"}
-: ${workhorse_command_args="-listenUmask 0 -listenNetwork unix -listenAddr ${workhorse_socket} -authBackend http://127.0.0.1:8080 -documentRoot ${gitlab_home}/public -authSocket ${webserver_socket}"}
+: ${workhorse_command_args="-listenUmask 0 -listenNetwork unix -listenAddr ${workhorse_socket} -authBackend http://127.0.0.1:8080@RELATIVE_URL@ -documentRoot ${gitlab_home}/public -authSocket ${webserver_socket}"}
 
 
 depend() {

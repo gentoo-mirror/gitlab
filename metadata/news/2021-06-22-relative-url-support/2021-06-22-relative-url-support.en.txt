@@ -1,0 +1,10 @@
+Title: Relative URL support added 
+Author: Horst Prote <prote@fmi.uni-stuttgart.de>
+Posted: 2021-06-22
+Revision: 1
+News-Item-Format: 2.0
+
+With version 13.12.5 support for installing GitLab under a relative URL was added.
+It can be enabled it with the new USE flag 'relative_url'.
+
+Many thanks to Amber Schenk who supplied the patch.
