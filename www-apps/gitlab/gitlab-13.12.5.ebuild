@@ -613,7 +613,8 @@ src_install() {
 
 	dodir ${GITLAB_SHELL}
 	local vGS=$(best_version dev-vcs/gitlab-shell)
-	echo ${vGS##*-} > ${D}/${GITLAB_SHELL}/VERSION
+	vGS=$(echo ${vGS#dev-vcs/gitlab-shell-})
+	echo ${vGS%-*} > ${D}/${GITLAB_SHELL}/VERSION
 	# Let lib/gitlab/shell.rb set the .gitlab_shell_secret symlink
 	# inside the sandbox. The real symlink will be set in pkg_config().
 	# Note: The gitlab-shell path "${D}/${GITLAB_SHELL}" is set
@@ -630,8 +631,14 @@ src_install() {
 	sed -i \
 		-e "s|${D}${GITLAB_SHELL}|${GITLAB_SHELL}|g" \
 		${D}/${GITLAB_CONFIG}/gitlab.yml || die "failed to change back gitlab-shell path"
-	# Remove the ${GITLAB_SHELL} we fooled lib/gitlab/shell.rb with.
-	rm -rf ${D}/${GITLAB_SHELL}
+	if [ "$MODUS" != "new" ]; then
+		# Use the .gitlab_shell_secret file of the installed GitLab
+		cp -f ${gitlab_dir}/.gitlab_shell_secret ${D}${GITLAB}/.gitlab_shell_secret
+	fi
+	# Correct the link
+	ln -sf ${GITLAB}/.gitlab_shell_secret ${D}${GITLAB_SHELL}/.gitlab_shell_secret
+	# Remove ${D}/${GITLAB_SHELL}/VERSION to avoid file collision with dev-vcs/gitlab-shell
+	rm -f ${D}/${GITLAB_SHELL}/VERSION
 
 	## Clean ##
 
@@ -1036,11 +1043,11 @@ pkg_config_initialize() {
 }
 
 pkg_config() {
-	## (Re-)Link gitlab_shell_secret into gitlab-shell
-	if [ -L "${GITLAB_SHELL}/.gitlab_shell_secret" ]; then
-		rm "${GITLAB_SHELL}/.gitlab_shell_secret"
-	fi
-	ln -s "${GITLAB}/.gitlab_shell_secret" "${GITLAB_SHELL}/.gitlab_shell_secret"
+#	## (Re-)Link gitlab_shell_secret into gitlab-shell
+#	if [ -L "${GITLAB_SHELL}/.gitlab_shell_secret" ]; then
+#		rm "${GITLAB_SHELL}/.gitlab_shell_secret"
+#	fi
+#	ln -s "${GITLAB}/.gitlab_shell_secret" "${GITLAB_SHELL}/.gitlab_shell_secret"
 
 	if [ "$MODUS" = "new" ]; then
 		pkg_config_initialize

@@ -82,7 +82,6 @@ src_install() {
 	insinto ${GITLAB_SHELL}
 	touch gitlab-shell.log
 	doins -r . || die
-	dosym ../gitlab/.gitlab_shell_secret ${GITLAB_SHELL}/.gitlab_shell_secret
 
 	for bin in $(ls bin) ; do
 		fperms 0755 ${GITLAB_SHELL}/bin/${bin} || die
