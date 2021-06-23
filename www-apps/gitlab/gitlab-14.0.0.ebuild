@@ -261,6 +261,7 @@ src_prepare_gitaly() {
 		-e "s|/home/git/|${GIT_HOME}/|g" \
 		-e "s|^# \[logging\]|\[logging\]|" \
 		-e "s|^# level = .*|level = \"warn\"|" \
+		-e "s|^# internal_socket_dir = |internal_socket_dir = |" \
 		config.toml.example || die "failed to filter config.toml.example"
 	if use gitaly_git ; then
 		sed -i \
