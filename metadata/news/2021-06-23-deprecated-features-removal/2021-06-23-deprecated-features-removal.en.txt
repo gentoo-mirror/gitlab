@@ -1,0 +1,44 @@
+Title: Removal of deprecated features 
+Author: Horst Prote <prote@fmi.uni-stuttgart.de>
+Posted: 2021-06-23
+Revision: 1
+News-Item-Format: 2.0
+
+Upstream removed several deprecated features in the upcoming annual majors
+release 14.0.0.
+
+It is strongly advised to work through the upstream website about
+"information about deprecations and removals for self-managed instances" at
+https://about.gitlab.com/releases/2021/05/22/gitlab-13-12-released/#release-deprecations
+before upgrading to version 14!
+
+It should be especially pointed out at
+- As announced in GitLab 13.0 legacy storage is deprecated and will be removed
+  in GitLab 14.0.
+  >>>>>> Before upgrading to GitLab 14.0 you   <<<<<<
+  >>>>>> must migrate fully to hashed storage. <<<<<<
+- NFS for Git repository storage deprecated
+- Starting in GitLab 14.0, expired SSH keys added to GitLab will be disabled
+  by default.
+- The Git default branch name changes from 'master' to 'main'. This will not
+  affect existing projects.
+- PostgreSQL 12 will be the minimum required version in GitLab 14.0.
+- Redis 4 has reached end of life and will no longer be supported.
+- Removal of deprecated pipeline processing code:
+  If you plan to upgrade from GitLab 13.2 or older directly to 14.0, you should
+  not have any pipelines running when you upgrade, as they might report the
+  wrong pipeline status when the upgrade completes. We recommend shutting down
+  GitLab and waiting for all pipelines on runners to complete, then upgrading
+  GitLab to 14.0. Alternatively, you can upgrade GitLab to a version between
+  13.3 and 13.12 first, then upgrade to 14.0.
+- Ruby version changing in Ruby.gitlab-ci.yml:
+  (Note: This concerns the Ruby CI template _NOT_ the Ruby version used in the
+         GitLab Code!)
+  Currently, by default, the Ruby.gitlab-ci.yml file includes Ruby 2.5.
+  To better support the latest versions of Ruby, the template is being changed
+  to use ruby:latest which is currently 3.0.
+- Support for Unicorn is deprecated and will be removed in GitLab 14.0 in favor
+  of Puma.
+- Update CI/CD templates to stop using hardcoded 'master':
+  In 14.0, they will all be changed to use a variable that points to your
+  project’s configured default branch instead.
