@@ -414,13 +414,18 @@ src_compile() {
 	einfo "Compiling source in $PWD ..."
 	emake || die "Compiling gitaly failed"
 
+	# Hack: Reusing gitaly's bundler cache for gitlab
+	local rubyV=$(ls ruby/vendor/bundle/ruby)
+	local ruby_vpath=vendor/bundle/ruby/${rubyV}
 	if [ -d ruby/${ruby_vpath}/cache ]; then
-		# Hack: Reusing gitaly's bundler cache for gitlab
-		local rubyV=$(ls ruby/vendor/bundle/ruby)
-		local ruby_vpath=vendor/bundle/ruby/${rubyV}
 		mkdir -p ${WORKDIR}/gitlab-${PV}/${ruby_vpath}
 		mv ruby/${ruby_vpath}/cache ${WORKDIR}/gitlab-${PV}/${ruby_vpath}
 	fi
+
+	# Hack: Copy did_you_mean Gem from system
+	cp -a /usr/lib64/ruby/gems/${rubyV}/gems/did_you_mean-* ruby/${ruby_vpath}/gems
+	cp /usr/lib64/ruby/gems/${rubyV}/specifications/did_you_mean-*.gemspec \
+		ruby/${ruby_vpath}/specifications
 }
 
 src_install_gitaly() {
