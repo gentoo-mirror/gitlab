@@ -11,8 +11,6 @@
     <flag name="gitlab-config">Config in /opt/gitlab/gitlab/config instead of /etc/gitlab (s. news 2021-02-22-etc-gitlab)</flag>
     <flag name="mail_room">Enables support for GitLab MailRoom</flag>
     <flag name="pages">Pulls in the compatible version of www-apps/gitlab-pages</flag>
-    <flag name="puma">Enables support for the puma HTTP server</flag>
-    <flag name="unicorn">Enables support for the unicorn HTTP server</flag>
   </use>
 </pkgmetadata>
 

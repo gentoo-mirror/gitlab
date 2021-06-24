@@ -12,7 +12,6 @@ description="GitLab git repository management"
 : ${gitlab_pids:="@GITLAB@/tmp/pids"}
 : ${gitlab_sockets:="@GITLAB@/tmp/sockets"}
 : ${gitlab_log:="@LOG_DIR@"}
-: ${gitlab_env:=""}
 
 : ${webserver_pidfile:="${gitlab_pids}/@WEBSERVER@.pid"}
 : ${webserver_socket:="${gitlab_sockets}/gitlab.socket"}
@@ -46,7 +45,6 @@ start() {
 
 	ebegin "Starting GitLab Sidekiq"
 	supervise-daemon ${RC_SVCNAME} --start \
-		$(for env in $gitlab_env ; do echo "--env $env" ; done) \
 		--chdir "${gitlab_home}" \
 		--user="${gitlab_user}:${gitlab_group}" \
 		--pidfile="${sidekiq_pidfile}" \
@@ -56,7 +54,6 @@ start() {
 
 	ebegin "Starting GitLab Workhorse"
 	start-stop-daemon --start \
-		$(for env in $gitlab_env ; do echo "--env $env" ; done) \
 		--env "PATH=/opt/gitlab/gitlab-workhorse/bin/:$PATH" \
 		--chdir "${gitlab_home}" \
 		--user="${gitlab_user}:${gitlab_group}" \

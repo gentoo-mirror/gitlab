@@ -1,6 +1,5 @@
 	ebegin "Starting GitLab web server Puma"
 	start-stop-daemon --start \\
-		$(for env in $gitlab_env ; do echo "--env $env" ; done) \\
 		--chdir "${gitlab_home}" \\
 		--user="${gitlab_user}:${gitlab_group}" \\
 		--pidfile="${gitlab_pids}/puma.pid" \\

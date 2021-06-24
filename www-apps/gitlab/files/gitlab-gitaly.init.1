@@ -14,7 +14,6 @@ description="GitLab Gitaly git repository management"
 : ${gitlab_pids:="@GITLAB@/tmp/pids"}
 : ${gitlab_sockets:="@GITLAB@/tmp/sockets"}
 : ${gitlab_log:="@LOG_DIR@"}
-: ${gitlab_env:=""}
 
 : ${gitaly_home:="@GITLAB_GITALY@"}
 : ${gitaly_config:="@GITALY_CONF@"}
@@ -34,7 +33,7 @@ depend() {
 start() {
 	ebegin "Starting GitLab Gitaly"
 	start-stop-daemon --start \
-		$(for env in $gitlab_env ; do echo "--env $env" ; done) \
+		--env RUBYOPT=--disable-did_you_mean \
 		--env GITALY_SOCKET_PATH=${gitaly_socket} \
 		--chdir "${gitlab_home}" \
 		--user="${gitlab_user}:${gitlab_group}" \

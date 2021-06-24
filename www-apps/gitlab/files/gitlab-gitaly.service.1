@@ -6,5 +6,6 @@ PartOf=gitlab.target
 Type=exec
 User=git
 Environment="GITALY_ARGS=/etc/gitlab-gitaly/config.toml"
+Environment="RUBYOPT=--disable-did_you_mean"
 WorkingDirectory=@GITLAB@
 ExecStart=@BASE_DIR@/gitlab-gitaly/bin/gitaly ${GITALY_ARGS}

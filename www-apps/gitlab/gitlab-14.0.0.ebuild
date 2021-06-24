@@ -23,13 +23,11 @@ LICENSE="MIT"
 RESTRICT="network-sandbox splitdebug strip"
 SLOT="0"
 KEYWORDS="~amd64 ~x86"
-IUSE="favicon +gitaly_git -gitlab-config kerberos -mail_room -pages +puma -relative_url -unicorn systemd"
-REQUIRED_USE="
-	^^ ( puma unicorn )"
+IUSE="favicon +gitaly_git -gitlab-config kerberos -mail_room -pages -relative_url systemd"
 # USE flags that affect the --without option below
-# Current (2020-12-10) groups in Gemfile:
-# unicorn puma metrics development test coverage omnibus ed25519 kerberos
-WITHOUTflags="kerberos puma unicorn"
+# Current (2021-06-23) groups in Gemfile:
+# puma metrics development test danger coverage omnibus ed25519 kerberos
+WITHOUTflags="kerberos"
 
 ## Gems dependencies:
 #   gpgme				app-crypt/gpgme
@@ -51,7 +49,7 @@ GEMS_DEPEND="
 	dev-db/postgresql:12
 	net-libs/http-parser"
 GITALY_DEPEND="
-	>=dev-lang/go-1.13.9
+	>=dev-lang/go-1.15
 	dev-util/cmake"
 WORKHORSE_DEPEND="
 	dev-lang/go
@@ -64,8 +62,8 @@ DEPEND="
 	acct-user/git[gitlab]
 	acct-group/git
 	>dev-lang/ruby-2.7.2:2.7[ssl]
-	~dev-vcs/gitlab-shell-13.18.0[relative_url=]
-	pages? ( ~www-apps/gitlab-pages-1.39.0 )
+	~dev-vcs/gitlab-shell-13.19.0[relative_url=]
+	pages? ( ~www-apps/gitlab-pages-1.40.0 )
 	!gitaly_git? ( >=dev-vcs/git-2.31.0[pcre] dev-libs/libpcre2[jit] )
 	net-misc/curl
 	virtual/ssh
@@ -144,10 +142,16 @@ pkg_setup() {
 			${eM}.${em1}.*)		MODUS="minor"
 								elog "This is a minor upgrade from $vINST to $PV.";;
 			${eM}.[0-${em2}].*) die "You should do minor upgrades step by step.";;
-			${eM1}.*.*)			die "You should upgrade to latest ${eM1}.x.x version"\
-									"and then to ${eM}.1.0 first.";;
+			13.12.5)			if [ "${PV}" = "14.0.0" ]; then
+									MODUS="major"
+									elog "This is a major upgrade from $vINST to $PV."
+								else
+									die "You should upgrade to 14.0.0 first."
+								fi;;
 			12.10.14)			die "You should upgrade to 13.1.0 first.";;
 			12.*.*)				die "You should upgrade to 12.10.14 first.";;
+			${eM1}.*.*)			die "You should upgrade to latest ${eM1}.x.x version"\
+									"first and then to the ${eM}.0.0 version.";;
 			*)					if ver_test $vINST -lt 12.0.0 ; then
 									die "Upgrading from $vINST isn't supported. Do it manual."
 								else
@@ -188,10 +192,8 @@ pkg_setup() {
 
 		elog  "  Copying configs from \"${old_confdir}\" to \"${T}/etc-config\" ..."
 		elog "  ... and fixing version specific paths ..."
-		local configs_to_migrate="database.yml gitlab.yml secrets.yml"
+		local configs_to_migrate="database.yml gitlab.yml secrets.yml puma.rb"
 		local initializers_to_migrate="smtp_settings.rb"
-		use puma    && configs_to_migrate+=" puma.rb"
-		use unicorn && configs_to_migrate+=" unicorn.rb"
 		local conf 
 		mkdir -p ${T}/etc-config/initializers
 		for conf in ${configs_to_migrate}; do
@@ -341,31 +343,15 @@ src_prepare() {
 
 	# remove needless files
 	rm .foreman .gitignore
-	use puma     || rm config/puma*
-	use unicorn  || rm config/unicorn.rb.example*
 
 	# Update paths for puma
-	if use puma; then
-		sed -i \
-			-e "s|/home/git/gitlab|${GITLAB}|g" \
-			config/puma.rb.example \
-			|| die "failed to modify puma.rb.example"
-	fi
+	sed -i \
+		-e "s|/home/git/gitlab|${GITLAB}|g" \
+		config/puma.rb.example \
+		|| die "failed to modify puma.rb.example"
 	if use relative_url; then
 		echo "ENV['RAILS_RELATIVE_URL_ROOT'] = \"/gitlab\"" >> config/puma.rb.example \
 			|| die "failed to modify puma.rb.example"
-	fi
-
-	# Update paths for unicorn
-	if use unicorn; then
-		sed -i \
-			-e "s|/home/git/gitlab|${GITLAB}|g" \
-			config/unicorn.rb.example \
-			|| die "failed to modify unicorn.rb.example"
-	fi
-	if use relative_url; then
-		echo "ENV['RAILS_RELATIVE_URL_ROOT'] = \"/gitlab\"" >> config/unicorn.rb.example \
-			|| die "failed to modify unicorn.rb.example"
 	fi
 
 	# "Compiling GetText PO files" wants to read these configs
@@ -383,12 +369,7 @@ src_prepare() {
 		mkdir -p ${T}/etc-config
 		cp config/database.yml.postgresql ${T}/etc-config/database.yml
 		cp config/gitlab.yml.example ${T}/etc-config/gitlab.yml
-		if use unicorn; then
-			cp config/unicorn.rb.example ${T}/etc-config/unicorn.rb
-		fi
-		if use puma; then
-			cp config/puma.rb.example ${T}/etc-config/puma.rb
-		fi
+		cp config/puma.rb.example ${T}/etc-config/puma.rb
 		if use relative_url; then
 			mkdir -p ${T}/etc-config/initializers
 			cp config/initializers/relative_url.rb ${T}/etc-config/initializers/relative_url.rb
@@ -433,10 +414,10 @@ src_compile() {
 	einfo "Compiling source in $PWD ..."
 	emake || die "Compiling gitaly failed"
 
+	# Hack: Reusing gitaly's bundler cache for gitlab
+	local rubyV=$(ls ruby/vendor/bundle/ruby)
+	local ruby_vpath=vendor/bundle/ruby/${rubyV}
 	if [ -d ruby/${ruby_vpath}/cache ]; then
-		# Hack: Reusing gitaly's bundler cache for gitlab
-		local rubyV=$(ls ruby/vendor/bundle/ruby)
-		local ruby_vpath=vendor/bundle/ruby/${rubyV}
 		mkdir -p ${WORKDIR}/gitlab-${PV}/${ruby_vpath}
 		mv ruby/${ruby_vpath}/cache ${WORKDIR}/gitlab-${PV}/${ruby_vpath}
 	fi
@@ -452,6 +433,11 @@ src_install_gitaly() {
 
 	# Clean up old gems (this is required due to our Hack above)
 	sh -c "cd ruby; ${BUNDLE} clean"
+
+	# Hack: Copy did_you_mean Gem from system
+	cp -a /usr/lib64/ruby/gems/${rubyV}/gems/did_you_mean-* ruby/${ruby_vpath}/gems
+	cp /usr/lib64/ruby/gems/${rubyV}/specifications/did_you_mean-*.gemspec \
+		ruby/${ruby_vpath}/specifications
 
 	# Will install binaries to ${GITLAB_GITALY}/bin. Don't specify the "bin"!
 	into "${GITLAB_GITALY}"
@@ -671,14 +657,7 @@ src_install() {
 	dosym "${LOG_DIR}" "${GITLAB}/log"
 
 	# systemd/openrc files
-	local webserver webserver_name
-	if use puma; then
-		webserver="puma"
-		webserver_name="Puma"
-	elif use unicorn; then
-		webserver="unicorn"
-		webserver_name="Unicorn"
-	fi
+	local webserver="puma" webserver_name="Puma"
 
 	use relative_url && relative_url="/gitlab" || relative_url=""
 
@@ -772,7 +751,7 @@ src_install() {
 	# fix permissions
 
 	fowners -R ${GIT_USER}:${GIT_GROUP} $GITLAB $CONF_DIR $TMP_DIR $LOG_DIR $GIT_REPOS
-	fperms o+Xr "${TMP_DIR}" # Let nginx access the puma/unicorn socket
+	fperms o+Xr "${TMP_DIR}" # Let nginx access the puma socket
 	[ -f "${D}/${CONF_DIR}/secrets.yml" ]      && fperms 600 "${CONF_DIR}/secrets.yml"
 	[ -f "${D}/${GITLAB_CONFIG}/secrets.yml" ] && fperms 600 "${GITLAB_CONFIG}/secrets.yml"
 
