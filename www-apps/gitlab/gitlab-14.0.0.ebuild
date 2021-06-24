@@ -421,11 +421,6 @@ src_compile() {
 		mkdir -p ${WORKDIR}/gitlab-${PV}/${ruby_vpath}
 		mv ruby/${ruby_vpath}/cache ${WORKDIR}/gitlab-${PV}/${ruby_vpath}
 	fi
-
-	# Hack: Copy did_you_mean Gem from system
-	cp -a /usr/lib64/ruby/gems/${rubyV}/gems/did_you_mean-* ruby/${ruby_vpath}/gems
-	cp /usr/lib64/ruby/gems/${rubyV}/specifications/did_you_mean-*.gemspec \
-		ruby/${ruby_vpath}/specifications
 }
 
 src_install_gitaly() {
@@ -438,6 +433,11 @@ src_install_gitaly() {
 
 	# Clean up old gems (this is required due to our Hack above)
 	sh -c "cd ruby; ${BUNDLE} clean"
+
+	# Hack: Copy did_you_mean Gem from system
+	cp -a /usr/lib64/ruby/gems/${rubyV}/gems/did_you_mean-* ruby/${ruby_vpath}/gems
+	cp /usr/lib64/ruby/gems/${rubyV}/specifications/did_you_mean-*.gemspec \
+		ruby/${ruby_vpath}/specifications
 
 	# Will install binaries to ${GITLAB_GITALY}/bin. Don't specify the "bin"!
 	into "${GITLAB_GITALY}"
