@@ -441,7 +441,7 @@ src_install_gitaly() {
 	local vDYM=$(best_version dev-ruby/did_you_mean)
 	vDYM=${vDYM#*/}; vDYM=${vDYM%-r*}; vDYM=${vDYM##*-}
 	local pDYM="/usr/lib64/ruby/gems/${rubyV}/gems/did_you_mean-${vDYM}"
-	local pSPES="/usr/lib64/ruby/gems/${rubyV}/gems/specifications"
+	local pSPES="/usr/lib64/ruby/gems/${rubyV}/specifications"
 	cp -a ${pDYM} ruby/${ruby_vpath}/gems
 	cp ${pSPECS}/did_you_mean-${vDYM}.gemspec ruby/${ruby_vpath}/specifications
 
