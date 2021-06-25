@@ -10,3 +10,4 @@ www-apps/gitlab:gitaly_git - Use the Git version provided by Gitaly
 www-apps/gitlab:gitlab-config - Config in /opt/gitlab/gitlab/config instead of /etc/gitlab (s. news 2021-02-22-etc-gitlab)
 www-apps/gitlab:mail_room - Enables support for GitLab MailRoom
 www-apps/gitlab:pages - Pulls in the compatible version of www-apps/gitlab-pages
+www-apps/gitlab:relative_url - Support for relative url
