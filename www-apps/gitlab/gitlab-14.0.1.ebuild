@@ -434,10 +434,16 @@ src_install_gitaly() {
 	# Clean up old gems (this is required due to our Hack above)
 	sh -c "cd ruby; ${BUNDLE} clean"
 
+	local rubyV=$(ls ruby/vendor/bundle/ruby)
+	local ruby_vpath=vendor/bundle/ruby/${rubyV}
+
 	# Hack: Copy did_you_mean Gem from system
-	cp -a /usr/lib64/ruby/gems/${rubyV}/gems/did_you_mean-* ruby/${ruby_vpath}/gems
-	cp /usr/lib64/ruby/gems/${rubyV}/specifications/did_you_mean-*.gemspec \
-		ruby/${ruby_vpath}/specifications
+	local vDYM=$(best_version dev-ruby/did_you_mean)
+	vDYM=${vDYM#*/}; vDYM=${vDYM%-r*}; vDYM=${vDYM##*-}
+	local pDYM="/usr/lib64/ruby/gems/${rubyV}/gems/did_you_mean-${vDYM}"
+	local pSPES="/usr/lib64/ruby/gems/${rubyV}/gems/specifications"
+	cp -a ${pDYM} ruby/${ruby_vpath}/gems
+	cp ${pSPECS}/did_you_mean-${vDYM}.gemspec ruby/${ruby_vpath}/specifications
 
 	# Will install binaries to ${GITLAB_GITALY}/bin. Don't specify the "bin"!
 	into "${GITLAB_GITALY}"
@@ -447,7 +453,6 @@ src_install_gitaly() {
 	doins -r "ruby"
 
 	# Make binaries in ruby/ executable
-	local rubyV=$(ls ruby/vendor/bundle/ruby)
 	exeinto "${GITLAB_GITALY}/ruby/git-hooks/"
 	doexe ruby/git-hooks/gitlab-shell-hook
 	exeinto "${GITLAB_GITALY}/ruby/bin"
