@@ -366,7 +366,8 @@ src_prepare() {
 		cp config/puma.rb.example ${T}/etc-config/puma.rb
 		if use relative_url; then
 			mkdir -p ${T}/etc-config/initializers
-			cp config/initializers/relative_url.rb ${T}/etc-config/initializers/relative_url.rb
+			cp config/initializers/relative_url.rb.sample \
+				${T}/etc-config/initializers/relative_url.rb
 		fi
 	fi
 
