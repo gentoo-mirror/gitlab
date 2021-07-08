@@ -1,0 +1,16 @@
+BDEPEND=virtual/rubygems >=dev-ruby/bundler-2:2 >=dev-vcs/git-1.8.2.1[curl] virtual/pkgconfig
+DEFINED_PHASES=compile config install postinst preinst prepare setup unpack
+DEPEND=app-crypt/gpgme dev-libs/icu dev-libs/libxml2 dev-libs/libxslt dev-util/ragel dev-libs/yajl >=net-libs/nodejs-14 dev-db/postgresql:12 net-libs/http-parser >=dev-lang/go-1.15 dev-util/cmake dev-lang/go media-libs/exiftool || ( dev-lang/ruby:2.7 ) virtual/rubygems acct-user/git[gitlab] acct-group/git >dev-lang/ruby-2.7.2:2.7[ssl] ~dev-vcs/gitlab-shell-13.17.0[relative_url=] pages? ( ~www-apps/gitlab-pages-1.38.0 ) !gitaly_git? ( >=dev-vcs/git-2.31.0[pcre] dev-libs/libpcre2[jit] ) net-misc/curl virtual/ssh >=sys-apps/yarn-1.15.0 dev-libs/re2
+DESCRIPTION=The gitlab and gitaly parts of the GitLab DevOps platform
+EAPI=7
+HOMEPAGE=https://gitlab.com/gitlab-org/gitlab-foss
+INHERIT=eutils git-r3 ruby-single systemd tmpfiles user
+IUSE=favicon +gitaly_git -gitlab-config kerberos -mail_room -pages -relative_url systemd
+KEYWORDS=~amd64 ~x86
+LICENSE=MIT
+PROPERTIES=live
+RDEPEND=app-crypt/gpgme dev-libs/icu dev-libs/libxml2 dev-libs/libxslt dev-util/ragel dev-libs/yajl >=net-libs/nodejs-14 dev-db/postgresql:12 net-libs/http-parser >=dev-lang/go-1.15 dev-util/cmake dev-lang/go media-libs/exiftool || ( dev-lang/ruby:2.7 ) virtual/rubygems acct-user/git[gitlab] acct-group/git >dev-lang/ruby-2.7.2:2.7[ssl] ~dev-vcs/gitlab-shell-13.17.0[relative_url=] pages? ( ~www-apps/gitlab-pages-1.38.0 ) !gitaly_git? ( >=dev-vcs/git-2.31.0[pcre] dev-libs/libpcre2[jit] ) net-misc/curl virtual/ssh >=sys-apps/yarn-1.15.0 dev-libs/re2 !www-servers/gitlab-workhorse >=dev-db/redis-5.0 virtual/mta kerberos? ( app-crypt/mit-krb5 ) favicon? ( media-gfx/graphicsmagick ) virtual/tmpfiles
+RESTRICT=network-sandbox splitdebug strip
+SLOT=0
+_eclasses_=edos2unix	33e347e171066657f91f8b0c72ec8773	strip-linguas	ac3ee41ee2d31d8c41a77c0838320cc7	wrapper	4251d4c84c25f59094fd557e0063a974	eutils	dab5d8ec471d025b79c9e6906bcf3bff	git-r3	cc875b0c1e9b3bdac1af0f82f3ba29da	ruby-utils	685587efe9ff6315b82811810827f69a	ruby-single	dd06178c43afcd54225a7d0fca6342a8	toolchain-funcs	9ea1c67b6f8315fdc2568abb674519aa	multilib	97566c1a256d07b00848aa767e38a352	systemd	c846b9e02ac8293bfc9ca38a195c2a18	tmpfiles	5cd6e8cf3288d5b19ff8b5c78c7e3e31	user-info	2e75eaea3582b052ec16d9d5aa74ced3	user	1033b6bed7cf367c4507ea9a3ff503d0
+_md5_=4a871325cb220e30e0ecf016f0222760
