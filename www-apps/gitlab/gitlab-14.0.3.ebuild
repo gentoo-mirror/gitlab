@@ -142,7 +142,7 @@ pkg_setup() {
 			${eM}.${em1}.*)		MODUS="minor"
 								elog "This is a minor upgrade from $vINST to $PV.";;
 			${eM}.[0-${em2}].*) die "You should do minor upgrades step by step.";;
-			13.12.5)			if [ "${PV}" = "14.0.0" ]; then
+			13.12.8)			if [ "${PV}" = "14.0.0" ]; then
 									MODUS="major"
 									elog "This is a major upgrade from $vINST to $PV."
 								else
@@ -252,7 +252,7 @@ src_prepare_gitaly() {
 	# Note: Order of -e expressions is important here
 	local gitlab_urlenc=$(echo "${GITLAB}/" | sed -e "s|/|%2F|g")
 	sed -i \
-		-e "s|^bin_dir = \"/home/git/gitaly\"|bin_dir = \"${GITLAB_GITALY}/bin\"|" \
+		-e "s|^bin_dir = \".*\"|bin_dir = \"${GITLAB_GITALY}/bin\"|" \
 		-e "s|/home/git/gitaly|${GITLAB_GITALY}|g" \
 		-e "s|/home/git/gitlab-shell|${GITLAB_SHELL}|g" \
 		-e "s|/home/git/gitlab/log|${GITLAB}/log|g" \
