@@ -245,7 +245,7 @@ src_prepare_gitaly() {
 	# Note: Order of -e expressions is important here
 	local gitlab_urlenc=$(echo "${GITLAB}/" | sed -e "s|/|%2F|g")
 	sed -i \
-		-e "s|^bin_dir = \"/home/git/gitaly\"|bin_dir = \"${GITLAB_GITALY}/bin\"|" \
+		-e "s|^bin_dir = \".*\"|bin_dir = \"${GITLAB_GITALY}/bin\"|" \
 		-e "s|/home/git/gitaly|${GITLAB_GITALY}|g" \
 		-e "s|/home/git/gitlab-shell|${GITLAB_SHELL}|g" \
 		-e "s|/home/git/gitlab/log|${GITLAB}/log|g" \
