@@ -12,7 +12,19 @@ HOMEPAGE="https://gitlab.com/gitlab-org/gitlab-runner"
 # https://gitlab-runner-downloads.s3.amazonaws.com/v13.6.0/index.html
 SRC_HOST="gitlab-runner-downloads.s3.amazonaws.com"
 SRC_BASE="https://${SRC_HOST}/v${PV}/binaries/gitlab-runner-linux"
-SRC_URI="${SRC_BASE}-amd64 -> gitlab-runner-${PV}"
+SRC_URI="
+amd64? (
+	${SRC_BASE}-amd64 -> gitlab-runner-${PV}
+)
+x86?   (
+	${SRC_BASE}-386   -> gitlab-runner-${PV}
+)
+arm?   (
+	${SRC_BASE}-arm   -> gitlab-runner-${PV}
+)
+arm64? (
+	${SRC_BASE}-arm64 -> gitlab-runner-${PV}
+)"
 
 LICENSE="MIT"
 SLOT="0"
