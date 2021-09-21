@@ -61,7 +61,7 @@ DEPEND="
 	${RUBY_DEPS}
 	acct-user/git[gitlab]
 	acct-group/git
-	>dev-lang/ruby-2.7.4:2.7[ssl]
+	>=dev-lang/ruby-2.7.4:2.7[ssl]
 	~dev-vcs/gitlab-shell-13.21.0[relative_url=]
 	pages? ( ~www-apps/gitlab-pages-1.44.0 )
 	!gitaly_git? ( >=dev-vcs/git-2.31.0[pcre] dev-libs/libpcre2[jit] )
