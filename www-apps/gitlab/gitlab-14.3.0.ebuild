@@ -49,7 +49,7 @@ GEMS_DEPEND="
 	dev-db/postgresql:12
 	net-libs/http-parser"
 GITALY_DEPEND="
-	>=dev-lang/go-1.15
+	>=dev-lang/go-1.16
 	dev-util/cmake"
 WORKHORSE_DEPEND="
 	dev-lang/go
