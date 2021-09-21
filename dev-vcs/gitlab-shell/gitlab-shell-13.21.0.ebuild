@@ -71,6 +71,8 @@ src_install() {
 	dosym "${CONF_DIR}/config.yml" "${GITLAB_SHELL}/config.yml"
 
 	insinto ${GITLAB_SHELL}
+	doins CHANGELOG README.md CONTRIBUTING.md LICENSE VERSION config.yml.example
+	doins -r support
 	touch gitlab-shell.log
 	doins gitlab-shell.log || die "failed to install gitlab-shell.log"
 
