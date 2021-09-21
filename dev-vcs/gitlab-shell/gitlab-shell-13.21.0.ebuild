@@ -61,14 +61,7 @@ src_prepare() {
 }
 
 src_compile() {
-	einfo "Running \"bundle install\" ..."
-	export LANG=en_US.UTF-8
-	export LC_ALL=en_US.UTF-8
-	ruby /usr/bin/bundle config set --local path 'vendor/bundle'
-	ruby /usr/bin/bundle install || die "failed to run bundle install"
-	ruby_version=$(ls vendor/bundle/ruby)
-	export PATH=$PWD/vendor/bundle/ruby/${ruby_version}/bin:$PATH
-	make compile || die "failed to run make compile"
+	emake compile || die "failed to run make compile"
 }
 
 src_install() {
@@ -77,15 +70,11 @@ src_install() {
 	# the gitlab-shell binary searches config in its base dir
 	dosym "${CONF_DIR}/config.yml" "${GITLAB_SHELL}/config.yml"
 
-	rm -Rf .git .gitignore go_build
-
 	insinto ${GITLAB_SHELL}
 	touch gitlab-shell.log
-	doins -r . || die
+	doins gitlab-shell.log || die "failed to install gitlab-shell.log"
 
-	for bin in $(ls bin) ; do
-		fperms 0755 ${GITLAB_SHELL}/bin/${bin} || die
-	done
+	emake DESTDIR="${D}" PREFIX="${GITLAB_SHELL}" install || die "failed to run make install"
 
 	fowners ${GIT_USER} ${GITLAB_SHELL}/gitlab-shell.log
 	fowners ${GIT_USER} ${GITLAB_SHELL} || die
