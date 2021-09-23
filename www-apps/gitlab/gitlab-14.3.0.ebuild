@@ -49,7 +49,7 @@ GEMS_DEPEND="
 	dev-db/postgresql:12
 	net-libs/http-parser"
 GITALY_DEPEND="
-	>=dev-lang/go-1.15
+	>=dev-lang/go-1.16
 	dev-util/cmake"
 WORKHORSE_DEPEND="
 	dev-lang/go
@@ -61,9 +61,9 @@ DEPEND="
 	${RUBY_DEPS}
 	acct-user/git[gitlab]
 	acct-group/git
-	>dev-lang/ruby-2.7.2:2.7[ssl]
-	~dev-vcs/gitlab-shell-13.19.0[relative_url=]
-	pages? ( ~www-apps/gitlab-pages-1.41.0 )
+	>=dev-lang/ruby-2.7.4:2.7[ssl]
+	~dev-vcs/gitlab-shell-13.21.0[relative_url=]
+	pages? ( ~www-apps/gitlab-pages-1.44.0 )
 	!gitaly_git? ( >=dev-vcs/git-2.31.0[pcre] dev-libs/libpcre2[jit] )
 	net-misc/curl
 	virtual/ssh
@@ -647,7 +647,7 @@ src_install() {
 	# fix QA Security Notice: world writable file(s)
 	elog "Fixing permissions of world writable files"
 	local gemsdir="${ruby_vpath}/gems"
-	local file gem wwfgems="gitlab-dangerfiles gitlab-experiment gitlab-labkit"
+	local file gem wwfgems="gitlab-labkit unleash"
 	# If we are using wildcards, the shell fills them without prefixing ${ED}. Thus
 	# we would target a file list in the real system instead of in the sandbox.
 	for gem in ${wwfgems}; do

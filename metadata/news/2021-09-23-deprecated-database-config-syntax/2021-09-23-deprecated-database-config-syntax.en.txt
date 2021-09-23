@@ -1,0 +1,14 @@
+Title: New syntax for 'config/database.yml' 
+Author: Horst Prote <prote@fmi.uni-stuttgart.de>
+Posted: 2021-09-23
+Revision: 1
+News-Item-Format: 2.0
+
+Upstream switches to a new syntax for 'config/database.yml'. Starting with the current
+14.3.0 version on can use the new syntax and with version 15.0 the support for the old
+syntax will be removed.
+
+So don't miss the new syntax when running 'etc-update' respectively 'dispatch-conf'.
+If you stay with the old syntax you'll get a WARNING.
+
+More information can be found here: https://gitlab.com/gitlab-org/gitlab/-/issues/338182
