@@ -1,6 +1,6 @@
 	ebegin "Starting GitLab web server Puma"
 	start-stop-daemon --start \\
-		--env RUBYOPT=--disable-did_you_mean \
+		--env RUBYOPT=--disable-did_you_mean \\
 		--chdir "${gitlab_home}" \\
 		--user="${gitlab_user}:${gitlab_group}" \\
 		--pidfile="${gitlab_pids}/puma.pid" \\
