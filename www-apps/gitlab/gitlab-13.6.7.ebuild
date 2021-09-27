@@ -69,7 +69,7 @@ DEPEND="
 	>=sys-apps/yarn-1.15.0
 	dev-libs/re2"
 RDEPEND="${DEPEND}
-	>=dev-db/redis-5.0
+	>=dev-db/redis-6.0
 	virtual/mta
 	kerberos? ( app-crypt/mit-krb5 )
 	favicon? ( media-gfx/graphicsmagick )"

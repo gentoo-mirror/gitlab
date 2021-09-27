@@ -73,7 +73,7 @@ DEPEND="
 	dev-libs/re2"
 RDEPEND="${DEPEND}
 	!www-servers/gitlab-workhorse
-	>=dev-db/redis-5.0
+	>=dev-db/redis-6.0
 	virtual/mta
 	kerberos? ( app-crypt/mit-krb5 )
 	favicon? ( media-gfx/graphicsmagick )"
