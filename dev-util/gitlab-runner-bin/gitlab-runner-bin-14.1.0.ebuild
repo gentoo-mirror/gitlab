@@ -14,16 +14,16 @@ SRC_HOST="gitlab-runner-downloads.s3.amazonaws.com"
 SRC_BASE="https://${SRC_HOST}/v${PV}/binaries/gitlab-runner-linux"
 SRC_URI="
 amd64? (
-	${SRC_BASE}-amd64 -> gitlab-runner-${PV}
+	${SRC_BASE}-amd64 -> gitlab-runner-amd64-${PV}
 )
 x86?   (
-	${SRC_BASE}-386   -> gitlab-runner-${PV}
+	${SRC_BASE}-386   -> gitlab-runner-x86-${PV}
 )
 arm?   (
-	${SRC_BASE}-arm   -> gitlab-runner-${PV}
+	${SRC_BASE}-arm   -> gitlab-runner-arm-${PV}
 )
 arm64? (
-	${SRC_BASE}-arm64 -> gitlab-runner-${PV}
+	${SRC_BASE}-arm64 -> gitlab-runner-arm64-${PV}
 )"
 
 LICENSE="MIT"
