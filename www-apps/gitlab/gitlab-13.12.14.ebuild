@@ -49,7 +49,7 @@ GEMS_DEPEND="
 	dev-db/postgresql:12
 	net-libs/http-parser"
 GITALY_DEPEND="
-	>=dev-lang/go-1.16
+	>=dev-lang/go-1.15
 	dev-util/cmake"
 WORKHORSE_DEPEND="
 	dev-lang/go
@@ -61,9 +61,9 @@ DEPEND="
 	${RUBY_DEPS}
 	acct-user/git[gitlab]
 	acct-group/git
-	>=dev-lang/ruby-2.7.4:2.7[ssl]
-	~dev-vcs/gitlab-shell-13.21.1[relative_url=]
-	pages? ( ~www-apps/gitlab-pages-1.44.0 )
+	>dev-lang/ruby-2.7.2:2.7[ssl]
+	~dev-vcs/gitlab-shell-13.18.1[relative_url=]
+	pages? ( ~www-apps/gitlab-pages-1.39.0 )
 	!gitaly_git? ( >=dev-vcs/git-2.31.0[pcre] dev-libs/libpcre2[jit] )
 	net-misc/curl
 	virtual/ssh
@@ -142,16 +142,10 @@ pkg_setup() {
 			${eM}.${em1}.*)		MODUS="minor"
 								elog "This is a minor upgrade from $vINST to $PV.";;
 			${eM}.[0-${em2}].*) die "You should do minor upgrades step by step.";;
-			13.12.14)			if [ "${PV}" = "14.0.0" ]; then
-									MODUS="major"
-									elog "This is a major upgrade from $vINST to $PV."
-								else
-									die "You should upgrade to 14.0.0 first."
-								fi;;
+			${eM1}.*.*)			die "You should upgrade to latest ${eM1}.x.x version"\
+									"and then to ${eM}.1.0 first.";;
 			12.10.14)			die "You should upgrade to 13.1.0 first.";;
 			12.*.*)				die "You should upgrade to 12.10.14 first.";;
-			${eM1}.*.*)			die "You should upgrade to latest ${eM1}.x.x version"\
-									"first and then to the ${eM}.0.0 version.";;
 			*)					if ver_test $vINST -lt 12.0.0 ; then
 									die "Upgrading from $vINST isn't supported. Do it manual."
 								else
@@ -617,10 +611,8 @@ src_install() {
 		-e "s|${GITLAB_SHELL}|${D}${GITLAB_SHELL}|g" \
 		config/gitlab.yml || die "failed to fake the gitlab-shell path"
 	einfo "Updating node dependencies and (re)compiling assets ..."
-	/bin/sh -c "
-		export NODE_OPTIONS='--max_old_space_size=4096'
-		${BUNDLE} exec rake yarn:install gitlab:assets:clean gitlab:assets:compile \
-		RAILS_ENV=${RAILS_ENV} NODE_ENV=${NODE_ENV}" \
+	${BUNDLE} exec rake yarn:install gitlab:assets:clean gitlab:assets:compile \
+		RAILS_ENV=${RAILS_ENV} NODE_ENV=${NODE_ENV} NODE_OPTIONS="--max_old_space_size=4096" \
 		|| die "failed to update node dependencies and (re)compile assets"
 	# Correct the gitlab-shell path we fooled lib/gitlab/shell.rb with.
 	sed -i \
