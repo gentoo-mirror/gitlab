@@ -62,8 +62,8 @@ DEPEND="
 	acct-user/git[gitlab]
 	acct-group/git
 	>dev-lang/ruby-2.7.2:2.7[ssl]
-	~dev-vcs/gitlab-shell-13.19.1[relative_url=]
-	pages? ( ~www-apps/gitlab-pages-1.42.0 )
+	~dev-vcs/gitlab-shell-13.18.1[relative_url=]
+	pages? ( ~www-apps/gitlab-pages-1.39.0 )
 	!gitaly_git? ( >=dev-vcs/git-2.31.0[pcre] dev-libs/libpcre2[jit] )
 	net-misc/curl
 	virtual/ssh
@@ -142,16 +142,10 @@ pkg_setup() {
 			${eM}.${em1}.*)		MODUS="minor"
 								elog "This is a minor upgrade from $vINST to $PV.";;
 			${eM}.[0-${em2}].*) die "You should do minor upgrades step by step.";;
-			13.12.15)			if [ "${PV}" = "14.0.0" ]; then
-									MODUS="major"
-									elog "This is a major upgrade from $vINST to $PV."
-								else
-									die "You should upgrade to 14.0.0 first."
-								fi;;
+			${eM1}.*.*)			die "You should upgrade to latest ${eM1}.x.x version"\
+									"and then to ${eM}.1.0 first.";;
 			12.10.14)			die "You should upgrade to 13.1.0 first.";;
 			12.*.*)				die "You should upgrade to 12.10.14 first.";;
-			${eM1}.*.*)			die "You should upgrade to latest ${eM1}.x.x version"\
-									"first and then to the ${eM}.0.0 version.";;
 			*)					if ver_test $vINST -lt 12.0.0 ; then
 									die "Upgrading from $vINST isn't supported. Do it manual."
 								else
@@ -647,7 +641,7 @@ src_install() {
 	# fix QA Security Notice: world writable file(s)
 	elog "Fixing permissions of world writable files"
 	local gemsdir="${ruby_vpath}/gems"
-	local file gem wwfgems="gitlab-dangerfiles gitlab-experiment gitlab-labkit"
+	local file gem wwfgems="gitlab-labkit unleash"
 	# If we are using wildcards, the shell fills them without prefixing ${ED}. Thus
 	# we would target a file list in the real system instead of in the sandbox.
 	for gem in ${wwfgems}; do
