@@ -307,7 +307,6 @@ src_prepare_gitaly() {
 }
 
 src_prepare() {
-	eapply -p0 "${FILESDIR}/${PN}-fix-checks-gentoo.patch"
 	eapply -p0 "${FILESDIR}/${PN}-fix-sendmail-param.patch"
 
 	eapply_user
