@@ -698,7 +698,7 @@ src_install() {
 			"${FILESDIR}/${PN}.target.${vSYS}" > "${T}/${PN}.target" \
 			|| die "failed to configure: ${PN}.target"
 		systemd_dounit "${T}/${PN}.target"
-		systemd_dounit "${T}/${PN}.slice.${vSYS}"
+		systemd_dounit "${FILESDIR}/${PN}.slice.${vSYS}"
 	else
 		## OpenRC init scripts ##
 		elog "Installing OpenRC init.d files"
