@@ -91,8 +91,8 @@ LOG_DIR="/var/log/${PN}"
 TMP_DIR="/var/tmp/${PN}"
 WORKHORSE="${BASE_DIR}/gitlab-workhorse"
 WORKHORSE_BIN="${WORKHORSE}/bin"
-vSYS=1 # version of SYStemd service files used by this ebuild
-vORC=1 # version of OpenRC init files used by this ebuild
+vSYS=2 # version of SYStemd service files used by this ebuild
+vORC=2 # version of OpenRC init files used by this ebuild
 
 GIT_REPOS="${GIT_HOME}/repositories"
 GITLAB_SHELL="${BASE_DIR}/gitlab-shell"
@@ -307,6 +307,7 @@ src_prepare_gitaly() {
 }
 
 src_prepare() {
+	eapply -p0 "${FILESDIR}/${PN}-fix-checks-gentoo-r1.patch"
 	eapply -p0 "${FILESDIR}/${PN}-fix-sendmail-param.patch"
 
 	eapply_user
@@ -648,7 +649,7 @@ src_install() {
 	# fix QA Security Notice: world writable file(s)
 	elog "Fixing permissions of world writable files"
 	local gemsdir="${ruby_vpath}/gems"
-	local file gem wwfgems="gitlab-labkit unleash"
+	local file gem wwfgems="gitlab-dangerfiles gitlab-labkit"
 	# If we are using wildcards, the shell fills them without prefixing ${ED}. Thus
 	# we would target a file list in the real system instead of in the sandbox.
 	for gem in ${wwfgems}; do
@@ -664,14 +665,12 @@ src_install() {
 	dosym "${LOG_DIR}" "${GITLAB}/log"
 
 	# systemd/openrc files
-	local webserver="puma" webserver_name="Puma"
-
 	use relative_url && relative_url="/gitlab" || relative_url=""
 
 	if use systemd; then
 		## Systemd files ##
 		elog "Installing systemd unit files"
-		local service services="gitaly sidekiq workhorse ${webserver}" unit unitfile
+		local service services="gitaly sidekiq workhorse puma" unit unitfile
 		use mail_room && services+=" mailroom"
 		use gitlab-config || services+=" update-config"
 		for service in ${services}; do
@@ -684,7 +683,6 @@ src_install() {
 				-e "s|@GITLAB_CONFIG@|${GITLAB_CONFIG}|g" \
 				-e "s|@TMP_DIR@|${TMP_DIR}|g" \
 				-e "s|@WORKHORSE_BIN@|${WORKHORSE_BIN}|g" \
-				-e "s|@WEBSERVER@|${webserver}|g" \
 				-e "s|@RELATIVE_URL@|${relative_url}|g" \
 				"${unitfile}" > "${T}/${unit}" || die "failed to configure: $unit"
 			systemd_dounit "${T}/${unit}"
@@ -694,17 +692,17 @@ src_install() {
 		use mail_room && optional_wants+="Wants=gitlab-mailroom.service"
 		use gitlab-config || optional_requires+="Requires=gitlab-update-config.service"
 		use gitlab-config || optional_after+="After=gitlab-update-config.service"
-		sed -e "s|@WEBSERVER@|${webserver}|g" \
-			-e "s|@OPTIONAL_REQUIRES@|${optional_requires}|" \
+		sed -e "s|@OPTIONAL_REQUIRES@|${optional_requires}|" \
 			-e "s|@OPTIONAL_AFTER@|${optional_after}|" \
 			-e "s|@OPTIONAL_WANTS@|${optional_wants}|" \
 			"${FILESDIR}/${PN}.target.${vSYS}" > "${T}/${PN}.target" \
 			|| die "failed to configure: ${PN}.target"
 		systemd_dounit "${T}/${PN}.target"
+		systemd_dounit "${T}/${PN}.slice.${vSYS}"
 	else
 		## OpenRC init scripts ##
 		elog "Installing OpenRC init.d files"
-		local service services="${PN} gitlab-gitaly" rc rcfile update_config webserver_start
+		local service services="${PN} gitlab-gitaly" rc rcfile update_config puma_start
 		local mailroom_vars='' mailroom_start='' mailroom_stop='' mailroom_status=''
 
 		rcfile="${FILESDIR}/${PN}.init.${vORC}"
@@ -712,7 +710,7 @@ src_install() {
 		# Note: We use this below to replace a matching line of the rcfile by
 		# the contents of another file whose newlines would break the outer sed.
 		# Note: Continuation characters '\' in inserted files have to be escaped!
-		webserver_start="$(sed -z 's/\n/\\n/g' ${rcfile}.${webserver}_start | head -c -2)"
+		puma_start="$(sed -z 's/\n/\\n/g' ${rcfile}.puma_start | head -c -2)"
 		if use mail_room; then
 			mailroom_vars="\n$(sed -z 's/\n/\\n/g' ${rcfile}.mailroom_vars)"
 			mailroom_start="\n$(sed -z 's/\n/\\n/g' ${rcfile}.mailroom_start)"
@@ -725,7 +723,7 @@ src_install() {
 			update_config="su -l ${GIT_USER} -c \"rsync -aHAX ${CONF_DIR}/ ${GITLAB_CONFIG}/\""
 		fi
 		use relative_url && relative_url="/gitlab" || relative_url=""
-		sed -e "s|@WEBSERVER_START@|${webserver_start}|" \
+		sed -e "s|@WEBSERVER_START@|${puma_start}|" \
 			-e "s|@MAILROOM_VARS@|${mailroom_vars}|" \
 			-e "s|@UPDATE_CONFIG@|${update_config}|" \
 			-e "s|@MAILROOM_START@|${mailroom_start}|" \
@@ -746,8 +744,6 @@ src_install() {
 				-e "s|@WORKHORSE_BIN@|${WORKHORSE_BIN}|g" \
 				-e "s|@GITLAB_GITALY@|${GITLAB_GITALY}|g" \
 				-e "s|@GITALY_CONF@|${GITALY_CONF}|g" \
-				-e "s|@WEBSERVER@|${webserver}|g" \
-				-e "s|@WEBSERVER_NAME@|${webserver_name}|g" \
 				"${rcfile}" > "${T}/${rc}" || die "failed to configure: ${rc}"
 			newinitd "${T}/${rc}" "${service}"
 		done

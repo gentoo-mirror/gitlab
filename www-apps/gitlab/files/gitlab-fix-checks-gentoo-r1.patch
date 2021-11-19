@@ -1,0 +1,11 @@
+--- lib/system_check/rake_task/app_task.rb.orig	2021-11-19 15:54:20.531610426 +0100
++++ lib/system_check/rake_task/app_task.rb	2021-11-19 15:54:31.785281604 +0100
+@@ -23,8 +23,6 @@
+           SystemCheck::App::UploadsDirectoryExistsCheck,
+           SystemCheck::App::UploadsPathPermissionCheck,
+           SystemCheck::App::UploadsPathTmpPermissionCheck,
+-          SystemCheck::App::SystemdUnitFilesOrInitScriptExistCheck,
+-          SystemCheck::App::SystemdUnitFilesOrInitScriptUpToDateCheck,
+           SystemCheck::App::ProjectsHaveNamespaceCheck,
+           SystemCheck::App::RedisVersionCheck,
+           SystemCheck::App::RubyVersionCheck,

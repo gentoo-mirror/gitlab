@@ -1,3 +1,6 @@
+# This is a quite old example OpenRC /etc/conf.d used in gitlab-pages.initd.
+# Read <gitlab-base-dir>/doc/administration/pages/source.md and
+# /opt/gitlab/${PN}/README.md on how to set up GitLab Pages.
 # /etc/conf.d/gitlab-pages
 
 # The address(es) to listen on for HTTPS requests
