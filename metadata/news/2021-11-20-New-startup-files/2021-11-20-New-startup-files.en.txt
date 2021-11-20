@@ -1,0 +1,49 @@
+Title: New Systemd and OpenRC startup files 
+Author: Horst Prote <prote@fmi.uni-stuttgart.de>
+Posted: 2021-11-20
+Revision: 1
+News-Item-Format: 2.0
+
+Upstream newly added systemd units (see the lib/support/systemd/ folder
+on https://gitlab.com/gitlab-org/gitlab-foss/-/tree/14-5-stable/ or under
+/opt/gitlab/gitlab/ after installing version 14.5.0) and I took the opportunity
+to compare and review the systemd units this ebuild carried along so far.
+
+The main changes are
+- New (and I think better) way to define the dependencies.
+  Now, when you (re)start gitlab.target it waits until all subservices are
+  completely up and ready. So don't be impatient: On my machine it lasts
+  about 2 minutes. It is gitlab-puma.service causing this delay and
+  previously gitlab.target returned immediately after the main service binary
+  of gitlab-puma.service had been executed. But even then one had to wait for
+  puma before GitLab was responsive.
+- Added a gitlab.slice unit.
+  See 'man systemd.slice' and 'man systemd.resource-control' for information
+  on slice units. You now can check the resource usage of the "gitlab.slice"
+  Control Group by executing
+    systemd-cgtop
+
+
+For the OpenRC init files I only made one little but crucial change:
+I removed "postgresql" from the "use ..." clause in the "depend()" function
+in order to harmonize the default setup for both the Systemd and the OpenRC
+case.
+
+Now this ebuild assumes that you run the Postgres server on a different
+machine. If you run it on the same machine as GitLab add the dependency
+A) Systemd case
+    systemctl edit gitlab-puma.service
+  In the editor that opens, add the following and save the file:
+    [Unit]
+    Wants=postgresql.service
+    After=postgresql.service
+
+    systemctl edit gitlab-sidekiq.service
+  In the editor that opens, add the following and save the file:
+    [Unit]
+    Wants=postgresql.service
+    After=postgresql.service
+
+B) OpenRC case
+  Add "postgresql" to the "use ..." clause in the "depend()" function
+  in /etc/init.d/gitlab (see the comment there)."

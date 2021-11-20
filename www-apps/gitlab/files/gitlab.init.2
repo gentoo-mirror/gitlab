@@ -1,0 +1,110 @@
+#!/sbin/openrc-run
+
+name="GitLab"
+description="GitLab git repository management"
+
+: ${rails_env:=@RAILS_ENV@}
+
+: ${gitlab_user:=@GIT_USER@}
+: ${gitlab_group:=@GIT_GROUP@}
+: ${gitlab_home:="@GITLAB@"}
+: ${gitlab_config:="@GITLAB@/config"}
+: ${gitlab_pids:="@GITLAB@/tmp/pids"}
+: ${gitlab_sockets:="@GITLAB@/tmp/sockets"}
+: ${gitlab_log:="@LOG_DIR@"}
+
+: ${webserver_pidfile:="${gitlab_pids}/puma.pid"}
+: ${webserver_socket:="${gitlab_sockets}/gitlab.socket"}
+
+: ${sidekiq_pidfile:="${gitlab_pids}/sidekiq.pid"}
+: ${sidekiq_log:="${gitlab_log}/sidekiq.log"}
+# We didn't find a working definition for this variable (see
+# https://gitlab.awesome-it.de/overlays/gitlab/-/issues/120)
+#: ${sidekiq_processes:="* * * * *"}
+# So we have to add this sidekiq arg directly to the service start below.
+: ${sidekiq_command:="@GITLAB@/bin/sidekiq-cluster"}
+: ${sidekiq_command_args:="-e ${rails_env}"}
+@MAILROOM_VARS@
+: ${workhorse_pidfile:="${gitlab_pids}/workhorse.pid"}
+: ${workhorse_log:="${gitlab_log}/workhorse.log"}
+: ${workhorse_socket:="${gitlab_sockets}/gitlab-workhorse.socket"}
+: ${workhorse_command:="@WORKHORSE_BIN@/gitlab-workhorse"}
+: ${workhorse_command_args="-listenUmask 0 -listenNetwork unix -listenAddr ${workhorse_socket} -authBackend http://127.0.0.1:8080@RELATIVE_URL@ -documentRoot ${gitlab_home}/public -authSocket ${webserver_socket}"}
+
+
+depend() {
+	provide gitlab
+	need redis gitaly
+	use net
+	# Add "postgresql" in use if you're running PostgreSQL on the same machine as GitLab
+}
+
+start() {
+@UPDATE_CONFIG@
+
+@WEBSERVER_START@
+
+	ebegin "Starting GitLab Sidekiq"
+	supervise-daemon ${RC_SVCNAME} --start \
+		--chdir "${gitlab_home}" \
+		--user="${gitlab_user}:${gitlab_group}" \
+		--pidfile="${sidekiq_pidfile}" \
+		-1 "${sidekiq_log}" -2 "${sidekiq_log}" \
+		${sidekiq_command} -- "*" "*" "*" "*" "*" ${sidekiq_command_args}
+	eend $?
+
+	ebegin "Starting GitLab Workhorse"
+	start-stop-daemon --start \
+		--env "PATH=/opt/gitlab/gitlab-workhorse/bin/:$PATH" \
+		--chdir "${gitlab_home}" \
+		--user="${gitlab_user}:${gitlab_group}" \
+		--pidfile="${workhorse_pidfile}" \
+		--make-pidfile \
+		--background -1 "${workhorse_log}" -2 "${workhorse_log}" \
+		--exec ${workhorse_command} -- ${workhorse_command_args}
+	eend $?
+@MAILROOM_START@}
+
+stop() {@MAILROOM_STOP@
+	ebegin "Stopping GitLab Workhorse"
+	start-stop-daemon --stop \
+		--chdir "${gitlab_home}" \
+		--user="${gitlab_user}:${gitlab_group}" \
+		--pidfile="${workhorse_pidfile}"
+	eend $?
+
+	ebegin "Stopping GitLab Sidekiq"
+	supervise-daemon ${RC_SVCNAME} --stop \
+		--chdir "${gitlab_home}" \
+		--user="${gitlab_user}:${gitlab_group}" \
+		--pidfile="${sidekiq_pidfile}"
+	eend $?
+
+	ebegin "Stopping GitLab @WEBSERVER_NAME@ servers"
+	start-stop-daemon --stop \
+		--chdir "${gitlab_home}" \
+		--user="${gitlab_user}:${gitlab_group}" \
+		--pidfile="${webserver_pidfile}"
+	eend $?
+}
+
+do_status() {
+	name="Gitlab $1"
+	msg=$(pidfile=$2 default_status 2>&1 | awk -F': ' '{print $2}')
+	pidfile=$2 default_status &>/dev/null
+	status=$?
+
+	if [[ $status -eq 0 ]] ; then
+		einfo "$name: $msg"
+	else
+		eerror "$name: $msg"
+	fi
+
+	eend $status
+}
+
+status() {@MAILROOM_STATUS@
+	do_status "Workhorse" ${workhorse_pidfile}
+	do_status "Sidekiq" ${sidekiq_pidfile}
+	do_status "@WEBSERVER_NAME@" ${webserver_pidfile}
+}
