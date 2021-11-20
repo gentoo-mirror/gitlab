@@ -824,6 +824,24 @@ pkg_postinst() {
 		elog "     You may need to add configs for the new 'gitlab' user to the"
 		elog "     pg_hba.conf and pg_ident.conf files of your database server."
 		elog
+		elog "     This ebuild assumes that you run the Postgres server on a"
+		elog "     different machine. If you run it here add the dependency"
+		if use systemd; then
+			elog "       systemctl edit gitlab-puma.service"
+			elog "     In the editor that opens, add the following and save the file:"
+			elog "       [Unit]"
+			elog "       Wants=postgresql.service"
+			elog "       After=postgresql.service"
+			elog
+			elog "       systemctl edit gitlab-sidekiq.service"
+			elog "     In the editor that opens, add the following and save the file:"
+			elog "       [Unit]"
+			elog "       Wants=postgresql.service"
+			elog "       After=postgresql.service"
+		else
+			elog "       in /etc/init.d/gitlab (see the comment there)."
+		fi
+		elog
 		elog "  2. Edit ${conf_dir}/database.yml in order to configure"
 		elog "     database settings for \"${RAILS_ENV}\" environment."
 		elog
@@ -856,6 +874,21 @@ pkg_postinst() {
 		elog "       unixsocketperm 770"
 		elog "       maxmemory 1024MB"
 		elog "       maxmemory-policy volatile-lru"
+		if use systemd; then
+			elog "     Supervise Redis with systemd: Change /etc/redis/redis.conf to"
+			elog "       daemonize no"
+			elog "       supervised systemd"
+			elog "       #pidfile /run/redis/redis.pid"
+			elog "     Make matching changes to the systemd unit file"
+			elog "     Create /etc/systemd/system/redis.service.d/10fix_type.conf"
+			elog "     and insert the following lines"
+			elog "       [Service]"
+			elog "       Type=notify"
+			elog "       PIDFile="
+			elog "     Then run"
+			elog "       systemctl daemon-reload"
+			elog "       systemctl restart redis.service"
+		fi
 		elog
 		elog "  5. Gitaly must be running for the \"emerge --config\". Execute"
 		if use systemd; then

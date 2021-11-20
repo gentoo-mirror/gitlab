@@ -35,7 +35,8 @@ description="GitLab git repository management"
 depend() {
 	provide gitlab
 	need redis gitaly
-	use net postgresql
+	use net
+	# Add "postgresql" in use if you're running PostgreSQL on the same machine as GitLab
 }
 
 start() {
