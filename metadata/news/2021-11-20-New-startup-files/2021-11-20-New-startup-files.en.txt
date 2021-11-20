@@ -11,7 +11,7 @@ to compare and review the systemd units this ebuild carried along so far.
 
 The main changes are
 - New (and I think better) way to define the dependencies.
-  Now, when yoy (re)start gitlab.target it waits until all subservices are
+  Now, when you (re)start gitlab.target it waits until all subservices are
   completely up and ready. So don't be impatient: On my machine it lasts
   about 2 minutes. It is gitlab-puma.service causing this delay and
   previously gitlab.target returned immediately after the main service binary
@@ -32,17 +32,17 @@ case.
 Now this ebuild assumes that you run the Postgres server on a different
 machine. If you run it on the same machine as GitLab add the dependency
 A) Systemd case
-    systemctl edit gitlab-puma.service"
+    systemctl edit gitlab-puma.service
   In the editor that opens, add the following and save the file:
-    [Unit]"
-    Wants=postgresql.service"
-    After=postgresql.service"
+    [Unit]
+    Wants=postgresql.service
+    After=postgresql.service
 
-    systemctl edit gitlab-sidekiq.service"
-  In the editor that opens, add the following and save the file:"
-    [Unit]"
-    Wants=postgresql.service"
-    After=postgresql.service"
+    systemctl edit gitlab-sidekiq.service
+  In the editor that opens, add the following and save the file:
+    [Unit]
+    Wants=postgresql.service
+    After=postgresql.service
 
 B) OpenRC case
   Add "postgresql" to the "use ..." clause in the "depend()" function
