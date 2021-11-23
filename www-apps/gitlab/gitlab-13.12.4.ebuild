@@ -152,7 +152,7 @@ pkg_setup() {
 									die "Upgrading from $vINST isn't supported. Do it manual."
 								else
 									die "Do step by step upgrades to latest minor version in"\
-										"each major version until ${eM}.${em}.x is reached."
+										" each major version until ${eM}.${em}.x is reached."
 								fi;;
 		esac
 	fi
