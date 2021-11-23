@@ -151,7 +151,7 @@ pkg_setup() {
 			*)					if ver_test $vINST -lt 12.0.0 ; then
 									die "Upgrading from $vINST isn't supported. Do it manual."
 								else
-									die "Do step by step upgrades or each minor version in"\
+									die "Do step by step upgrades to latest minor version in"\
 										"each major version until ${eM}.${em}.x is reached."
 								fi;;
 		esac
