@@ -104,8 +104,6 @@ RAILS_ENV=${RAILS_ENV:-production}
 NODE_ENV=${RAILS_ENV:-production}
 BUNDLE="ruby /usr/bin/bundle"
 
-HQ=''
-# is set to 'hq' in pkg_setup() when migrating from www-apps/gitlabhq to www-apps/gitlab
 MODUS='' # [new|rebuild|patch|minor|major]
 
 pkg_setup() {
@@ -113,10 +111,11 @@ pkg_setup() {
 	vINST=$(best_version www-apps/gitlab)
 	if [ -z "$vINST" ]; then
 		vINST=$(best_version www-apps/gitlabhq)
-		[ -n "$vINST" ] && HQ="yes"
+		[ -n "$vINST" ] && die "The migration from a www-apps/gitlabhq installation to "\
+							   ">=www-apps/gitlab-14.0.0 isn't supported. You have to "\
+							   "upgrade to 13.12.15 first."
 	fi
 	vINST=${vINST##*-}
-	[ $HQ ] && HQ="hq-${vINST}"
 	if [ -n "$vINST" ] && ver_test "$PV" -lt "$vINST"; then
 		# do downgrades on explicit user request only
 		ewarn "You are going to downgrade from $vINST to $PV."
@@ -167,7 +166,6 @@ pkg_setup() {
 		elog "Checking for background migrations ..."
 		local bm gitlab_dir rails_cmd="'puts Gitlab::BackgroundMigration.remaining'"
 		gitlab_dir="${BASE_DIR}/${PN}"
-		[ $HQ ] && gitlab_dir="${BASE_DIR}/gitlab${HQ}"
 		bm=$(su -l ${GIT_USER} -s /bin/sh -c "
 			export RUBYOPT=--disable-did_you_mean LANG=en_US.UTF-8 LC_ALL=en_US.UTF-8
 			cd ${gitlab_dir}
@@ -185,33 +183,7 @@ pkg_setup() {
 		fi
 	fi
 
-	# this needs root privilege to read secrets.yml
-	if [ $HQ ]; then
-		local old_confdir="${BASE_DIR}/gitlab${HQ}/config"
-		elog  "Saving current configuration:"
-
-		elog  "  Copying configs from \"${old_confdir}\" to \"${T}/etc-config\" ..."
-		elog "  ... and fixing version specific paths ..."
-		local configs_to_migrate="database.yml gitlab.yml secrets.yml puma.rb"
-		local initializers_to_migrate="smtp_settings.rb"
-		local conf 
-		mkdir -p ${T}/etc-config/initializers
-		for conf in ${configs_to_migrate}; do
-			test -f ${old_confdir}/${conf} || break
-			cp -a ${old_confdir}/${conf} ${T}/etc-config
-			sed -i \
-			-e "s|gitlab${HQ}|${PN}|g" \
-			-e "s|/opt/gitlab/gitlab-gitaly-${vINST}|${GITLAB_GITALY}|g" \
-			${T}/etc-config/$conf
-		done
-		for conf in ${initializers_to_migrate}; do
-			test -f ${old_confdir}/initializers/${conf} || break
-			cp -a ${old_confdir}/initializers/${conf} ${T}/etc-config/initializers
-			sed -i \
-			-e "s|gitlab${HQ}|${PN}|g" \
-			${T}/etc-config/initializers/$conf
-		done
-	elif [ "$MODUS" = "rebuild" ] || \
+	if [ "$MODUS" = "rebuild" ] || \
 		 [ "$MODUS" = "patch" ] || [ "$MODUS" = "minor" ] || [ "$MODUS" = "major" ]; then
 		elog  "Saving current configuration"
 		cp -a ${CONF_DIR} ${T}/etc-config
@@ -291,7 +263,6 @@ src_prepare_gitaly() {
 
 	# Hack: Don't start from scratch, use the installed bundle
 	local gitaly_dir="${GITLAB_GITALY}"
-	[ $HQ ] && gitaly_dir="${gitaly_dir}-${vINST}"
 	if [ -d ${gitaly_dir}/ ]; then
 		einfo "Using parts of the installed gitlab-gitaly to save time:"
 		mkdir -p vendor/bundle
@@ -554,7 +525,6 @@ src_install() {
 	cd "${D}/${GITLAB}"
 
 	local gitlab_dir="${BASE_DIR}/${PN}"
-	[ $HQ ] && gitlab_dir="${gitlab_dir}${HQ}"
 
 	if [ -d ${gitlab_dir}/ ]; then
 		einfo "Using parts of the installed gitlab to save time:"
@@ -764,15 +734,6 @@ src_install() {
 	src_install_gitaly
 }
 
-pkg_preinst() {
-	if [ $HQ ]; then
-		if ! use gitlab-config; then
-			[ -e ${CONF_DIR} ] || mkdir ${CONF_DIR}
-			cp -r --preserve=mode,timestamps ${T}/etc-config/* ${CONF_DIR}/
-		fi
-	fi
-}
-
 pkg_postinst_gitaly() {
 	if use gitaly_git; then
 		local conf_dir="${CONF_DIR}"
@@ -886,10 +847,6 @@ pkg_postinst() {
 			SKIP_POST_DEPLOYMENT_MIGRATIONS=true \
 			${BUNDLE} exec rake db:migrate RAILS_ENV=${RAILS_ENV}" \
 				|| die "failed to migrate database."
-		if [ $HQ ]; then
-			elog
-			elog "Adopt your nginx site config to the new /opt/gitlab/gitlab/ path."
-		fi
 		elog
 		elog "Update the config in /etc/gitlab and then run"
 		if use systemd; then
@@ -974,23 +931,6 @@ pkg_config_do_upgrade() {
 	pkg_config_do_upgrade_clear_redis_cache
 
 	pkg_config_do_upgrade_configure_git
-
-	if [ $HQ ]; then
-		einfo "For the www-apps/gitlabhq -> www-apps/gitlab migration you have to"
-		einfo "stop your running Gitlab instance during data migration: "
-		einfo "\$ systemctl stop gitlabhq.target"
-		einfo "or"
-		einfo "\$ rc-service gitlabhq stop"
-
-		einfon "Proceed? [Y|n] "
-		read -r proceed
-		if [[ !( $proceed =~ ^(y|Y|)$ ) ]]; then
-			einfo "Aborting www-apps/gitlabhq -> www-apps/gitlab migration."
-			return 1
-		fi
-
-		pkg_config_do_upgrade_migrate_data
-	fi
 }
 
 pkg_config_initialize() {
@@ -1053,14 +993,6 @@ pkg_config() {
 		else
 			einfo "\$ rc-service ${PN} start"
 		fi
-	elif [ $HQ ]; then
-		einfo
-		einfo "You should now disable the old gitlabhq service:"
-		if use systemd; then
-			 einfo "\$ systemctl disable gitlabhq.target"
-		else
-			 einfo "\$ rc-update delete gitlabhq"
-		fi
 	fi
 
 	einfo
@@ -1089,19 +1021,5 @@ pkg_config() {
 			einfo "\t }"
 			einfo "under the main gitlab location block"
 		fi
-	fi
-
-	if [ $HQ ]; then
-		einfo
-		einfo "With the www-apps/gitlabhq -> www-apps/gitlab migration finished"
-		einfo "the following packages become obsolete:"
-		einfo "  app-eselect/eselect-gitlab-gitaly"
-		einfo "  app-eselect/eselect-gitlabhq"
-		einfo "  dev-vcs/gitlab-gitaly"
-		einfo "  www-apps/gitlabhq"
-		einfo "After unmerging these clean up the leftovers:"
-		einfo "  /opt/gitlab/gitlabhq-13.8.2/"
-		einfo "  /var/tmp/gitlabhq-13.8.2/"
-		einfo "  /var/log/gitlabhq-13.8.2/"
 	fi
 }
