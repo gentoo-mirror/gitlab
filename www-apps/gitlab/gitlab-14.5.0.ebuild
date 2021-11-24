@@ -37,6 +37,7 @@ WITHOUTflags="kerberos"
 #   yajl-ruby			dev-libs/yajl
 #   execjs				net-libs/nodejs, or any other JS runtime
 #   pg					dev-db/postgresql-base
+#   gitlab-markup		dev-python/docutils
 #
 GEMS_DEPEND="
 	app-crypt/gpgme
@@ -47,7 +48,8 @@ GEMS_DEPEND="
 	dev-libs/yajl
 	>=net-libs/nodejs-14
 	dev-db/postgresql:12
-	net-libs/http-parser"
+	net-libs/http-parser
+	dev-python/docutils"
 GITALY_DEPEND="
 	>=dev-lang/go-1.16
 	dev-util/cmake"
@@ -280,6 +282,7 @@ src_prepare_gitaly() {
 src_prepare() {
 	eapply -p0 "${FILESDIR}/${PN}-fix-checks-gentoo-r1.patch"
 	eapply -p0 "${FILESDIR}/${PN}-fix-sendmail-param.patch"
+	eapply -p0 "${FILESDIR}/${PN}-pod-markup.patch"
 
 	eapply_user
 	# Update paths for gitlab
