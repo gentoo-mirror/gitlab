@@ -24,9 +24,11 @@ RESTRICT="network-sandbox splitdebug strip"
 SLOT="0"
 KEYWORDS="~amd64 ~x86"
 IUSE="favicon +gitaly_git -gitlab-config kerberos -mail_room -pages -relative_url systemd"
-# USE flags that affect the --without option below
-# Current (2021-06-23) groups in Gemfile:
-# puma metrics development test danger coverage omnibus ed25519 kerberos
+# Current (2021-11-24) groups in gitlab Gemfile:
+# puma development test danger coverage omnibus ed25519 kerberos
+# Current (2021-11-24) groups in gitlab-gitaly Gemfile:
+# development test omnibus
+# USE flags that affect the "--local without" option below
 WITHOUTflags="kerberos"
 
 ## Gems dependencies:
@@ -257,7 +259,7 @@ src_prepare_gitaly() {
 	sed -s 's|^BUNDLE_FLAGS|#BUNDLE_FLAGS|' -i Makefile || die
 
 	cd ruby
-	local without="development test"
+	local without="development test omnibus"
 	${BUNDLE} config set --local path 'vendor/bundle'
 	${BUNDLE} config set --local deployment 'true'
 	${BUNDLE} config set --local without "${without}"
@@ -551,7 +553,7 @@ src_install() {
 		cp -a ${gitlab_dir}/public/assets/ public/
 	fi
 
-	local without="development test coverage omnibus"
+	local without="development test omnibus"
 	local flag; for flag in ${WITHOUTflags}; do
 		without+="$(use $flag || echo ' '$flag)"
 	done
