@@ -559,9 +559,8 @@ src_install() {
 	done
 	${BUNDLE} config set --local deployment 'true'
 	${BUNDLE} config set --local without "${without}"
-	${BUNDLE} config set --local build.gpgm --use-system-libraries
+	${BUNDLE} config set --local build.gpgme --use-system-libraries
 	${BUNDLE} config set --local build.nokogiri --use-system-libraries
-	${BUNDLE} config set --local build.yajl-ruby --use-system-libraries
 	${BUNDLE} config set --local build.ruby-magic --use-system-libraries
 
 	#einfo "Current ruby version is \"$(ruby --version)\""
