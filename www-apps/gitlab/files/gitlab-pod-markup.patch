@@ -1,0 +1,11 @@
+--- lib/gitlab/markup_helper.rb.orig    2021-11-24 11:07:46.313524077 +0100
++++ lib/gitlab/markup_helper.rb 2021-11-24 11:10:20.426335443 +0100
+@@ -6,7 +6,7 @@
+ 
+     MARKDOWN_EXTENSIONS = %w[mdown mkd mkdn md markdown rmd].freeze
+     ASCIIDOC_EXTENSIONS = %w[adoc ad asciidoc].freeze
+-    OTHER_EXTENSIONS = %w[textile rdoc org creole wiki mediawiki rst].freeze
++    OTHER_EXTENSIONS = %w[textile rdoc org creole wiki mediawiki rst pod].freeze
+     EXTENSIONS = MARKDOWN_EXTENSIONS + ASCIIDOC_EXTENSIONS + OTHER_EXTENSIONS
+     PLAIN_FILENAMES = %w[readme index].freeze
+

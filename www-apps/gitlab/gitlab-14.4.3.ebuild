@@ -24,11 +24,9 @@ RESTRICT="network-sandbox splitdebug strip"
 SLOT="0"
 KEYWORDS="~amd64 ~x86"
 IUSE="favicon +gitaly_git -gitlab-config kerberos -mail_room -pages -relative_url systemd"
-# Current (2021-11-24) groups in gitlab Gemfile:
-# puma development test danger coverage omnibus ed25519 kerberos
-# Current (2021-11-24) groups in gitlab-gitaly Gemfile:
-# development test omnibus
-# USE flags that affect the "--local without" option below
+# USE flags that affect the --without option below
+# Current (2021-06-23) groups in Gemfile:
+# puma metrics development test danger coverage omnibus ed25519 kerberos
 WITHOUTflags="kerberos"
 
 ## Gems dependencies:
@@ -39,7 +37,6 @@ WITHOUTflags="kerberos"
 #   yajl-ruby			dev-libs/yajl
 #   execjs				net-libs/nodejs, or any other JS runtime
 #   pg					dev-db/postgresql-base
-#   gitlab-markup		dev-python/docutils
 #
 GEMS_DEPEND="
 	app-crypt/gpgme
@@ -50,8 +47,7 @@ GEMS_DEPEND="
 	dev-libs/yajl
 	>=net-libs/nodejs-14
 	dev-db/postgresql:12
-	net-libs/http-parser
-	dev-python/docutils"
+	net-libs/http-parser"
 GITALY_DEPEND="
 	>=dev-lang/go-1.16
 	dev-util/cmake"
@@ -66,8 +62,8 @@ DEPEND="
 	acct-user/git[gitlab]
 	acct-group/git
 	>=dev-lang/ruby-2.7.4:2.7[ssl]
-	~dev-vcs/gitlab-shell-13.22.0[relative_url=]
-	pages? ( ~www-apps/gitlab-pages-1.48.0 )
+	~dev-vcs/gitlab-shell-13.21.1[relative_url=]
+	pages? ( ~www-apps/gitlab-pages-1.46.0 )
 	!gitaly_git? ( >=dev-vcs/git-2.33.0[pcre] dev-libs/libpcre2[jit] )
 	net-misc/curl
 	virtual/ssh
@@ -95,8 +91,8 @@ LOG_DIR="/var/log/${PN}"
 TMP_DIR="/var/tmp/${PN}"
 WORKHORSE="${BASE_DIR}/gitlab-workhorse"
 WORKHORSE_BIN="${WORKHORSE}/bin"
-vSYS=2 # version of SYStemd service files used by this ebuild
-vORC=2 # version of OpenRC init files used by this ebuild
+vSYS=1 # version of SYStemd service files used by this ebuild
+vORC=1 # version of OpenRC init files used by this ebuild
 
 GIT_REPOS="${GIT_HOME}/repositories"
 GITLAB_SHELL="${BASE_DIR}/gitlab-shell"
@@ -259,7 +255,7 @@ src_prepare_gitaly() {
 	sed -s 's|^BUNDLE_FLAGS|#BUNDLE_FLAGS|' -i Makefile || die
 
 	cd ruby
-	local without="development test omnibus"
+	local without="development test"
 	${BUNDLE} config set --local path 'vendor/bundle'
 	${BUNDLE} config set --local deployment 'true'
 	${BUNDLE} config set --local without "${without}"
@@ -282,9 +278,8 @@ src_prepare_gitaly() {
 }
 
 src_prepare() {
-	eapply -p0 "${FILESDIR}/${PN}-fix-checks-gentoo-r1.patch"
+	eapply -p0 "${FILESDIR}/${PN}-fix-checks-gentoo.patch"
 	eapply -p0 "${FILESDIR}/${PN}-fix-sendmail-param.patch"
-	eapply -p0 "${FILESDIR}/${PN}-pod-markup.patch"
 
 	eapply_user
 	# Update paths for gitlab
@@ -553,7 +548,7 @@ src_install() {
 		cp -a ${gitlab_dir}/public/assets/ public/
 	fi
 
-	local without="development test omnibus"
+	local without="development test coverage omnibus"
 	local flag; for flag in ${WITHOUTflags}; do
 		without+="$(use $flag || echo ' '$flag)"
 	done
@@ -624,7 +619,7 @@ src_install() {
 	# fix QA Security Notice: world writable file(s)
 	elog "Fixing permissions of world writable files"
 	local gemsdir="${ruby_vpath}/gems"
-	local file gem wwfgems="gitlab-dangerfiles gitlab-labkit"
+	local file gem wwfgems="gitlab-labkit unleash"
 	# If we are using wildcards, the shell fills them without prefixing ${ED}. Thus
 	# we would target a file list in the real system instead of in the sandbox.
 	for gem in ${wwfgems}; do
@@ -640,12 +635,14 @@ src_install() {
 	dosym "${LOG_DIR}" "${GITLAB}/log"
 
 	# systemd/openrc files
+	local webserver="puma" webserver_name="Puma"
+
 	use relative_url && relative_url="/gitlab" || relative_url=""
 
 	if use systemd; then
 		## Systemd files ##
 		elog "Installing systemd unit files"
-		local service services="gitaly sidekiq workhorse puma" unit unitfile
+		local service services="gitaly sidekiq workhorse ${webserver}" unit unitfile
 		use mail_room && services+=" mailroom"
 		use gitlab-config || services+=" update-config"
 		for service in ${services}; do
@@ -658,6 +655,7 @@ src_install() {
 				-e "s|@GITLAB_CONFIG@|${GITLAB_CONFIG}|g" \
 				-e "s|@TMP_DIR@|${TMP_DIR}|g" \
 				-e "s|@WORKHORSE_BIN@|${WORKHORSE_BIN}|g" \
+				-e "s|@WEBSERVER@|${webserver}|g" \
 				-e "s|@RELATIVE_URL@|${relative_url}|g" \
 				"${unitfile}" > "${T}/${unit}" || die "failed to configure: $unit"
 			systemd_dounit "${T}/${unit}"
@@ -667,17 +665,17 @@ src_install() {
 		use mail_room && optional_wants+="Wants=gitlab-mailroom.service"
 		use gitlab-config || optional_requires+="Requires=gitlab-update-config.service"
 		use gitlab-config || optional_after+="After=gitlab-update-config.service"
-		sed -e "s|@OPTIONAL_REQUIRES@|${optional_requires}|" \
+		sed -e "s|@WEBSERVER@|${webserver}|g" \
+			-e "s|@OPTIONAL_REQUIRES@|${optional_requires}|" \
 			-e "s|@OPTIONAL_AFTER@|${optional_after}|" \
 			-e "s|@OPTIONAL_WANTS@|${optional_wants}|" \
 			"${FILESDIR}/${PN}.target.${vSYS}" > "${T}/${PN}.target" \
 			|| die "failed to configure: ${PN}.target"
 		systemd_dounit "${T}/${PN}.target"
-		systemd_dounit "${FILESDIR}/${PN}.slice.${vSYS}"
 	else
 		## OpenRC init scripts ##
 		elog "Installing OpenRC init.d files"
-		local service services="${PN} gitlab-gitaly" rc rcfile update_config puma_start
+		local service services="${PN} gitlab-gitaly" rc rcfile update_config webserver_start
 		local mailroom_vars='' mailroom_start='' mailroom_stop='' mailroom_status=''
 
 		rcfile="${FILESDIR}/${PN}.init.${vORC}"
@@ -685,7 +683,7 @@ src_install() {
 		# Note: We use this below to replace a matching line of the rcfile by
 		# the contents of another file whose newlines would break the outer sed.
 		# Note: Continuation characters '\' in inserted files have to be escaped!
-		puma_start="$(sed -z 's/\n/\\n/g' ${rcfile}.puma_start | head -c -2)"
+		webserver_start="$(sed -z 's/\n/\\n/g' ${rcfile}.${webserver}_start | head -c -2)"
 		if use mail_room; then
 			mailroom_vars="\n$(sed -z 's/\n/\\n/g' ${rcfile}.mailroom_vars)"
 			mailroom_start="\n$(sed -z 's/\n/\\n/g' ${rcfile}.mailroom_start)"
@@ -698,7 +696,7 @@ src_install() {
 			update_config="su -l ${GIT_USER} -c \"rsync -aHAX ${CONF_DIR}/ ${GITLAB_CONFIG}/\""
 		fi
 		use relative_url && relative_url="/gitlab" || relative_url=""
-		sed -e "s|@WEBSERVER_START@|${puma_start}|" \
+		sed -e "s|@WEBSERVER_START@|${webserver_start}|" \
 			-e "s|@MAILROOM_VARS@|${mailroom_vars}|" \
 			-e "s|@UPDATE_CONFIG@|${update_config}|" \
 			-e "s|@MAILROOM_START@|${mailroom_start}|" \
@@ -719,6 +717,8 @@ src_install() {
 				-e "s|@WORKHORSE_BIN@|${WORKHORSE_BIN}|g" \
 				-e "s|@GITLAB_GITALY@|${GITLAB_GITALY}|g" \
 				-e "s|@GITALY_CONF@|${GITALY_CONF}|g" \
+				-e "s|@WEBSERVER@|${webserver}|g" \
+				-e "s|@WEBSERVER_NAME@|${webserver_name}|g" \
 				"${rcfile}" > "${T}/${rc}" || die "failed to configure: ${rc}"
 			newinitd "${T}/${rc}" "${service}"
 		done
@@ -790,24 +790,6 @@ pkg_postinst() {
 		elog "     You may need to add configs for the new 'gitlab' user to the"
 		elog "     pg_hba.conf and pg_ident.conf files of your database server."
 		elog
-		elog "     This ebuild assumes that you run the Postgres server on a"
-		elog "     different machine. If you run it here add the dependency"
-		if use systemd; then
-			elog "       systemctl edit gitlab-puma.service"
-			elog "     In the editor that opens, add the following and save the file:"
-			elog "       [Unit]"
-			elog "       Wants=postgresql.service"
-			elog "       After=postgresql.service"
-			elog
-			elog "       systemctl edit gitlab-sidekiq.service"
-			elog "     In the editor that opens, add the following and save the file:"
-			elog "       [Unit]"
-			elog "       Wants=postgresql.service"
-			elog "       After=postgresql.service"
-		else
-			elog "       in /etc/init.d/gitlab (see the comment there)."
-		fi
-		elog
 		elog "  2. Edit ${conf_dir}/database.yml in order to configure"
 		elog "     database settings for \"${RAILS_ENV}\" environment."
 		elog
@@ -840,21 +822,6 @@ pkg_postinst() {
 		elog "       unixsocketperm 770"
 		elog "       maxmemory 1024MB"
 		elog "       maxmemory-policy volatile-lru"
-		if use systemd; then
-			elog "     Supervise Redis with systemd: Change /etc/redis/redis.conf to"
-			elog "       daemonize no"
-			elog "       supervised systemd"
-			elog "       #pidfile /run/redis/redis.pid"
-			elog "     Make matching changes to the systemd unit file"
-			elog "     Create /etc/systemd/system/redis.service.d/10fix_type.conf"
-			elog "     and insert the following lines"
-			elog "       [Service]"
-			elog "       Type=notify"
-			elog "       PIDFile="
-			elog "     Then run"
-			elog "       systemctl daemon-reload"
-			elog "       systemctl restart redis.service"
-		fi
 		elog
 		elog "  5. Gitaly must be running for the \"emerge --config\". Execute"
 		if use systemd; then
