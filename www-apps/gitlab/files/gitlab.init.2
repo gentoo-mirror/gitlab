@@ -80,7 +80,7 @@ stop() {@MAILROOM_STOP@
 		--pidfile="${sidekiq_pidfile}"
 	eend $?
 
-	ebegin "Stopping GitLab @WEBSERVER_NAME@ servers"
+	ebegin "Stopping GitLab Puma servers"
 	start-stop-daemon --stop \
 		--chdir "${gitlab_home}" \
 		--user="${gitlab_user}:${gitlab_group}" \
@@ -106,5 +106,5 @@ do_status() {
 status() {@MAILROOM_STATUS@
 	do_status "Workhorse" ${workhorse_pidfile}
 	do_status "Sidekiq" ${sidekiq_pidfile}
-	do_status "@WEBSERVER_NAME@" ${webserver_pidfile}
+	do_status "Puma" ${webserver_pidfile}
 }
