@@ -389,7 +389,7 @@ src_compile() {
 	cd ${WORKDIR}/gitlab-gitaly-${PV}
 	export RUBYOPT=--disable-did_you_mean
 	einfo "Compiling source in $PWD ..."
-	emake || die "Compiling gitaly failed"
+	emake WITH_BUNDLED_GIT=$(usex gitaly_git) || die "Compiling gitaly failed"
 
 	# Hack: Reusing gitaly's bundler cache for gitlab
 	local rubyV=$(ls ruby/vendor/bundle/ruby)
@@ -438,6 +438,10 @@ src_install_gitaly() {
 	doexe ruby/vendor/bundle/ruby/${rubyV}/bin/*
 
 	if use gitaly_git ; then
+		sed -i \
+			-e "s|\${GIT_PREFIX}/bin/git|\${GIT_DEFAULT_PREFIX}/bin/git|" \
+			-e "$(sed -n '/\${Q}touch \$@/ =' foo | tail -n 1)"' s|\${Q}touch \$@||' \
+			Makefile || die "failed to fix gitaly Makefile"
 		emake git DESTDIR="${D}" GIT_PREFIX="${GITLAB_GITALY}"
 	fi
 
