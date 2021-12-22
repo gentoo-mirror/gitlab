@@ -1,0 +1,24 @@
+Title: New prometheus USE flag 
+Author: Horst Prote <prote@fmi.uni-stuttgart.de>
+Posted: 2021-12-22
+Revision: 1
+News-Item-Format: 2.0
+
+In /opt/gitlab/gitlab/doc/administration/monitoring/prometheus/index.md one reads
+  Prometheus is a powerful time-series monitoring service, providing a flexible
+  platform for monitoring GitLab and other software products.
+
+  GitLab provides out-of-the-box monitoring with Prometheus, providing easy
+  access to high quality time-series monitoring of GitLab services.
+
+  Prometheus and the various exporters listed in this page are bundled in the
+  Omnibus GitLab package. [...] For installations from source you must install
+  them yourself.
+
+With the latest changes in version 14.6.0 the startup of the sidekiq service
+fails if there is no Prometheus metrics server running. One either has to
+- install, setup and run a Prometheus server (I think so; haven't tried it)
+- or disable "sidekiq_exporter:" in the gitlab.yml file.
+
+So I added the new prometheus USE flag, which is off by default and then
+disables "sidekiq_exporter:", "web_exporter:" and "prometheus:" in gitlab.yml.
