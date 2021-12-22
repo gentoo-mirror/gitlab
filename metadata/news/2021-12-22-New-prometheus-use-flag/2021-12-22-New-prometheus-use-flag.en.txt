@@ -16,7 +16,7 @@ In /opt/gitlab/gitlab/doc/administration/monitoring/prometheus/index.md one read
   them yourself.
 
 With the latest changes in version 14.6.0 the startup of the sidekiq service
-fails there is no Prometheus metrics server running. One either has to
+fails if there is no Prometheus metrics server running. One either has to
 - install, setup and run a Prometheus server (I think so; haven't tried it)
 - or disable "sidekiq_exporter:" in the gitlab.yml file.
 
