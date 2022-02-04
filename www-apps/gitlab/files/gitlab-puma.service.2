@@ -16,6 +16,7 @@ User=git
 WorkingDirectory=@GITLAB@
 Environment=RAILS_ENV=production
 Environment="RUBYOPT=--disable-did_you_mean"
+Environment=prometheus_multiproc_dir=
 ExecStart=@GITLAB@/bin/bundle exec puma -C @GITLAB_CONFIG@/puma.rb -e ${RAILS_ENV} --pidfile @TMP_DIR@/pids/puma.pid
 ExecReload=/usr/bin/kill -USR2 $MAINPID
 PIDFile=@TMP_DIR@/pids/puma.pid
