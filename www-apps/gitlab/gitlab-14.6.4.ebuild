@@ -23,13 +23,13 @@ LICENSE="MIT"
 RESTRICT="network-sandbox splitdebug strip"
 SLOT="0"
 KEYWORDS="~amd64 ~x86"
-IUSE="favicon +gitaly_git -gitlab-config kerberos -mail_room -pages +puma -unicorn systemd"
-REQUIRED_USE="
-	^^ ( puma unicorn )"
-# USE flags that affect the --without option below
-# Current (2020-12-10) groups in Gemfile:
-# unicorn puma metrics development test coverage omnibus ed25519 kerberos
-WITHOUTflags="kerberos puma unicorn"
+IUSE="favicon +gitaly_git -gitlab-config kerberos -mail_room -pages -prometheus -relative_url systemd"
+# Current (2021-11-24) groups in gitlab Gemfile:
+# puma development test danger coverage omnibus ed25519 kerberos
+# Current (2021-11-24) groups in gitlab-gitaly Gemfile:
+# development test omnibus
+# USE flags that affect the "--local without" option below
+WITHOUTflags="kerberos"
 
 ## Gems dependencies:
 #   gpgme				app-crypt/gpgme
@@ -39,6 +39,7 @@ WITHOUTflags="kerberos puma unicorn"
 #   yajl-ruby			dev-libs/yajl
 #   execjs				net-libs/nodejs, or any other JS runtime
 #   pg					dev-db/postgresql-base
+#   gitlab-markup		dev-python/docutils
 #
 GEMS_DEPEND="
 	app-crypt/gpgme
@@ -49,9 +50,10 @@ GEMS_DEPEND="
 	dev-libs/yajl
 	>=net-libs/nodejs-14
 	dev-db/postgresql:12
-	net-libs/http-parser"
+	net-libs/http-parser
+	dev-python/docutils"
 GITALY_DEPEND="
-	>=dev-lang/go-1.13.9
+	>=dev-lang/go-1.16
 	dev-util/cmake"
 WORKHORSE_DEPEND="
 	dev-lang/go
@@ -63,10 +65,10 @@ DEPEND="
 	${RUBY_DEPS}
 	acct-user/git[gitlab]
 	acct-group/git
-	>dev-lang/ruby-2.7.2:2.7[ssl]
-	~dev-vcs/gitlab-shell-13.17.0
-	pages? ( ~www-apps/gitlab-pages-1.38.0 )
-	!gitaly_git? ( >=dev-vcs/git-2.31.0[pcre] dev-libs/libpcre2[jit] )
+	>=dev-lang/ruby-2.7.4:2.7[ssl]
+	~dev-vcs/gitlab-shell-13.22.1[relative_url=]
+	pages? ( ~www-apps/gitlab-pages-1.49.0 )
+	!gitaly_git? ( >=dev-vcs/git-2.33.0[pcre] dev-libs/libpcre2[jit] )
 	net-misc/curl
 	virtual/ssh
 	>=sys-apps/yarn-1.15.0
@@ -93,8 +95,8 @@ LOG_DIR="/var/log/${PN}"
 TMP_DIR="/var/tmp/${PN}"
 WORKHORSE="${BASE_DIR}/gitlab-workhorse"
 WORKHORSE_BIN="${WORKHORSE}/bin"
-vSYS=1 # version of SYStemd service files used by this ebuild
-vORC=1 # version of OpenRC init files used by this ebuild
+vSYS=2 # version of SYStemd service files used by this ebuild
+vORC=2 # version of OpenRC init files used by this ebuild
 
 GIT_REPOS="${GIT_HOME}/repositories"
 GITLAB_SHELL="${BASE_DIR}/gitlab-shell"
@@ -106,8 +108,6 @@ RAILS_ENV=${RAILS_ENV:-production}
 NODE_ENV=${RAILS_ENV:-production}
 BUNDLE="ruby /usr/bin/bundle"
 
-HQ=''
-# is set to 'hq' in pkg_setup() when migrating from www-apps/gitlabhq to www-apps/gitlab
 MODUS='' # [new|rebuild|patch|minor|major]
 
 pkg_setup() {
@@ -115,10 +115,11 @@ pkg_setup() {
 	vINST=$(best_version www-apps/gitlab)
 	if [ -z "$vINST" ]; then
 		vINST=$(best_version www-apps/gitlabhq)
-		[ -n "$vINST" ] && HQ="yes"
+		[ -n "$vINST" ] && die "The migration from a www-apps/gitlabhq installation to "\
+							   ">=www-apps/gitlab-14.0.0 isn't supported. You have to "\
+							   "upgrade to 13.12.15 first."
 	fi
 	vINST=${vINST##*-}
-	[ $HQ ] && HQ="hq-${vINST}"
 	if [ -n "$vINST" ] && ver_test "$PV" -lt "$vINST"; then
 		# do downgrades on explicit user request only
 		ewarn "You are going to downgrade from $vINST to $PV."
@@ -144,10 +145,16 @@ pkg_setup() {
 			${eM}.${em1}.*)		MODUS="minor"
 								elog "This is a minor upgrade from $vINST to $PV.";;
 			${eM}.[0-${em2}].*) die "You should do minor upgrades step by step.";;
-			${eM1}.*.*)			die "You should upgrade to latest ${eM1}.x.x version"\
-									"and then to ${eM}.1.0 first.";;
+			13.12.15)			if [ "${PV}" = "14.0.0" ]; then
+									MODUS="major"
+									elog "This is a major upgrade from $vINST to $PV."
+								else
+									die "You should upgrade to 14.0.0 first."
+								fi;;
 			12.10.14)			die "You should upgrade to 13.1.0 first.";;
 			12.*.*)				die "You should upgrade to 12.10.14 first.";;
+			${eM1}.*.*)			die "You should upgrade to latest ${eM1}.x.x version"\
+									"first and then to the ${eM}.0.0 version.";;
 			*)					if ver_test $vINST -lt 12.0.0 ; then
 									die "Upgrading from $vINST isn't supported. Do it manual."
 								else
@@ -163,7 +170,6 @@ pkg_setup() {
 		elog "Checking for background migrations ..."
 		local bm gitlab_dir rails_cmd="'puts Gitlab::BackgroundMigration.remaining'"
 		gitlab_dir="${BASE_DIR}/${PN}"
-		[ $HQ ] && gitlab_dir="${BASE_DIR}/gitlab${HQ}"
 		bm=$(su -l ${GIT_USER} -s /bin/sh -c "
 			export RUBYOPT=--disable-did_you_mean LANG=en_US.UTF-8 LC_ALL=en_US.UTF-8
 			cd ${gitlab_dir}
@@ -181,35 +187,7 @@ pkg_setup() {
 		fi
 	fi
 
-	# this needs root privilege to read secrets.yml
-	if [ $HQ ]; then
-		local old_confdir="${BASE_DIR}/gitlab${HQ}/config"
-		elog  "Saving current configuration:"
-
-		elog  "  Copying configs from \"${old_confdir}\" to \"${T}/etc-config\" ..."
-		elog "  ... and fixing version specific paths ..."
-		local configs_to_migrate="database.yml gitlab.yml secrets.yml"
-		local initializers_to_migrate="smtp_settings.rb"
-		use puma    && configs_to_migrate+=" puma.rb"
-		use unicorn && configs_to_migrate+=" unicorn.rb"
-		local conf 
-		mkdir -p ${T}/etc-config/initializers
-		for conf in ${configs_to_migrate}; do
-			test -f ${old_confdir}/${conf} || break
-			cp -a ${old_confdir}/${conf} ${T}/etc-config
-			sed -i \
-			-e "s|gitlab${HQ}|${PN}|g" \
-			-e "s|/opt/gitlab/gitlab-gitaly-${vINST}|${GITLAB_GITALY}|g" \
-			${T}/etc-config/$conf
-		done
-		for conf in ${initializers_to_migrate}; do
-			test -f ${old_confdir}/initializers/${conf} || break
-			cp -a ${old_confdir}/initializers/${conf} ${T}/etc-config/initializers
-			sed -i \
-			-e "s|gitlab${HQ}|${PN}|g" \
-			${T}/etc-config/initializers/$conf
-		done
-	elif [ "$MODUS" = "rebuild" ] || \
+	if [ "$MODUS" = "rebuild" ] || \
 		 [ "$MODUS" = "patch" ] || [ "$MODUS" = "minor" ] || [ "$MODUS" = "major" ]; then
 		elog  "Saving current configuration"
 		cp -a ${CONF_DIR} ${T}/etc-config
@@ -259,10 +237,16 @@ src_prepare_gitaly() {
 		-e "s|/home/git/|${GIT_HOME}/|g" \
 		-e "s|^# \[logging\]|\[logging\]|" \
 		-e "s|^# level = .*|level = \"warn\"|" \
+		-e "s|^# internal_socket_dir = |internal_socket_dir = |" \
 		config.toml.example || die "failed to filter config.toml.example"
 	if use gitaly_git ; then
 		sed -i \
 			-e "s|bin_path = .*|bin_path = \"/opt/gitlab/gitlab-gitaly/bin/git\"|" \
+			config.toml.example || die "failed to filter config.toml.example"
+	fi
+	if use relative_url ; then
+		sed -i \
+			-e "s|^# relative_url_root = '/'|relative_url_root = '/gitlab'|" \
 			config.toml.example || die "failed to filter config.toml.example"
 	fi
 
@@ -275,7 +259,7 @@ src_prepare_gitaly() {
 	sed -s 's|^BUNDLE_FLAGS|#BUNDLE_FLAGS|' -i Makefile || die
 
 	cd ruby
-	local without="development test"
+	local without="development test omnibus"
 	${BUNDLE} config set --local path 'vendor/bundle'
 	${BUNDLE} config set --local deployment 'true'
 	${BUNDLE} config set --local without "${without}"
@@ -283,7 +267,6 @@ src_prepare_gitaly() {
 
 	# Hack: Don't start from scratch, use the installed bundle
 	local gitaly_dir="${GITLAB_GITALY}"
-	[ $HQ ] && gitaly_dir="${gitaly_dir}-${vINST}"
 	if [ -d ${gitaly_dir}/ ]; then
 		einfo "Using parts of the installed gitlab-gitaly to save time:"
 		mkdir -p vendor/bundle
@@ -299,8 +282,9 @@ src_prepare_gitaly() {
 }
 
 src_prepare() {
-	eapply -p0 "${FILESDIR}/${PN}-fix-checks-gentoo.patch"
+	eapply -p0 "${FILESDIR}/${PN}-fix-checks-gentoo-r1.patch"
 	eapply -p0 "${FILESDIR}/${PN}-fix-sendmail-param.patch"
+	eapply -p0 "${FILESDIR}/${PN}-pod-markup.patch"
 
 	eapply_user
 	# Update paths for gitlab
@@ -312,12 +296,24 @@ src_prepare() {
 		-e "s|/home/git/gitaly|${GITLAB_GITALY}|g" \
 		-e "s|/home/git|${GIT_HOME}|g" \
 		config/gitlab.yml.example || die "failed to filter gitlab.yml.example"
+	if ! use prometheus; then
+		sed -i \
+			-e '/ *sidekiq_exporter:/{n;s| *# *enabled: true|      enabled: false|}' \
+			-e '/ *web_exporter:/{n;s| *# *enabled: true|      enabled: false|}' \
+			-e '/ *prometheus:/{n;s| *# *enabled: true|    enabled: false|}' \
+		config/gitlab.yml.example || die "failed to filter gitlab.yml.example"
+	fi
 	if use gitaly_git && \
 		[ "$MODUS" != "new" ] && \
 		has_version "www-apps/gitlab[gitaly_git]"
 	then
 		sed -i \
 			-e "s|bin_path: /usr/bin/git|bin_path: /opt/gitlab/gitlab-gitaly/bin/git|" \
+			config/gitlab.yml.example || die "failed to filter gitlab.yml.example"
+	fi
+	if use relative_url; then
+		sed -i \
+			-e "s|# relative_url_root|relative_url_root|g" \
 			config/gitlab.yml.example || die "failed to filter gitlab.yml.example"
 	fi
 	cp config/resque.yml.example config/resque.yml
@@ -330,23 +326,15 @@ src_prepare() {
 
 	# remove needless files
 	rm .foreman .gitignore
-	use puma     || rm config/puma*
-	use unicorn  || rm config/unicorn.rb.example*
 
 	# Update paths for puma
-	if use puma; then
-		sed -i \
-			-e "s|/home/git/gitlab|${GITLAB}|g" \
-			config/puma.rb.example \
+	sed -i \
+		-e "s|/home/git/gitlab|${GITLAB}|g" \
+		config/puma.rb.example \
+		|| die "failed to modify puma.rb.example"
+	if use relative_url; then
+		echo "ENV['RAILS_RELATIVE_URL_ROOT'] = \"/gitlab\"" >> config/puma.rb.example \
 			|| die "failed to modify puma.rb.example"
-	fi
-
-	# Update paths for unicorn
-	if use unicorn; then
-		sed -i \
-			-e "s|/home/git/gitlab|${GITLAB}|g" \
-			config/unicorn.rb.example \
-			|| die "failed to modify unicorn.rb.example"
 	fi
 
 	# "Compiling GetText PO files" wants to read these configs
@@ -364,11 +352,11 @@ src_prepare() {
 		mkdir -p ${T}/etc-config
 		cp config/database.yml.postgresql ${T}/etc-config/database.yml
 		cp config/gitlab.yml.example ${T}/etc-config/gitlab.yml
-		if use unicorn; then
-			cp config/unicorn.rb.example ${T}/etc-config/unicorn.rb
-		fi
-		if use puma; then
-			cp config/puma.rb.example ${T}/etc-config/puma.rb
+		cp config/puma.rb.example ${T}/etc-config/puma.rb
+		if use relative_url; then
+			mkdir -p ${T}/etc-config/initializers
+			cp config/initializers/relative_url.rb.sample \
+				${T}/etc-config/initializers/relative_url.rb
 		fi
 	fi
 
@@ -408,12 +396,12 @@ src_compile() {
 	cd ${WORKDIR}/gitlab-gitaly-${PV}
 	export RUBYOPT=--disable-did_you_mean
 	einfo "Compiling source in $PWD ..."
-	emake || die "Compiling gitaly failed"
+	emake WITH_BUNDLED_GIT=$(usex gitaly_git) || die "Compiling gitaly failed"
 
+	# Hack: Reusing gitaly's bundler cache for gitlab
+	local rubyV=$(ls ruby/vendor/bundle/ruby)
+	local ruby_vpath=vendor/bundle/ruby/${rubyV}
 	if [ -d ruby/${ruby_vpath}/cache ]; then
-		# Hack: Reusing gitaly's bundler cache for gitlab
-		local rubyV=$(ls ruby/vendor/bundle/ruby)
-		local ruby_vpath=vendor/bundle/ruby/${rubyV}
 		mkdir -p ${WORKDIR}/gitlab-${PV}/${ruby_vpath}
 		mv ruby/${ruby_vpath}/cache ${WORKDIR}/gitlab-${PV}/${ruby_vpath}
 	fi
@@ -430,6 +418,17 @@ src_install_gitaly() {
 	# Clean up old gems (this is required due to our Hack above)
 	sh -c "cd ruby; ${BUNDLE} clean"
 
+	local rubyV=$(ls ruby/vendor/bundle/ruby)
+	local ruby_vpath=vendor/bundle/ruby/${rubyV}
+
+	# Hack: Copy did_you_mean Gem from system
+	local vDYM=$(best_version dev-ruby/did_you_mean)
+	vDYM=${vDYM#*/}; vDYM=${vDYM%-r*}; vDYM=${vDYM##*-}
+	local pDYM="/usr/lib64/ruby/gems/${rubyV}/gems/did_you_mean-${vDYM}"
+	local pSPECS="/usr/lib64/ruby/gems/${rubyV}/specifications"
+	cp -a ${pDYM} ruby/${ruby_vpath}/gems
+	cp ${pSPECS}/did_you_mean-${vDYM}.gemspec ruby/${ruby_vpath}/specifications
+
 	# Will install binaries to ${GITLAB_GITALY}/bin. Don't specify the "bin"!
 	into "${GITLAB_GITALY}"
 	dobin _build/bin/*
@@ -438,7 +437,6 @@ src_install_gitaly() {
 	doins -r "ruby"
 
 	# Make binaries in ruby/ executable
-	local rubyV=$(ls ruby/vendor/bundle/ruby)
 	exeinto "${GITLAB_GITALY}/ruby/git-hooks/"
 	doexe ruby/git-hooks/gitlab-shell-hook
 	exeinto "${GITLAB_GITALY}/ruby/bin"
@@ -447,6 +445,10 @@ src_install_gitaly() {
 	doexe ruby/vendor/bundle/ruby/${rubyV}/bin/*
 
 	if use gitaly_git ; then
+		sed -i \
+			-e "s|\${GIT_PREFIX}/bin/git|\${GIT_DEFAULT_PREFIX}/bin/git|" \
+			-e '/${Q}env.*${GIT_BUILD_OPTIONS} install/{n;s|\${Q}touch \$@||}' \
+			Makefile || die "failed to fix gitaly Makefile"
 		emake git DESTDIR="${D}" GIT_PREFIX="${GITLAB_GITALY}"
 	fi
 
@@ -539,7 +541,6 @@ src_install() {
 	cd "${D}/${GITLAB}"
 
 	local gitlab_dir="${BASE_DIR}/${PN}"
-	[ $HQ ] && gitlab_dir="${gitlab_dir}${HQ}"
 
 	if [ -d ${gitlab_dir}/ ]; then
 		einfo "Using parts of the installed gitlab to save time:"
@@ -563,27 +564,35 @@ src_install() {
 		cp -a ${gitlab_dir}/public/assets/ public/
 	fi
 
-	local without="development test coverage omnibus"
+	local without="development test omnibus"
 	local flag; for flag in ${WITHOUTflags}; do
 		without+="$(use $flag || echo ' '$flag)"
 	done
 	${BUNDLE} config set --local deployment 'true'
 	${BUNDLE} config set --local without "${without}"
-	${BUNDLE} config set --local build.gpgm --use-system-libraries
+	${BUNDLE} config set --local build.gpgme --use-system-libraries
 	${BUNDLE} config set --local build.nokogiri --use-system-libraries
-	${BUNDLE} config set --local build.yajl-ruby --use-system-libraries
 	${BUNDLE} config set --local build.ruby-magic --use-system-libraries
 
 	#einfo "Current ruby version is \"$(ruby --version)\""
 
 	einfo "Running bundle install ..."
-	${BUNDLE} install --jobs=$(nproc) || die "bundle install failed"
+	# Cleanup args to extract only JOBS.
+	# Because bundler does not know anything else.
+	local jobs=1
+	grep -Eo '(\-j|\-\-jobs)(=?|[[:space:]]*)[[:digit:]]+' <<< "${MAKEOPTS}" > /dev/null
+	if [[ $? -eq 0 ]] ; then
+		jobs=$(grep -Eo '(\-j|\-\-jobs)(=?|[[:space:]]*)[[:digit:]]+' <<< "${MAKEOPTS}" \
+			| tail -n1 | grep -Eo '[[:digit:]]+')
+	fi
+	${BUNDLE} install --jobs=${jobs} || die "bundle install failed"
 
 	## Install GetText PO files, yarn, assets via bundler ##
 
 	dodir ${GITLAB_SHELL}
 	local vGS=$(best_version dev-vcs/gitlab-shell)
-	echo ${vGS##*-} > ${D}/${GITLAB_SHELL}/VERSION
+	vGS=$(echo ${vGS#dev-vcs/gitlab-shell-})
+	echo ${vGS%-*} > ${D}/${GITLAB_SHELL}/VERSION
 	# Let lib/gitlab/shell.rb set the .gitlab_shell_secret symlink
 	# inside the sandbox. The real symlink will be set in pkg_config().
 	# Note: The gitlab-shell path "${D}/${GITLAB_SHELL}" is set
@@ -593,15 +602,23 @@ src_install() {
 		-e "s|${GITLAB_SHELL}|${D}${GITLAB_SHELL}|g" \
 		config/gitlab.yml || die "failed to fake the gitlab-shell path"
 	einfo "Updating node dependencies and (re)compiling assets ..."
-	${BUNDLE} exec rake yarn:install gitlab:assets:clean gitlab:assets:compile \
-		RAILS_ENV=${RAILS_ENV} NODE_ENV=${NODE_ENV} NODE_OPTIONS="--max_old_space_size=4096" \
+	/bin/sh -c "
+		export NODE_OPTIONS='--max_old_space_size=4096'
+		${BUNDLE} exec rake yarn:install gitlab:assets:clean gitlab:assets:compile \
+		RAILS_ENV=${RAILS_ENV} NODE_ENV=${NODE_ENV}" \
 		|| die "failed to update node dependencies and (re)compile assets"
 	# Correct the gitlab-shell path we fooled lib/gitlab/shell.rb with.
 	sed -i \
 		-e "s|${D}${GITLAB_SHELL}|${GITLAB_SHELL}|g" \
 		${D}/${GITLAB_CONFIG}/gitlab.yml || die "failed to change back gitlab-shell path"
-	# Remove the ${GITLAB_SHELL} we fooled lib/gitlab/shell.rb with.
-	rm -rf ${D}/${GITLAB_SHELL}
+	if [ "$MODUS" != "new" ]; then
+		# Use the .gitlab_shell_secret file of the installed GitLab
+		cp -f ${gitlab_dir}/.gitlab_shell_secret ${D}${GITLAB}/.gitlab_shell_secret
+	fi
+	# Correct the link
+	ln -sf ${GITLAB}/.gitlab_shell_secret ${D}${GITLAB_SHELL}/.gitlab_shell_secret
+	# Remove ${D}/${GITLAB_SHELL}/VERSION to avoid file collision with dev-vcs/gitlab-shell
+	rm -f ${D}/${GITLAB_SHELL}/VERSION
 
 	## Clean ##
 
@@ -617,7 +634,7 @@ src_install() {
 	# fix QA Security Notice: world writable file(s)
 	elog "Fixing permissions of world writable files"
 	local gemsdir="${ruby_vpath}/gems"
-	local file gem wwfgems="gitlab-dangerfiles gitlab-experiment gitlab-labkit"
+	local file gem wwfgems="gitlab-dangerfiles gitlab-labkit"
 	# If we are using wildcards, the shell fills them without prefixing ${ED}. Thus
 	# we would target a file list in the real system instead of in the sandbox.
 	for gem in ${wwfgems}; do
@@ -633,19 +650,12 @@ src_install() {
 	dosym "${LOG_DIR}" "${GITLAB}/log"
 
 	# systemd/openrc files
-	local webserver webserver_name
-	if use puma; then
-		webserver="puma"
-		webserver_name="Puma"
-	elif use unicorn; then
-		webserver="unicorn"
-		webserver_name="Unicorn"
-	fi
+	use relative_url && relative_url="/gitlab" || relative_url=""
 
 	if use systemd; then
 		## Systemd files ##
 		elog "Installing systemd unit files"
-		local service services="gitaly sidekiq workhorse ${webserver}" unit unitfile
+		local service services="gitaly sidekiq workhorse puma" unit unitfile
 		use mail_room && services+=" mailroom"
 		use gitlab-config || services+=" update-config"
 		for service in ${services}; do
@@ -658,7 +668,7 @@ src_install() {
 				-e "s|@GITLAB_CONFIG@|${GITLAB_CONFIG}|g" \
 				-e "s|@TMP_DIR@|${TMP_DIR}|g" \
 				-e "s|@WORKHORSE_BIN@|${WORKHORSE_BIN}|g" \
-				-e "s|@WEBSERVER@|${webserver}|g" \
+				-e "s|@RELATIVE_URL@|${relative_url}|g" \
 				"${unitfile}" > "${T}/${unit}" || die "failed to configure: $unit"
 			systemd_dounit "${T}/${unit}"
 		done
@@ -667,17 +677,17 @@ src_install() {
 		use mail_room && optional_wants+="Wants=gitlab-mailroom.service"
 		use gitlab-config || optional_requires+="Requires=gitlab-update-config.service"
 		use gitlab-config || optional_after+="After=gitlab-update-config.service"
-		sed -e "s|@WEBSERVER@|${webserver}|g" \
-			-e "s|@OPTIONAL_REQUIRES@|${optional_requires}|" \
+		sed -e "s|@OPTIONAL_REQUIRES@|${optional_requires}|" \
 			-e "s|@OPTIONAL_AFTER@|${optional_after}|" \
 			-e "s|@OPTIONAL_WANTS@|${optional_wants}|" \
 			"${FILESDIR}/${PN}.target.${vSYS}" > "${T}/${PN}.target" \
 			|| die "failed to configure: ${PN}.target"
 		systemd_dounit "${T}/${PN}.target"
+		systemd_dounit "${FILESDIR}/${PN}.slice.${vSYS}"
 	else
 		## OpenRC init scripts ##
 		elog "Installing OpenRC init.d files"
-		local service services="${PN} gitlab-gitaly" rc rcfile update_config webserver_start
+		local service services="${PN} gitlab-gitaly" rc rcfile update_config puma_start
 		local mailroom_vars='' mailroom_start='' mailroom_stop='' mailroom_status=''
 
 		rcfile="${FILESDIR}/${PN}.init.${vORC}"
@@ -685,7 +695,7 @@ src_install() {
 		# Note: We use this below to replace a matching line of the rcfile by
 		# the contents of another file whose newlines would break the outer sed.
 		# Note: Continuation characters '\' in inserted files have to be escaped!
-		webserver_start="$(sed -z 's/\n/\\n/g' ${rcfile}.${webserver}_start | head -c -2)"
+		puma_start="$(sed -z 's/\n/\\n/g' ${rcfile}.puma_start | head -c -2)"
 		if use mail_room; then
 			mailroom_vars="\n$(sed -z 's/\n/\\n/g' ${rcfile}.mailroom_vars)"
 			mailroom_start="\n$(sed -z 's/\n/\\n/g' ${rcfile}.mailroom_start)"
@@ -697,12 +707,14 @@ src_install() {
 		else
 			update_config="su -l ${GIT_USER} -c \"rsync -aHAX ${CONF_DIR}/ ${GITLAB_CONFIG}/\""
 		fi
-		sed -e "s|@WEBSERVER_START@|${webserver_start}|" \
+		use relative_url && relative_url="/gitlab" || relative_url=""
+		sed -e "s|@WEBSERVER_START@|${puma_start}|" \
 			-e "s|@MAILROOM_VARS@|${mailroom_vars}|" \
 			-e "s|@UPDATE_CONFIG@|${update_config}|" \
 			-e "s|@MAILROOM_START@|${mailroom_start}|" \
 			-e "s|@MAILROOM_STOP@|${mailroom_stop}|" \
 			-e "s|@MAILROOM_STATUS@|${mailroom_status}|" \
+			-e "s|@RELATIVE_URL@|${relative_url}|" \
 			${rcfile} > ${T}/${PN}.init.${vORC} || die "failed to prepare ${rcfile}"
 		cp "${FILESDIR}/gitlab-gitaly.init.${vORC}" ${T}/
 
@@ -717,8 +729,6 @@ src_install() {
 				-e "s|@WORKHORSE_BIN@|${WORKHORSE_BIN}|g" \
 				-e "s|@GITLAB_GITALY@|${GITLAB_GITALY}|g" \
 				-e "s|@GITALY_CONF@|${GITALY_CONF}|g" \
-				-e "s|@WEBSERVER@|${webserver}|g" \
-				-e "s|@WEBSERVER_NAME@|${webserver_name}|g" \
 				"${rcfile}" > "${T}/${rc}" || die "failed to configure: ${rc}"
 			newinitd "${T}/${rc}" "${service}"
 		done
@@ -729,20 +739,11 @@ src_install() {
 	# fix permissions
 
 	fowners -R ${GIT_USER}:${GIT_GROUP} $GITLAB $CONF_DIR $TMP_DIR $LOG_DIR $GIT_REPOS
-	fperms o+Xr "${TMP_DIR}" # Let nginx access the puma/unicorn socket
+	fperms o+Xr "${TMP_DIR}" # Let nginx access the puma socket
 	[ -f "${D}/${CONF_DIR}/secrets.yml" ]      && fperms 600 "${CONF_DIR}/secrets.yml"
 	[ -f "${D}/${GITLAB_CONFIG}/secrets.yml" ] && fperms 600 "${GITLAB_CONFIG}/secrets.yml"
 
 	src_install_gitaly
-}
-
-pkg_preinst() {
-	if [ $HQ ]; then
-		if ! use gitlab-config; then
-			[ -e ${CONF_DIR} ] || mkdir ${CONF_DIR}
-			cp -r --preserve=mode,timestamps ${T}/etc-config/* ${CONF_DIR}/
-		fi
-	fi
 }
 
 pkg_postinst_gitaly() {
@@ -799,6 +800,24 @@ pkg_postinst() {
 		elog "     You may need to add configs for the new 'gitlab' user to the"
 		elog "     pg_hba.conf and pg_ident.conf files of your database server."
 		elog
+		elog "     This ebuild assumes that you run the Postgres server on a"
+		elog "     different machine. If you run it here add the dependency"
+		if use systemd; then
+			elog "       systemctl edit gitlab-puma.service"
+			elog "     In the editor that opens, add the following and save the file:"
+			elog "       [Unit]"
+			elog "       Wants=postgresql.service"
+			elog "       After=postgresql.service"
+			elog
+			elog "       systemctl edit gitlab-sidekiq.service"
+			elog "     In the editor that opens, add the following and save the file:"
+			elog "       [Unit]"
+			elog "       Wants=postgresql.service"
+			elog "       After=postgresql.service"
+		else
+			elog "       in /etc/init.d/gitlab (see the comment there)."
+		fi
+		elog
 		elog "  2. Edit ${conf_dir}/database.yml in order to configure"
 		elog "     database settings for \"${RAILS_ENV}\" environment."
 		elog
@@ -831,6 +850,21 @@ pkg_postinst() {
 		elog "       unixsocketperm 770"
 		elog "       maxmemory 1024MB"
 		elog "       maxmemory-policy volatile-lru"
+		if use systemd; then
+			elog "     Supervise Redis with systemd: Change /etc/redis/redis.conf to"
+			elog "       daemonize no"
+			elog "       supervised systemd"
+			elog "       #pidfile /run/redis/redis.pid"
+			elog "     Make matching changes to the systemd unit file"
+			elog "     Create /etc/systemd/system/redis.service.d/10fix_type.conf"
+			elog "     and insert the following lines"
+			elog "       [Service]"
+			elog "       Type=notify"
+			elog "       PIDFile="
+			elog "     Then run"
+			elog "       systemctl daemon-reload"
+			elog "       systemctl restart redis.service"
+		fi
 		elog
 		elog "  5. Gitaly must be running for the \"emerge --config\". Execute"
 		if use systemd; then
@@ -858,10 +892,6 @@ pkg_postinst() {
 			SKIP_POST_DEPLOYMENT_MIGRATIONS=true \
 			${BUNDLE} exec rake db:migrate RAILS_ENV=${RAILS_ENV}" \
 				|| die "failed to migrate database."
-		if [ $HQ ]; then
-			elog
-			elog "Adopt your nginx site config to the new /opt/gitlab/gitlab/ path."
-		fi
 		elog
 		elog "Update the config in /etc/gitlab and then run"
 		if use systemd; then
@@ -946,23 +976,6 @@ pkg_config_do_upgrade() {
 	pkg_config_do_upgrade_clear_redis_cache
 
 	pkg_config_do_upgrade_configure_git
-
-	if [ $HQ ]; then
-		einfo "For the www-apps/gitlabhq -> www-apps/gitlab migration you have to"
-		einfo "stop your running Gitlab instance during data migration: "
-		einfo "\$ systemctl stop gitlabhq.target"
-		einfo "or"
-		einfo "\$ rc-service gitlabhq stop"
-
-		einfon "Proceed? [Y|n] "
-		read -r proceed
-		if [[ !( $proceed =~ ^(y|Y|)$ ) ]]; then
-			einfo "Aborting www-apps/gitlabhq -> www-apps/gitlab migration."
-			return 1
-		fi
-
-		pkg_config_do_upgrade_migrate_data
-	fi
 }
 
 pkg_config_initialize() {
@@ -1001,11 +1014,11 @@ pkg_config_initialize() {
 }
 
 pkg_config() {
-	## (Re-)Link gitlab_shell_secret into gitlab-shell
-	if [ -L "${GITLAB_SHELL}/.gitlab_shell_secret" ]; then
-		rm "${GITLAB_SHELL}/.gitlab_shell_secret"
-	fi
-	ln -s "${GITLAB}/.gitlab_shell_secret" "${GITLAB_SHELL}/.gitlab_shell_secret"
+#	## (Re-)Link gitlab_shell_secret into gitlab-shell
+#	if [ -L "${GITLAB_SHELL}/.gitlab_shell_secret" ]; then
+#		rm "${GITLAB_SHELL}/.gitlab_shell_secret"
+#	fi
+#	ln -s "${GITLAB}/.gitlab_shell_secret" "${GITLAB_SHELL}/.gitlab_shell_secret"
 
 	if [ "$MODUS" = "new" ]; then
 		pkg_config_initialize
@@ -1025,14 +1038,6 @@ pkg_config() {
 		else
 			einfo "\$ rc-service ${PN} start"
 		fi
-	elif [ $HQ ]; then
-		einfo
-		einfo "You should now disable the old gitlabhq service:"
-		if use systemd; then
-			 einfo "\$ systemctl disable gitlabhq.target"
-		else
-			 einfo "\$ rc-update delete gitlabhq"
-		fi
 	fi
 
 	einfo
@@ -1048,19 +1053,18 @@ pkg_config() {
 	elif [ "$MODUS" = "new" ]; then
 		einfo "To configure your nginx site have a look at the examples configurations"
 		einfo "in the ${GITLAB}/lib/support/nginx/ folder."
-	fi
-
-	if [ $HQ ]; then
-		einfo
-		einfo "With the www-apps/gitlabhq -> www-apps/gitlab migration finished"
-		einfo "the following packages become obsolete:"
-		einfo "  app-eselect/eselect-gitlab-gitaly"
-		einfo "  app-eselect/eselect-gitlabhq"
-		einfo "  dev-vcs/gitlab-gitaly"
-		einfo "  www-apps/gitlabhq"
-		einfo "After unmerging these clean up the leftovers:"
-		einfo "  /opt/gitlab/gitlabhq-13.8.2/"
-		einfo "  /var/tmp/gitlabhq-13.8.2/"
-		einfo "  /var/log/gitlabhq-13.8.2/"
+		if use relative_url; then
+			einfo "For a relative URL installation several modifications must be made to nginx"
+			einfo "\t Move everything in the top-level 'server' block to top-level nginx.conf"
+			einfo "\t Remove the top-level 'server' block"
+			einfo "\t Add a 'location /gitlab at the top where the server block was"
+			einfo "\t Change 'location /' to 'location /gitlab/'"
+			einfo "\t Symlink <htdocs>/gitlab to ${GITLAB}/public"
+			einfo "In order for the Backround Jobs page to work, add"
+			einfo "\t 'location ~ ^/gitlab/admin/sidekiq/* {"
+			einfo "\t proxy_pass http://gitlab-workhorse;"
+			einfo "\t }"
+			einfo "under the main gitlab location block"
+		fi
 	fi
 }

@@ -49,6 +49,7 @@ start() {
 		--chdir "${gitlab_home}" \
 		--user="${gitlab_user}:${gitlab_group}" \
 		--pidfile="${sidekiq_pidfile}" \
+		--env prometheus_multiproc_dir= \\
 		-1 "${sidekiq_log}" -2 "${sidekiq_log}" \
 		${sidekiq_command} -- "*" "*" "*" "*" "*" ${sidekiq_command_args}
 	eend $?
