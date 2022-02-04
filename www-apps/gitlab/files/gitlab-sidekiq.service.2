@@ -14,7 +14,7 @@ WorkingDirectory=@GITLAB@
 Environment=RAILS_ENV=production
 Environment=processes_args="* * * * *"
 Environment=SIDEKIQ_MEMORY_KILLER_MAX_RSS=2000000
-Environment=prometheus_multiproc_dir=
+Environment=prometheus_multiproc_dir=@TMP_DIR@/prometheus_multiproc_dir
 ExecStart=@GITLAB@/bin/sidekiq-cluster "$processes_args" -e ${RAILS_ENV}
 PIDFile=@TMP_DIR@/pids/sidekiq.pid
 Restart=on-failure

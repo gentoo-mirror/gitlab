@@ -11,6 +11,7 @@ description="GitLab git repository management"
 : ${gitlab_config:="@GITLAB@/config"}
 : ${gitlab_pids:="@GITLAB@/tmp/pids"}
 : ${gitlab_sockets:="@GITLAB@/tmp/sockets"}
+: ${gitlab_metrics:="@GITLAB@/tmp/prometheus_multiproc_dir"}
 : ${gitlab_log:="@LOG_DIR@"}
 
 : ${webserver_pidfile:="${gitlab_pids}/puma.pid"}
@@ -49,7 +50,7 @@ start() {
 		--chdir "${gitlab_home}" \
 		--user="${gitlab_user}:${gitlab_group}" \
 		--pidfile="${sidekiq_pidfile}" \
-		--env prometheus_multiproc_dir= \\
+		--env prometheus_multiproc_dir="${gitlab_metrics}" \\
 		-1 "${sidekiq_log}" -2 "${sidekiq_log}" \
 		${sidekiq_command} -- "*" "*" "*" "*" "*" ${sidekiq_command_args}
 	eend $?
