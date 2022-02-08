@@ -4,5 +4,5 @@ acct-user/gitlab-pages 0: Dedicated user for gitlab-pages
 acct-user/gitlab-runner 0: Dedicated user for gitlab-runner
 dev-util/gitlab-runner-bin 14.5.0 14.6.0 14.7.0: GitLab Runner
 dev-vcs/gitlab-shell 13.22.0 13.22.1 13.22.2: SSH access for GitLab
-www-apps/gitlab 14.5.0 14.5.1 14.5.2 14.5.3 14.5.4 14.6.0 14.6.1 14.6.2 14.6.3 14.6.4 14.7.0 14.7.1: The gitlab and gitaly parts of the GitLab DevOps platform
+www-apps/gitlab 14.5.0 14.5.1 14.5.2 14.5.3 14.5.4 14.6.0 14.6.1 14.6.2 14.6.3 14.6.4 14.7.0 14.7.1 14.7.2: The gitlab and gitaly parts of the GitLab DevOps platform
 www-apps/gitlab-pages 1.48.0 1.49.0 1.51.0: GitLab Pages daemon used to serve static websites for GitLab users
