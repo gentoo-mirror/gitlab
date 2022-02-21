@@ -397,7 +397,7 @@ src_compile() {
 	cd ${WORKDIR}/gitlab-gitaly-${PV}
 	export RUBYOPT=--disable-did_you_mean
 	einfo "Compiling source in $PWD ..."
-	emake WITH_BUNDLED_GIT=$(usex gitaly_git) WITHOUT_BUILD_ID=$(usex gitaly_git) \
+	MAKEOPTS="${MAKEOPTS} -j1" emake WITH_BUNDLED_GIT=$(usex gitaly_git) \
 		|| die "Compiling gitaly failed"
 
 	# Hack: Reusing gitaly's bundler cache for gitlab
