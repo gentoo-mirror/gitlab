@@ -558,7 +558,7 @@ src_install() {
 	# Hack: Don't start from scratch, use the installed node_modules
 	if [ -d ${gitlab_dir}/node_modules ]; then
 		einfo "   Copying ${gitlab_dir}/node_modules/ ..."
-		cp -a ${gitlab_dir}/node_modules/ ./
+		rsync -a --exclude=".cache" ${gitlab_dir}/node_modules ./
 	fi
 	# Hack: Don't start from scratch, use the installed public/assets
 	if [ -d ${gitlab_dir}/public/assets ]; then
