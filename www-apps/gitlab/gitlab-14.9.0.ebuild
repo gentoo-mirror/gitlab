@@ -250,10 +250,6 @@ src_prepare_gitaly() {
 			config.toml.example || die "failed to filter config.toml.example"
 	fi
 
-	sed -i \
-		-e "s|\$GITALY_BIN_DIR|${GITLAB_GITALY}/bin|" \
-		ruby/git-hooks/gitlab-shell-hook || die "failed to filter gitlab-shell-hook"
-
 	# See https://gitlab.com/gitlab-org/gitaly/issues/493
 	sed -s 's|LDFLAGS|GO_LDFLAGS|g' -i Makefile || die
 	sed -s 's|^BUNDLE_FLAGS|#BUNDLE_FLAGS|' -i Makefile || die
@@ -439,8 +435,6 @@ src_install_gitaly() {
 	doins -r "ruby"
 
 	# Make binaries in ruby/ executable
-	exeinto "${GITLAB_GITALY}/ruby/git-hooks/"
-	doexe ruby/git-hooks/gitlab-shell-hook
 	exeinto "${GITLAB_GITALY}/ruby/bin"
 	doexe ruby/bin/*
 	exeinto "${GITLAB_GITALY}/ruby/vendor/bundle/ruby/${rubyV}/bin"
