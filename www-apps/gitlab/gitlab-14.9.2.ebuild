@@ -23,7 +23,7 @@ LICENSE="MIT"
 RESTRICT="network-sandbox splitdebug strip"
 SLOT="0"
 KEYWORDS="~amd64 ~x86"
-IUSE="favicon +gitaly_git -gitlab-config kerberos -mail_room -pages -relative_url systemd"
+IUSE="favicon +gitaly_git -gitlab-config kerberos -mail_room -pages -prometheus -relative_url systemd"
 # Current (2021-11-24) groups in gitlab Gemfile:
 # puma development test danger coverage omnibus ed25519 kerberos
 # Current (2021-11-24) groups in gitlab-gitaly Gemfile:
@@ -66,8 +66,8 @@ DEPEND="
 	acct-user/git[gitlab]
 	acct-group/git
 	>=dev-lang/ruby-2.7.4:2.7[ssl]
-	~dev-vcs/gitlab-shell-13.22.1[relative_url=]
-	pages? ( ~www-apps/gitlab-pages-1.48.0 )
+	~dev-vcs/gitlab-shell-13.24.0[relative_url=]
+	pages? ( ~www-apps/gitlab-pages-1.56.1 )
 	!gitaly_git? ( >=dev-vcs/git-2.33.0[pcre] dev-libs/libpcre2[jit] )
 	net-misc/curl
 	virtual/ssh
@@ -250,10 +250,6 @@ src_prepare_gitaly() {
 			config.toml.example || die "failed to filter config.toml.example"
 	fi
 
-	sed -i \
-		-e "s|\$GITALY_BIN_DIR|${GITLAB_GITALY}/bin|" \
-		ruby/git-hooks/gitlab-shell-hook || die "failed to filter gitlab-shell-hook"
-
 	# See https://gitlab.com/gitlab-org/gitaly/issues/493
 	sed -s 's|LDFLAGS|GO_LDFLAGS|g' -i Makefile || die
 	sed -s 's|^BUNDLE_FLAGS|#BUNDLE_FLAGS|' -i Makefile || die
@@ -296,6 +292,13 @@ src_prepare() {
 		-e "s|/home/git/gitaly|${GITLAB_GITALY}|g" \
 		-e "s|/home/git|${GIT_HOME}|g" \
 		config/gitlab.yml.example || die "failed to filter gitlab.yml.example"
+	if ! use prometheus; then
+		sed -i \
+			-e '/ *sidekiq_exporter:/{n;s| *# *enabled: true|      enabled: false|}' \
+			-e '/ *web_exporter:/{n;s| *# *enabled: true|      enabled: false|}' \
+			-e '/ *prometheus:/{n;s| *# *enabled: true|    enabled: false|}' \
+		config/gitlab.yml.example || die "failed to filter gitlab.yml.example"
+	fi
 	if use gitaly_git && \
 		[ "$MODUS" != "new" ] && \
 		has_version "www-apps/gitlab[gitaly_git]"
@@ -310,6 +313,7 @@ src_prepare() {
 			config/gitlab.yml.example || die "failed to filter gitlab.yml.example"
 	fi
 	cp config/resque.yml.example config/resque.yml
+	cp config/cable.yml.example config/cable.yml
 
 	# Already use the ruby-magic version that'll come with 13.11
 	sed -i \
@@ -389,7 +393,8 @@ src_compile() {
 	cd ${WORKDIR}/gitlab-gitaly-${PV}
 	export RUBYOPT=--disable-did_you_mean
 	einfo "Compiling source in $PWD ..."
-	emake || die "Compiling gitaly failed"
+	MAKEOPTS="${MAKEOPTS} -j1" emake WITH_BUNDLED_GIT=$(usex gitaly_git) \
+		|| die "Compiling gitaly failed"
 
 	# Hack: Reusing gitaly's bundler cache for gitlab
 	local rubyV=$(ls ruby/vendor/bundle/ruby)
@@ -430,14 +435,16 @@ src_install_gitaly() {
 	doins -r "ruby"
 
 	# Make binaries in ruby/ executable
-	exeinto "${GITLAB_GITALY}/ruby/git-hooks/"
-	doexe ruby/git-hooks/gitlab-shell-hook
 	exeinto "${GITLAB_GITALY}/ruby/bin"
 	doexe ruby/bin/*
 	exeinto "${GITLAB_GITALY}/ruby/vendor/bundle/ruby/${rubyV}/bin"
 	doexe ruby/vendor/bundle/ruby/${rubyV}/bin/*
 
 	if use gitaly_git ; then
+		sed -i \
+			-e "s|\${GIT_PREFIX}/bin/git|\${GIT_DEFAULT_PREFIX}/bin/git|" \
+			-e '/${Q}env.*${GIT_BUILD_OPTIONS} install/{n;s|\${Q}touch \$@||}' \
+			Makefile || die "failed to fix gitaly Makefile"
 		emake git DESTDIR="${D}" GIT_PREFIX="${GITLAB_GITALY}"
 	fi
 
@@ -545,7 +552,7 @@ src_install() {
 	# Hack: Don't start from scratch, use the installed node_modules
 	if [ -d ${gitlab_dir}/node_modules ]; then
 		einfo "   Copying ${gitlab_dir}/node_modules/ ..."
-		cp -a ${gitlab_dir}/node_modules/ ./
+		rsync -a --exclude=".cache" ${gitlab_dir}/node_modules ./
 	fi
 	# Hack: Don't start from scratch, use the installed public/assets
 	if [ -d ${gitlab_dir}/public/assets ]; then
@@ -623,7 +630,7 @@ src_install() {
 	# fix QA Security Notice: world writable file(s)
 	elog "Fixing permissions of world writable files"
 	local gemsdir="${ruby_vpath}/gems"
-	local file gem wwfgems="gitlab-dangerfiles gitlab-labkit"
+	local file gem wwfgems="gitlab-dangerfiles gitlab-experiment gitlab-labkit unleash"
 	# If we are using wildcards, the shell fills them without prefixing ${ED}. Thus
 	# we would target a file list in the real system instead of in the sandbox.
 	for gem in ${wwfgems}; do

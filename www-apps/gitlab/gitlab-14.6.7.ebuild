@@ -23,7 +23,7 @@ LICENSE="MIT"
 RESTRICT="network-sandbox splitdebug strip"
 SLOT="0"
 KEYWORDS="~amd64 ~x86"
-IUSE="favicon +gitaly_git -gitlab-config kerberos -mail_room -pages -relative_url systemd"
+IUSE="favicon +gitaly_git -gitlab-config kerberos -mail_room -pages -prometheus -relative_url systemd"
 # Current (2021-11-24) groups in gitlab Gemfile:
 # puma development test danger coverage omnibus ed25519 kerberos
 # Current (2021-11-24) groups in gitlab-gitaly Gemfile:
@@ -67,7 +67,7 @@ DEPEND="
 	acct-group/git
 	>=dev-lang/ruby-2.7.4:2.7[ssl]
 	~dev-vcs/gitlab-shell-13.22.1[relative_url=]
-	pages? ( ~www-apps/gitlab-pages-1.48.0 )
+	pages? ( ~www-apps/gitlab-pages-1.49.0 )
 	!gitaly_git? ( >=dev-vcs/git-2.33.0[pcre] dev-libs/libpcre2[jit] )
 	net-misc/curl
 	virtual/ssh
@@ -296,6 +296,13 @@ src_prepare() {
 		-e "s|/home/git/gitaly|${GITLAB_GITALY}|g" \
 		-e "s|/home/git|${GIT_HOME}|g" \
 		config/gitlab.yml.example || die "failed to filter gitlab.yml.example"
+	if ! use prometheus; then
+		sed -i \
+			-e '/ *sidekiq_exporter:/{n;s| *# *enabled: true|      enabled: false|}' \
+			-e '/ *web_exporter:/{n;s| *# *enabled: true|      enabled: false|}' \
+			-e '/ *prometheus:/{n;s| *# *enabled: true|    enabled: false|}' \
+		config/gitlab.yml.example || die "failed to filter gitlab.yml.example"
+	fi
 	if use gitaly_git && \
 		[ "$MODUS" != "new" ] && \
 		has_version "www-apps/gitlab[gitaly_git]"
@@ -389,7 +396,7 @@ src_compile() {
 	cd ${WORKDIR}/gitlab-gitaly-${PV}
 	export RUBYOPT=--disable-did_you_mean
 	einfo "Compiling source in $PWD ..."
-	emake || die "Compiling gitaly failed"
+	emake WITH_BUNDLED_GIT=$(usex gitaly_git) || die "Compiling gitaly failed"
 
 	# Hack: Reusing gitaly's bundler cache for gitlab
 	local rubyV=$(ls ruby/vendor/bundle/ruby)
@@ -438,6 +445,10 @@ src_install_gitaly() {
 	doexe ruby/vendor/bundle/ruby/${rubyV}/bin/*
 
 	if use gitaly_git ; then
+		sed -i \
+			-e "s|\${GIT_PREFIX}/bin/git|\${GIT_DEFAULT_PREFIX}/bin/git|" \
+			-e '/${Q}env.*${GIT_BUILD_OPTIONS} install/{n;s|\${Q}touch \$@||}' \
+			Makefile || die "failed to fix gitaly Makefile"
 		emake git DESTDIR="${D}" GIT_PREFIX="${GITLAB_GITALY}"
 	fi
 
