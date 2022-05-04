@@ -1,0 +1,14 @@
+Title: Breaking changes in 15.0 and Deprecations 
+Author: Horst Prote <prote@fmi.uni-stuttgart.de>
+Posted: 2022-05-04
+Revision: 1
+News-Item-Format: 2.0
+
+Upstream is launching GitLab 15.0 on May 22!
+
+This version brings many improvements, but also removes deprecated features and
+introduces breaking changes that may impact your workflow. To see what is being
+deprecated and removed, please visit
+- Breaking changes in 15.0:
+  https://about.gitlab.com/blog/2022/04/18/gitlab-releases-15-breaking-changes/
+- and Deprecations: https://docs.gitlab.com/ee/update/deprecations.html
