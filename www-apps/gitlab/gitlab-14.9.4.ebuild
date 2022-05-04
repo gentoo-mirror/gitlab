@@ -66,8 +66,8 @@ DEPEND="
 	acct-user/git[gitlab]
 	acct-group/git
 	>=dev-lang/ruby-2.7.4:2.7[ssl]
-	~dev-vcs/gitlab-shell-13.22.1[relative_url=]
-	pages? ( ~www-apps/gitlab-pages-1.49.0 )
+	~dev-vcs/gitlab-shell-13.24.0[relative_url=]
+	pages? ( ~www-apps/gitlab-pages-1.56.1 )
 	!gitaly_git? ( >=dev-vcs/git-2.33.0[pcre] dev-libs/libpcre2[jit] )
 	net-misc/curl
 	virtual/ssh
@@ -250,10 +250,6 @@ src_prepare_gitaly() {
 			config.toml.example || die "failed to filter config.toml.example"
 	fi
 
-	sed -i \
-		-e "s|\$GITALY_BIN_DIR|${GITLAB_GITALY}/bin|" \
-		ruby/git-hooks/gitlab-shell-hook || die "failed to filter gitlab-shell-hook"
-
 	# See https://gitlab.com/gitlab-org/gitaly/issues/493
 	sed -s 's|LDFLAGS|GO_LDFLAGS|g' -i Makefile || die
 	sed -s 's|^BUNDLE_FLAGS|#BUNDLE_FLAGS|' -i Makefile || die
@@ -317,6 +313,7 @@ src_prepare() {
 			config/gitlab.yml.example || die "failed to filter gitlab.yml.example"
 	fi
 	cp config/resque.yml.example config/resque.yml
+	cp config/cable.yml.example config/cable.yml
 
 	# Already use the ruby-magic version that'll come with 13.11
 	sed -i \
@@ -396,7 +393,8 @@ src_compile() {
 	cd ${WORKDIR}/gitlab-gitaly-${PV}
 	export RUBYOPT=--disable-did_you_mean
 	einfo "Compiling source in $PWD ..."
-	emake WITH_BUNDLED_GIT=$(usex gitaly_git) || die "Compiling gitaly failed"
+	MAKEOPTS="${MAKEOPTS} -j1" emake WITH_BUNDLED_GIT=$(usex gitaly_git) \
+		|| die "Compiling gitaly failed"
 
 	# Hack: Reusing gitaly's bundler cache for gitlab
 	local rubyV=$(ls ruby/vendor/bundle/ruby)
@@ -437,8 +435,6 @@ src_install_gitaly() {
 	doins -r "ruby"
 
 	# Make binaries in ruby/ executable
-	exeinto "${GITLAB_GITALY}/ruby/git-hooks/"
-	doexe ruby/git-hooks/gitlab-shell-hook
 	exeinto "${GITLAB_GITALY}/ruby/bin"
 	doexe ruby/bin/*
 	exeinto "${GITLAB_GITALY}/ruby/vendor/bundle/ruby/${rubyV}/bin"
@@ -556,7 +552,7 @@ src_install() {
 	# Hack: Don't start from scratch, use the installed node_modules
 	if [ -d ${gitlab_dir}/node_modules ]; then
 		einfo "   Copying ${gitlab_dir}/node_modules/ ..."
-		cp -a ${gitlab_dir}/node_modules/ ./
+		rsync -a --exclude=".cache" ${gitlab_dir}/node_modules ./
 	fi
 	# Hack: Don't start from scratch, use the installed public/assets
 	if [ -d ${gitlab_dir}/public/assets ]; then
@@ -634,7 +630,7 @@ src_install() {
 	# fix QA Security Notice: world writable file(s)
 	elog "Fixing permissions of world writable files"
 	local gemsdir="${ruby_vpath}/gems"
-	local file gem wwfgems="gitlab-dangerfiles gitlab-labkit"
+	local file gem wwfgems="gitlab-dangerfiles gitlab-experiment gitlab-labkit unleash"
 	# If we are using wildcards, the shell fills them without prefixing ${ED}. Thus
 	# we would target a file list in the real system instead of in the sandbox.
 	for gem in ${wwfgems}; do
