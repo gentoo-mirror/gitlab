@@ -49,7 +49,7 @@ GEMS_DEPEND="
 	dev-util/ragel
 	dev-libs/yajl
 	>=net-libs/nodejs-14
-	dev-db/postgresql:12
+	|| ( >=dev-db/postgresql-12.10:12 dev-db/postgresql:13 )
 	net-libs/http-parser
 	dev-python/docutils"
 GITALY_DEPEND="
@@ -66,8 +66,8 @@ DEPEND="
 	acct-user/git[gitlab]
 	acct-group/git
 	>=dev-lang/ruby-2.7.4:2.7[ssl]
-	>=dev-vcs/gitlab-shell-13.24.0[relative_url=]
-	<dev-vcs/gitlab-shell-13.25.0
+	>=dev-vcs/gitlab-shell-13.25.1[relative_url=]
+	<dev-vcs/gitlab-shell-13.26.0
 	pages? ( ~www-apps/gitlab-pages-1.56.1 )
 	!gitaly_git? ( >=dev-vcs/git-2.33.0[pcre] dev-libs/libpcre2[jit] )
 	net-misc/curl
