@@ -24,7 +24,6 @@ DEPEND="
 	acct-group/git
 	|| ( >=dev-vcs/git-2.31.0[pcre] www-apps/gitlab[gitaly_git] )
 	>=dev-lang/go-1.16
-	>=www-apps/gitlab-14.10.3
 	virtual/ssh
 	dev-db/redis"
 RDEPEND="${DEPEND}"
