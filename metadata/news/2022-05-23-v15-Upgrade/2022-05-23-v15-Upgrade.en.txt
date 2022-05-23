@@ -1,0 +1,32 @@
+Title: v15.0.0 upgrading instructions 
+Author: Horst Prote <prote@fmi.uni-stuttgart.de>
+Posted: 2022-05-23
+Revision: 1
+News-Item-Format: 2.0
+
+With version 15.0.0 the support for the lagacy database config was removed
+(see https://gitlab.com/gitlab-org/gitlab/-/issues/338182).
+
+If you have not done so already you now have to migrate /etc/gitlab/database.yml
+to the new syntax.
+
+Previously, the config/database.yml file looked like the following:
+
+production:
+  adapter: postgresql
+  encoding: unicode
+  database: gitlabhq_production
+  ...
+
+Starting with GitLab 15.0, it needs to define a main database first:
+
+production:
+  main:
+    adapter: postgresql
+    encoding: unicode
+    database: gitlabhq_production
+    ...
+
+
+For more "breaking changes and deprecations" read the previous news item
+2022-05-04  [gitlab] Breaking changes in 15.0 and Deprecations
