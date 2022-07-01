@@ -65,9 +65,9 @@ DEPEND="
 	${RUBY_DEPS}
 	acct-user/git[gitlab]
 	acct-group/git
-	>=dev-lang/ruby-2.7.5:2.7[ssl]
-	>=dev-vcs/gitlab-shell-14.7.4[relative_url=]
-	pages? ( ~www-apps/gitlab-pages-1.59.0 )
+	>=dev-lang/ruby-2.7.4:2.7[ssl]
+	>=dev-vcs/gitlab-shell-13.25.1[relative_url=]
+	pages? ( ~www-apps/gitlab-pages-1.56.1 )
 	!gitaly_git? ( >=dev-vcs/git-2.33.0[pcre] dev-libs/libpcre2[jit] )
 	net-misc/curl
 	virtual/ssh
@@ -145,13 +145,12 @@ pkg_setup() {
 			${eM}.${em1}.*)		MODUS="minor"
 								elog "This is a minor upgrade from $vINST to $PV.";;
 			${eM}.[0-${em2}].*) die "You should do minor upgrades step by step.";;
-			14.10.5)			if [ "${PV}" = "15.0.0" ]; then
+			13.12.15)			if [ "${PV}" = "14.0.0" ]; then
 									MODUS="major"
 									elog "This is a major upgrade from $vINST to $PV."
 								else
-									die "You should upgrade to 15.0.0 first."
+									die "You should upgrade to 14.0.0 first."
 								fi;;
-			13.12.15)			die "You should upgrade to 14.0.0 first.";;
 			12.10.14)			die "You should upgrade to 13.1.0 first.";;
 			12.*.*)				die "You should upgrade to 12.10.14 first.";;
 			${eM1}.*.*)			die "You should upgrade to latest ${eM1}.x.x version"\
