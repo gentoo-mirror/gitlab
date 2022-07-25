@@ -5,7 +5,7 @@
  gem 'json', '~> 2.5.1'
  gem 'json_schemer', '~> 0.2.18'
 -gem 'oj', '~> 3.13.16'
-+gem 'oj', '~> 3.13.17'
++gem 'oj', '~> 3.13.14'
  gem 'multi_json', '~> 1.14.1'
  gem 'yajl-ruby', '~> 1.4.1', require: 'yajl'
  
@@ -16,7 +16,7 @@
        train-core
        wmi-lite (~> 1.0)
 -    oj (3.13.16)
-+    oj (3.13.17)
++    oj (3.13.14)
      omniauth (1.9.1)
        hashie (>= 3.4.6)
        rack (>= 1.6.2, < 3)
@@ -25,7 +25,7 @@
    octokit (~> 4.15)
    ohai (~> 16.10)
 -  oj (~> 3.13.16)
-+  oj (~> 3.13.17)
++  oj (~> 3.13.14)
    omniauth (~> 1.8)
    omniauth-alicloud (~> 1.0.1)
    omniauth-atlassian-oauth2 (~> 0.2.0)
