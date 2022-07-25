@@ -1,0 +1,31 @@
+--- Gemfile.orig	2022-07-25 15:24:57.469572281 +0200
++++ Gemfile	2022-07-25 15:27:32.740182500 +0200
+@@ -536,7 +536,7 @@
+ # JSON
+ gem 'json', '~> 2.5.1'
+ gem 'json_schemer', '~> 0.2.18'
+-gem 'oj', '~> 3.13.16'
++gem 'oj', '~> 3.13.14'
+ gem 'multi_json', '~> 1.14.1'
+ gem 'yajl-ruby', '~> 1.4.1', require: 'yajl'
+ 
+--- Gemfile.lock.orig	2022-07-25 15:24:42.057612542 +0200
++++ Gemfile.lock	2022-07-25 15:31:06.392683112 +0200
+@@ -869,7 +869,7 @@
+       plist (~> 3.1)
+       train-core
+       wmi-lite (~> 1.0)
+-    oj (3.13.16)
++    oj (3.13.14)
+     omniauth (1.9.1)
+       hashie (>= 3.4.6)
+       rack (>= 1.6.2, < 3)
+@@ -1637,7 +1637,7 @@
+   oauth2 (~> 2.0)
+   octokit (~> 4.15)
+   ohai (~> 16.10)
+-  oj (~> 3.13.16)
++  oj (~> 3.13.14)
+   omniauth (~> 1.8)
+   omniauth-alicloud (~> 1.0.1)
+   omniauth-atlassian-oauth2 (~> 0.2.0)
