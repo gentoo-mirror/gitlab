@@ -119,7 +119,8 @@ pkg_setup() {
 							   ">=www-apps/gitlab-14.0.0 isn't supported. You have to "\
 							   "upgrade to 13.12.15 first."
 	fi
-	vINST=${vINST%%-*}
+	vINST=${vINST%-r*}
+	vINST=${vINST##*-}
 	if [ -n "$vINST" ] && ver_test "$PV" -lt "$vINST"; then
 		# do downgrades on explicit user request only
 		ewarn "You are going to downgrade from $vINST to $PV."
