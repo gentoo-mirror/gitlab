@@ -1,0 +1,38 @@
+Title: Sidekiq MemoryKiller 
+Author: Horst Prote <prote@fmi.uni-stuttgart.de>
+Posted: 2022-07-29
+Revision: 1
+News-Item-Format: 2.0
+
+In November 2021 when introducing some "New systemd and init.d files" I made
+a typo in the new files/gitlab-sidekiq.service.2 file
+
+Restart=on-failure
+
+causing the Sidekiq Killer not to work any more: The Killer still stops
+Sidekiq when it exceeds the memory limit but the systemd service will not
+restart Sidekiq afterwards because it stops 'gracefully' with exit code 0
+which is no failure. So I just changed files/gitlab-sidekiq.service.2 to
+
+Restart=on-success
+
+but didn't make a new release to avoid forcing everyone to rebuild just for
+this 'minor' change. New builds will use this new setup but you may just edit
+/lib/systemd/system/gitlab-sidekiq.service and change the 'Restart=' line.
+
+
+Note that the Sidekiq MemoryKiller is not available for the OpenRC init script.
+
+
+The Sidekiq MemoryKiller is configured by some environment variables. The
+minimal config is added to /lib/systemd/system/gitlab-sidekiq.service by
+
+Environment=SIDEKIQ_MEMORY_KILLER_MAX_RSS=2000000
+
+You may override this and/or set some of the other variables (see
+/opt/gitlab/gitlab/doc/administration/operations/sidekiq_memory_killer.md)
+by creating /etc/systemd/system/gitlab-sidekiq.service.d/killer.conf with
+
+[Service]
+Environment=SIDEKIQ_MEMORY_KILLER_MAX_RSS=1000000
+Environment=SIDEKIQ_MEMORY_KILLER_<some-other-variable>=<value>
