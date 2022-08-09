@@ -337,6 +337,10 @@ src_prepare() {
 			|| die "failed to modify puma.rb.example"
 	fi
 
+	# Remove Geo database setting as in gitlab-foss Geo is not available and
+	# GitLab will do a "Only main: and ci: database names are supported." check. 
+	sed -i '/geo:/,/^$/d' config/database.yml.postgresql
+
 	# "Compiling GetText PO files" wants to read these configs
 	cp config/database.yml.postgresql config/database.yml
 	cp config/gitlab.yml.example config/gitlab.yml
