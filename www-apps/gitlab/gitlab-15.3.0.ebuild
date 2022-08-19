@@ -774,6 +774,13 @@ pkg_postinst() {
 			git config --global user.name 'GitLab'" \
 			|| die "failed to setup git user/email"
 	fi
+	einfo "Cleaning Git global settings for git user"
+	su -l ${GIT_USER} -s /bin/sh -c "
+		git config --global --remove-section core 2>/dev/null;
+		git config --global --remove-section gc 2>/dev/null;
+		git config --global --remove-section repack 2>/dev/null;
+		git config --global --remove-section receive 2>/dev/null;" \
+		|| die "failed to Clean Git global settings for git user"
 
 	if [ "$MODUS" = "new" ]; then
 		local conf_dir="${CONF_DIR}"
