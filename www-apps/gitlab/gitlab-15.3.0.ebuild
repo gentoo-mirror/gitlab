@@ -774,14 +774,6 @@ pkg_postinst() {
 			git config --global user.name 'GitLab'" \
 			|| die "failed to setup git user/email"
 	fi
-	einfo "Configuring Git global settings for git user"
-	su -l ${GIT_USER} -s /bin/sh -c "
-		git config --global core.autocrlf 'input';
-		git config --global gc.auto 0;
-		git config --global repack.writeBitmaps true;
-		git config --global receive.advertisePushOptions true;
-		git config --global core.fsyncObjectFiles true" \
-		|| die "failed to Configure Git global settings for git user"
 
 	if [ "$MODUS" = "new" ]; then
 		local conf_dir="${CONF_DIR}"
@@ -964,20 +956,11 @@ pkg_config_do_upgrade_clear_redis_cache() {
 			|| die "failed to run cache:clear"
 }
 
-pkg_config_do_upgrade_configure_git() {
-	einfo "Configure Git to enable packfile bitmaps ..."
-	su -l ${GIT_USER} -s /bin/sh -c "
-		git config --global repack.writeBitmaps true" \
-			|| die "failed to configure Git"
-}
-
 pkg_config_do_upgrade() {
 	# do the upgrade
 	pkg_config_do_upgrade_migrate_database
 
 	pkg_config_do_upgrade_clear_redis_cache
-
-	pkg_config_do_upgrade_configure_git
 }
 
 pkg_config_initialize() {
