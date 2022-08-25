@@ -779,8 +779,7 @@ pkg_postinst() {
 		git config --global --remove-section core 2>/dev/null;
 		git config --global --remove-section gc 2>/dev/null;
 		git config --global --remove-section repack 2>/dev/null;
-		git config --global --remove-section receive 2>/dev/null;" \
-		|| die "failed to Clean Git global settings for git user"
+		git config --global --remove-section receive 2>/dev/null;"
 
 	if [ "$MODUS" = "new" ]; then
 		local conf_dir="${CONF_DIR}"
