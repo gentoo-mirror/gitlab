@@ -31,7 +31,10 @@ SLOT="0"
 KEYWORDS="~amd64 ~x86 ~arm ~arm64"
 IUSE="systemd"
 
-RDEPEND="acct-user/gitlab-runner"
+RDEPEND="
+	!dev-util/gitlab-runner
+	acct-user/gitlab-runner
+"
 DEPEND="
 	${RDEPEND}
 	systemd? ( sys-apps/systemd )
