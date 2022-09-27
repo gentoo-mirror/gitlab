@@ -1,0 +1,41 @@
+Title: GitLab Runner 
+Author: Horst Prote <prote@fmi.uni-stuttgart.de>
+Posted: 2022-09-27
+Revision: 1
+News-Item-Format: 2.0
+
+Since March 2022 there is a dev-util/gitlab-runner ebuild in the gentoo tree
+accompanied by acct-group/gitlab-runner and acct-user/gitlab-runner making the
+package dev-util/gitlab-runner-bin of this overlay kind of obsolete and making
+acct-user/gitlab-runner of this overlay really obsolete.
+
+So
+- acct-user/gitlab-runner of this overlay was removed
+- a blocking deoendency was added to all dev-util/gitlab-runner-bin ebuilds
+  to prohibit a parallel installation with dev-util/gitlab-runner
+
+Although dev-util/gitlab-runner compiles in just a few minutes I'll keep the
+dev-util/gitlab-runner-bin package in the overlay.
+
+For those who want to switch to dev-util/gitlab-runner here how I did it:
+  $ emerge gitlab-runner
+This told me
+  "dev-util/gitlab-runner" is soft blocking dev-util/gitlab-runner-bin-15.4.0
+so I did a backup of /etc/gitlab-runner/config.toml (just to be sure; shouldn't
+be neccessary), unmerged dev-util/gitlab-runner-bin and installed the new package:
+  $ emerge -C gitlab-runner-bin
+  $ emerge gitlab-runner
+On my machine acct-user/gitlab-runner-0 from the overlay was already replaced by
+acct-user/gitlab-runner-1 from the portage tree but the gitlab-runner user still
+had the UID 125 (from the overlay) instead of the UID 510 (as the portage tree
+package would use it). So I did:
+  $ systemctl stop gitlab-runner.service
+  $ usermod -u 510 gitlab-runner
+That already changed ownership in /var/lib/gitlab-runner which is the HOME of
+the gitlab-runner user.
+  $ chown gitlab-runner:gitlab-runner /etc/gitlab-runner/config.toml
+  $ chown gitlab-runner:gitlab-runner /var/log/gitlab-runner/
+As I'm using systemd there were no files in /var/log/gitlab-runner/. If you use
+the init.d Script you may have to chown the log files therein too.
+Restart the service:
+  $ systemctl start gitlab-runner.service
