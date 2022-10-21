@@ -71,7 +71,7 @@ DEPEND="
 	!gitaly_git? ( >=dev-vcs/git-2.33.0[pcre] dev-libs/libpcre2[jit] )
 	net-misc/curl
 	virtual/ssh
-	>=sys-apps/yarn-1.15.0
+	=sys-apps/yarn-1.22*
 	dev-libs/re2"
 RDEPEND="${DEPEND}
 	!www-servers/gitlab-workhorse

@@ -65,10 +65,9 @@ DEPEND="
 	${RUBY_DEPS}
 	acct-user/git[gitlab]
 	acct-group/git
-	>=dev-lang/ruby-2.7.4:2.7[ssl]
-	>=dev-vcs/gitlab-shell-13.25.1[relative_url=]
-	<dev-vcs/gitlab-shell-13.26.0
-	pages? ( ~www-apps/gitlab-pages-1.56.1 )
+	>=dev-lang/ruby-2.7.5:2.7[ssl]
+	>=dev-vcs/gitlab-shell-14.12.0[relative_url=]
+	pages? ( ~www-apps/gitlab-pages-1.62.0 )
 	!gitaly_git? ( >=dev-vcs/git-2.33.0[pcre] dev-libs/libpcre2[jit] )
 	net-misc/curl
 	virtual/ssh
@@ -120,6 +119,7 @@ pkg_setup() {
 							   ">=www-apps/gitlab-14.0.0 isn't supported. You have to "\
 							   "upgrade to 13.12.15 first."
 	fi
+	vINST=${vINST%-r*}
 	vINST=${vINST##*-}
 	if [ -n "$vINST" ] && ver_test "$PV" -lt "$vINST"; then
 		# do downgrades on explicit user request only
@@ -146,12 +146,13 @@ pkg_setup() {
 			${eM}.${em1}.*)		MODUS="minor"
 								elog "This is a minor upgrade from $vINST to $PV.";;
 			${eM}.[0-${em2}].*) die "You should do minor upgrades step by step.";;
-			13.12.15)			if [ "${PV}" = "14.0.0" ]; then
+			14.10.5)			if [ "${PV}" = "15.0.0" ]; then
 									MODUS="major"
 									elog "This is a major upgrade from $vINST to $PV."
 								else
-									die "You should upgrade to 14.0.0 first."
+									die "You should upgrade to 15.0.0 first."
 								fi;;
+			13.12.15)			die "You should upgrade to 14.0.0 first.";;
 			12.10.14)			die "You should upgrade to 13.1.0 first.";;
 			12.*.*)				die "You should upgrade to 12.10.14 first.";;
 			${eM1}.*.*)			die "You should upgrade to latest ${eM1}.x.x version"\
@@ -334,6 +335,10 @@ src_prepare() {
 		echo "ENV['RAILS_RELATIVE_URL_ROOT'] = \"/gitlab\"" >> config/puma.rb.example \
 			|| die "failed to modify puma.rb.example"
 	fi
+
+	# Remove Geo database setting as in gitlab-foss Geo is not available and
+	# GitLab will do a "Only main: and ci: database names are supported." check. 
+	sed -i '/geo:/,/^$/d' config/database.yml.postgresql
 
 	# "Compiling GetText PO files" wants to read these configs
 	cp config/database.yml.postgresql config/database.yml
@@ -769,14 +774,12 @@ pkg_postinst() {
 			git config --global user.name 'GitLab'" \
 			|| die "failed to setup git user/email"
 	fi
-	einfo "Configuring Git global settings for git user"
+	einfo "Cleaning Git global settings for git user"
 	su -l ${GIT_USER} -s /bin/sh -c "
-		git config --global core.autocrlf 'input';
-		git config --global gc.auto 0;
-		git config --global repack.writeBitmaps true;
-		git config --global receive.advertisePushOptions true;
-		git config --global core.fsyncObjectFiles true" \
-		|| die "failed to Configure Git global settings for git user"
+		git config --global --remove-section core 2>/dev/null;
+		git config --global --remove-section gc 2>/dev/null;
+		git config --global --remove-section repack 2>/dev/null;
+		git config --global --remove-section receive 2>/dev/null;"
 
 	if [ "$MODUS" = "new" ]; then
 		local conf_dir="${CONF_DIR}"
@@ -787,10 +790,11 @@ pkg_postinst() {
 		elog "  1. Create a database user for GitLab."
 		elog "     On your database server (local ore remote) become user postgres:"
 		elog "       su -l postgres"
-		elog "     GitLab needs two PostgreSQL extensions: pg_trgm and btree_gist."
+		elog "     GitLab needs three PostgreSQL extensions: pg_trgm, btree_gist, plpgsql."
 		elog "     To create the extensions if they are missing do:"
 		elog "       psql -d template1 -c \"CREATE EXTENSION IF NOT EXISTS pg_trgm;\""
 		elog "       psql -d template1 -c \"CREATE EXTENSION IF NOT EXISTS btree_gist;\""
+		elog "       psql -d template1 -c \"CREATE EXTENSION IF NOT EXISTS plpgsql;\""
 		elog "     Create the database user:"
 		elog "       psql -c \"CREATE USER gitlab CREATEDB PASSWORD 'gitlab'\""
 		elog "     Note: You should change your password to something more random ..."
@@ -959,20 +963,11 @@ pkg_config_do_upgrade_clear_redis_cache() {
 			|| die "failed to run cache:clear"
 }
 
-pkg_config_do_upgrade_configure_git() {
-	einfo "Configure Git to enable packfile bitmaps ..."
-	su -l ${GIT_USER} -s /bin/sh -c "
-		git config --global repack.writeBitmaps true" \
-			|| die "failed to configure Git"
-}
-
 pkg_config_do_upgrade() {
 	# do the upgrade
 	pkg_config_do_upgrade_migrate_database
 
 	pkg_config_do_upgrade_clear_redis_cache
-
-	pkg_config_do_upgrade_configure_git
 }
 
 pkg_config_initialize() {
