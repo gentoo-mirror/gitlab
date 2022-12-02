@@ -752,10 +752,10 @@ pkg_postinst_gitaly() {
 		local conf_dir="${CONF_DIR}"
 		use gitlab-config && conf_dir="${GITLAB_CONFIG}"
 		elog  ""
-		einfo "Note: With gitaly_git USE flag enabled the included git was installed to"
-		einfo "      ${GITLAB_GITALY}/bin/. In order to use it one has to set the"
-		einfo "      [git] \"bin_path\" variable in \"${CONF_DIR_GITALY}/config.toml\" and in"
-		einfo "      \"${conf_dir}/gitlab.yml\" to \"${GITLAB_GITALY}/bin/git\""
+		ewarn "Note: With gitaly_git USE flag enabled the included git was installed to"
+		ewarn "      ${GITLAB_GITALY}/bin/. In order to use it one has to set the"
+		ewarn "      [git] \"bin_path\" variable in \"${CONF_DIR_GITALY}/config.toml\" and in"
+		ewarn "      \"${conf_dir}/gitlab.yml\" to \"${GITLAB_GITALY}/bin/git\""
 	fi
 }
 
@@ -908,15 +908,15 @@ pkg_postinst() {
 }
 
 pkg_config_do_upgrade_migrate_data() {
-	einfo  "-- Migrating data --"
-	einfo "Found your latest gitlabhq instance at \"${BASE_DIR}/gitlabhq-${vINST}\"."
+	elog  "-- Migrating data --"
+	elog "Found your latest gitlabhq instance at \"${BASE_DIR}/gitlabhq-${vINST}\"."
 
-	einfo  "1. This will move your public/uploads/ folder from"
-	einfo  "   \"${BASE_DIR}/gitlabhq-${vINST}\" to \"${GITLAB}\"."
+	elog  "1. This will move your public/uploads/ folder from"
+	elog  "   \"${BASE_DIR}/gitlabhq-${vINST}\" to \"${GITLAB}\"."
 	einfon "   (C)ontinue or (s)kip? "
 	local migrate_uploads=$(continue_or_skip)
 	if [[ $migrate_uploads ]]; then
-		einfo "   Moving the public/uploads/ folder ..."
+		elog "   Moving the public/uploads/ folder ..."
 		su -l ${GIT_USER} -s /bin/sh -c "
 			rm -rf ${GITLAB}/public/uploads && \
 			mv ${BASE_DIR}/gitlabhq-${vINST}/public/uploads ${GITLAB}/public/uploads" \
@@ -924,15 +924,15 @@ pkg_config_do_upgrade_migrate_data() {
 
 		# Fix permissions
 		find "${GITLAB}/public/uploads/" -type d -exec chmod 0700 {} \;
-		einfo "   ... finished."
+		elog "   ... finished."
 	fi
 
-	einfo  "2. This will move your shared/ data folder from"
-	einfo  "   \"${BASE_DIR}/gitlabhq-${vINST}\" to \"${GITLAB}\"."
+	elog  "2. This will move your shared/ data folder from"
+	elog  "   \"${BASE_DIR}/gitlabhq-${vINST}\" to \"${GITLAB}\"."
 	einfon "   (C)ontinue or (s)kip? "
 	local migrate_shared=$(continue_or_skip)
 	if [[ $migrate_shared ]]; then
-		einfo "   Moving the shared/ data folder ..."
+		elog "   Moving the shared/ data folder ..."
 		su -l ${GIT_USER} -s /bin/sh -c "
 			rm -rf ${GITLAB}/shared && \
 			mv ${BASE_DIR}/gitlabhq-${vINST}/shared ${GITLAB}/shared" \
@@ -940,12 +940,12 @@ pkg_config_do_upgrade_migrate_data() {
 
 		# Fix permissions
 		find "${GITLAB}/shared/" -type d -exec chmod 0700 {} \;
-		einfo "   ... finished."
+		elog "   ... finished."
 	fi
 }
 
 pkg_config_do_upgrade_migrate_database() {
-	einfo "Migrating database ..."
+	elog "Migrating database ..."
 	su -l ${GIT_USER} -s /bin/sh -c "
 		export LANG=en_US.UTF-8; export LC_ALL=en_US.UTF-8
 		cd ${GITLAB}
@@ -954,7 +954,7 @@ pkg_config_do_upgrade_migrate_database() {
 }
 
 pkg_config_do_upgrade_clear_redis_cache() {
-	einfo "Clean up cache ..."
+	elog "Clean up cache ..."
 	su -l ${GIT_USER} -s /bin/sh -c "
 		export LANG=en_US.UTF-8; export LC_ALL=en_US.UTF-8
 		cd ${GITLAB}
@@ -975,7 +975,7 @@ pkg_config_initialize() {
 	use gitlab-config && conf_dir="${GITLAB_CONFIG}"
 
 	## Check config files existence ##
-	einfo "Checking configuration files ..."
+	elog "Checking configuration files ..."
 	if [ ! -r "${conf_dir}/database.yml" ]; then
 		eerror "Copy \"${GITLAB_CONFIG}/database.yml.postgresql\" to \"${conf_dir}/database.yml\""
 		eerror "and edit this file in order to configure your database settings for"
@@ -995,7 +995,7 @@ pkg_config_initialize() {
 	einfo
 	einfon "Set the Administrator/root email: "
 	read -r email
-	einfo "Initializing database ..."
+	elog "Initializing database ..."
 	su -l ${GIT_USER} -s /bin/sh -c "
 		export LANG=en_US.UTF-8; export LC_ALL=en_US.UTF-8
 		cd ${GITLAB}
@@ -1014,7 +1014,7 @@ pkg_config() {
 	if [ "$MODUS" = "new" ]; then
 		pkg_config_initialize
 	elif [ "$MODUS" = "rebuild" ]; then
-		einfo "No need to run \"emerge --config\" after a rebuild."
+		elog "No need to run \"emerge --config\" after a rebuild."
 	elif [ "$MODUS" = "patch" ] || [ "$MODUS" = "minor" ] || [ "$MODUS" = "major" ]; then
 		pkg_config_do_upgrade
 		local ret=$?
@@ -1022,40 +1022,40 @@ pkg_config() {
 	fi
 
 	if [ "$MODUS" = "new" ]; then
-		einfo
-		einfo "Now start ${PN} with"
+		elog
+		elog "Now start ${PN} with"
 		if use systemd; then
-			einfo "\$ systemctl start ${PN}.target"
+			elog "\$ systemctl start ${PN}.target"
 		else
-			einfo "\$ rc-service ${PN} start"
+			elog "\$ rc-service ${PN} start"
 		fi
 	fi
 
-	einfo
-	einfo "You might want to check your application status. Run this:"
-	einfo "\$ cd ${GITLAB}"
-	einfo "\$ sudo -u ${GIT_USER} ${BUNDLE} exec rake gitlab:check RAILS_ENV=${RAILS_ENV}"
-	einfo
-	einfo "GitLab is prepared now."
+	elog
+	elog "You might want to check your application status. Run this:"
+	elog "\$ cd ${GITLAB}"
+	elog "\$ sudo -u ${GIT_USER} ${BUNDLE} exec rake gitlab:check RAILS_ENV=${RAILS_ENV}"
+	elog
+	elog "GitLab is prepared now."
 	if [ "$MODUS" = "patch" ] || [ "$MODUS" = "minor" ] || [ "$MODUS" = "major" ]; then
-		einfo "Ensure you're still up-to-date with the latest NGINX configuration changes:"
-		einfo "\$ cd /opt/gitlab/gitlab"
-		einfo "\$ git -P diff v${vINST}:lib/support/nginx/ v${PV}:lib/support/nginx/"
+		elog "Ensure you're still up-to-date with the latest NGINX configuration changes:"
+		elog "\$ cd /opt/gitlab/gitlab"
+		elog "\$ git -P diff v${vINST}:lib/support/nginx/ v${PV}:lib/support/nginx/"
 	elif [ "$MODUS" = "new" ]; then
-		einfo "To configure your nginx site have a look at the examples configurations"
-		einfo "in the ${GITLAB}/lib/support/nginx/ folder."
+		elog "To configure your nginx site have a look at the examples configurations"
+		elog "in the ${GITLAB}/lib/support/nginx/ folder."
 		if use relative_url; then
-			einfo "For a relative URL installation several modifications must be made to nginx"
-			einfo "\t Move everything in the top-level 'server' block to top-level nginx.conf"
-			einfo "\t Remove the top-level 'server' block"
-			einfo "\t Add a 'location /gitlab at the top where the server block was"
-			einfo "\t Change 'location /' to 'location /gitlab/'"
-			einfo "\t Symlink <htdocs>/gitlab to ${GITLAB}/public"
-			einfo "In order for the Backround Jobs page to work, add"
-			einfo "\t 'location ~ ^/gitlab/admin/sidekiq/* {"
-			einfo "\t proxy_pass http://gitlab-workhorse;"
-			einfo "\t }"
-			einfo "under the main gitlab location block"
+			elog "For a relative URL installation several modifications must be made to nginx"
+			elog "\t Move everything in the top-level 'server' block to top-level nginx.conf"
+			elog "\t Remove the top-level 'server' block"
+			elog "\t Add a 'location /gitlab at the top where the server block was"
+			elog "\t Change 'location /' to 'location /gitlab/'"
+			elog "\t Symlink <htdocs>/gitlab to ${GITLAB}/public"
+			elog "In order for the Backround Jobs page to work, add"
+			elog "\t 'location ~ ^/gitlab/admin/sidekiq/* {"
+			elog "\t proxy_pass http://gitlab-workhorse;"
+			elog "\t }"
+			elog "under the main gitlab location block"
 		fi
 	fi
 }
