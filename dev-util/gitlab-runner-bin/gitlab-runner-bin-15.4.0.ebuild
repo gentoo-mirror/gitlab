@@ -3,7 +3,7 @@
 
 EAPI=7
 
-inherit readme.gentoo-r1 systemd tmpfiles user
+inherit readme.gentoo-r1 systemd tmpfiles
 
 DESCRIPTION="GitLab Runner"
 HOMEPAGE="https://gitlab.com/gitlab-org/gitlab-runner"
