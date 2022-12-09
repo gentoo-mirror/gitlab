@@ -7,7 +7,7 @@ EGIT_REPO_URI="https://gitlab.com/gitlab-org/gitlab-shell.git"
 EGIT_COMMIT="v${PV}"
 USE_RUBY="ruby27"
 
-inherit eutils git-r3 ruby-single user
+inherit eutils git-r3 ruby-single
 
 DESCRIPTION="SSH access for GitLab"
 HOMEPAGE="https://gitlab.com/gitlab-org/gitlab-shell"
