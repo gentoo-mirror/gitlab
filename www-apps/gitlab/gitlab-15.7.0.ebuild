@@ -466,7 +466,8 @@ src_install() {
 
 	diropts -m750
 	keepdir "${LOG_DIR}"
-	keepdir "${TMP_DIR}"
+	# is created at runtime by /usr/lib/tmpfiles.d/gitlab.conf
+	#keepdir "${TMP_DIR}"
 
 	diropts -m755
 	keepdir "${GIT_REPOS}"
@@ -522,6 +523,10 @@ src_install() {
 
 	## Install all others ##
 
+	# keep upstream permissions in scripts/ folder
+	cp -dR --preserve=mode scripts "${ED}/${GITLAB}"
+	rm -rf scripts
+	# now copy all the rest
 	insinto "${GITLAB}"
 	doins -r ./
 
