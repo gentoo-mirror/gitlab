@@ -535,12 +535,12 @@ src_install() {
 
 	dodir /etc/logrotate.d
 	sed -e "s|@LOG_DIR@|${LOG_DIR}|g" \
-		"${FILESDIR}"/gitlab.logrotate > "${D}"/etc/logrotate.d/${PN} \
+		"${FILESDIR}"/gitlab.logrotate > "${ED}"/etc/logrotate.d/${PN} \
 		|| die "failed to filter gitlab.logrotate"
 
 	## Install gems via bundler ##
 
-	cd "${D}/${GITLAB}"
+	cd "${ED}/${GITLAB}"
 
 	local gitlab_dir="${BASE_DIR}/${PN}"
 
@@ -594,14 +594,14 @@ src_install() {
 	dodir ${GITLAB_SHELL}
 	local vGS=$(best_version dev-vcs/gitlab-shell)
 	vGS=$(echo ${vGS#dev-vcs/gitlab-shell-})
-	echo ${vGS%-*} > ${D}/${GITLAB_SHELL}/VERSION
+	echo ${vGS%-*} > ${ED}/${GITLAB_SHELL}/VERSION
 	# Let lib/gitlab/shell.rb set the .gitlab_shell_secret symlink
 	# inside the sandbox. The real symlink will be set in pkg_config().
-	# Note: The gitlab-shell path "${D}/${GITLAB_SHELL}" is set
+	# Note: The gitlab-shell path "${ED}/${GITLAB_SHELL}" is set
 	#       here to prevent lib/gitlab/shell.rb creating the
 	#       gitlab_shell.secret symlink outside the sandbox.
 	sed -i \
-		-e "s|${GITLAB_SHELL}|${D}${GITLAB_SHELL}|g" \
+		-e "s|${GITLAB_SHELL}|${ED}${GITLAB_SHELL}|g" \
 		config/gitlab.yml || die "failed to fake the gitlab-shell path"
 	einfo "Updating node dependencies and (re)compiling assets ..."
 	/bin/sh -c "
@@ -611,16 +611,16 @@ src_install() {
 		|| die "failed to update node dependencies and (re)compile assets"
 	# Correct the gitlab-shell path we fooled lib/gitlab/shell.rb with.
 	sed -i \
-		-e "s|${D}${GITLAB_SHELL}|${GITLAB_SHELL}|g" \
-		${D}/${GITLAB_CONFIG}/gitlab.yml || die "failed to change back gitlab-shell path"
+		-e "s|${ED}${GITLAB_SHELL}|${GITLAB_SHELL}|g" \
+		${ED}/${GITLAB_CONFIG}/gitlab.yml || die "failed to change back gitlab-shell path"
 	if [ "$MODUS" != "new" ]; then
 		# Use the .gitlab_shell_secret file of the installed GitLab
-		cp -f ${gitlab_dir}/.gitlab_shell_secret ${D}${GITLAB}/.gitlab_shell_secret
+		cp -f ${gitlab_dir}/.gitlab_shell_secret ${ED}${GITLAB}/.gitlab_shell_secret
 	fi
 	# Correct the link
-	ln -sf ${GITLAB}/.gitlab_shell_secret ${D}${GITLAB_SHELL}/.gitlab_shell_secret
-	# Remove ${D}/${GITLAB_SHELL}/VERSION to avoid file collision with dev-vcs/gitlab-shell
-	rm -f ${D}/${GITLAB_SHELL}/VERSION
+	ln -sf ${GITLAB}/.gitlab_shell_secret ${ED}${GITLAB_SHELL}/.gitlab_shell_secret
+	# Remove ${ED}/${GITLAB_SHELL}/VERSION to avoid file collision with dev-vcs/gitlab-shell
+	rm -f ${ED}/${GITLAB_SHELL}/VERSION
 
 	## Clean ##
 
@@ -741,8 +741,8 @@ src_install() {
 
 	fowners -R ${GIT_USER}:${GIT_GROUP} $GITLAB $CONF_DIR $TMP_DIR $LOG_DIR $GIT_REPOS
 	fperms o+Xr "${TMP_DIR}" # Let nginx access the puma socket
-	[ -f "${D}/${CONF_DIR}/secrets.yml" ]      && fperms 600 "${CONF_DIR}/secrets.yml"
-	[ -f "${D}/${GITLAB_CONFIG}/secrets.yml" ] && fperms 600 "${GITLAB_CONFIG}/secrets.yml"
+	[ -f "${ED}/${CONF_DIR}/secrets.yml" ]      && fperms 600 "${CONF_DIR}/secrets.yml"
+	[ -f "${ED}/${GITLAB_CONFIG}/secrets.yml" ] && fperms 600 "${GITLAB_CONFIG}/secrets.yml"
 
 	src_install_gitaly
 }
