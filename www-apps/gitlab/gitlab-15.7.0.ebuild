@@ -744,8 +744,7 @@ src_install() {
 
 	# fix permissions
 
-	fowners -R ${GIT_USER}:${GIT_GROUP} $GITLAB $CONF_DIR $TMP_DIR $LOG_DIR $GIT_REPOS
-	fperms o+Xr "${TMP_DIR}" # Let nginx access the puma socket
+	fowners -R ${GIT_USER}:${GIT_GROUP} $GITLAB $CONF_DIR $LOG_DIR $GIT_REPOS
 	[ -f "${ED}/${CONF_DIR}/secrets.yml" ]      && fperms 600 "${CONF_DIR}/secrets.yml"
 	[ -f "${ED}/${GITLAB_CONFIG}/secrets.yml" ] && fperms 600 "${GITLAB_CONFIG}/secrets.yml"
 
