@@ -1,0 +1,16 @@
+BDEPEND=|| ( dev-lang/ruby:2.7 ) virtual/rubygems >=dev-ruby/bundler-2:2 >=dev-vcs/git-1.8.2.1[curl]
+DEFINED_PHASES=compile install postinst prepare unpack
+DEPEND=acct-user/git[gitlab] acct-group/git || ( >=dev-vcs/git-2.31.0[pcre] www-apps/gitlab[gitaly_git] ) >=dev-lang/go-1.16 virtual/ssh dev-db/redis
+DESCRIPTION=SSH access for GitLab
+EAPI=7
+HOMEPAGE=https://gitlab.com/gitlab-org/gitlab-shell
+INHERIT=eutils git-r3 ruby-single
+IUSE=-relative_url
+KEYWORDS=~amd64 ~x86 ~arm
+LICENSE=MIT
+PROPERTIES=live
+RDEPEND=acct-user/git[gitlab] acct-group/git || ( >=dev-vcs/git-2.31.0[pcre] www-apps/gitlab[gitaly_git] ) >=dev-lang/go-1.16 virtual/ssh dev-db/redis
+RESTRICT=network-sandbox
+SLOT=0
+_eclasses_=edos2unix	33e347e171066657f91f8b0c72ec8773	strip-linguas	ac3ee41ee2d31d8c41a77c0838320cc7	wrapper	4a1902f969e5718126434fc35f3a0d9c	eutils	8f942ebdcf04334697649d4a0bf65a32	git-r3	2347f8fe2d392b2a091191f94be37e6f	ruby-utils	97c8e15d89dc6537e36cddedf413ed22	ruby-single	b9b5d136d97bf37058132e4231da02fa
+_md5_=9c02ad45666658c275ca3020f16cf9ae
