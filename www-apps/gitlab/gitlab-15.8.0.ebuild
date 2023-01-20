@@ -641,7 +641,7 @@ src_install() {
 	# fix QA Security Notice: world writable file(s)
 	elog "Fixing permissions of world writable files"
 	local gemsdir="${ruby_vpath}/gems"
-	local file gem wwfgems="gitlab-dangerfiles toml-rb"
+	local file gem wwfgems="gitlab-dangerfiles gitlab-labkit toml-rb unleash"
 	# If we are using wildcards, the shell fills them without prefixing ${ED}. Thus
 	# we would target a file list in the real system instead of in the sandbox.
 	for gem in ${wwfgems}; do
