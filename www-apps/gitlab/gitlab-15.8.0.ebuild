@@ -68,7 +68,7 @@ DEPEND="
 	>=dev-lang/ruby-2.7.5:2.7[ssl]
 	>=dev-vcs/gitlab-shell-14.15.0[relative_url=]
 	pages? ( ~www-apps/gitlab-pages-${PVR} )
-	!gitaly_git? ( >=dev-vcs/git-2.37.0[pcre] dev-libs/libpcre2[jit] )
+	!gitaly_git? ( >=dev-vcs/git-2.38.0[pcre] dev-libs/libpcre2[jit] )
 	net-misc/curl
 	virtual/ssh
 	=sys-apps/yarn-1.22*
