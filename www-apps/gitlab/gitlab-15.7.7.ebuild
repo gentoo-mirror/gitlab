@@ -48,12 +48,12 @@ GEMS_DEPEND="
 	dev-libs/libxslt
 	dev-util/ragel
 	dev-libs/yajl
-	>=net-libs/nodejs-14
+	>=net-libs/nodejs-16.15.0
 	|| ( >=dev-db/postgresql-12.10:12 dev-db/postgresql:13 )
 	net-libs/http-parser
 	dev-python/docutils"
 GITALY_DEPEND="
-	>=dev-lang/go-1.16
+	>=dev-lang/go-1.18
 	dev-util/cmake"
 WORKHORSE_DEPEND="
 	dev-lang/go
@@ -66,9 +66,9 @@ DEPEND="
 	acct-user/git[gitlab]
 	acct-group/git
 	>=dev-lang/ruby-2.7.5:2.7[ssl]
-	>=dev-vcs/gitlab-shell-14.12.0[relative_url=]
-	pages? ( ~www-apps/gitlab-pages-15.5.7 )
-	!gitaly_git? ( >=dev-vcs/git-2.33.0[pcre] dev-libs/libpcre2[jit] )
+	>=dev-vcs/gitlab-shell-14.14.0[relative_url=]
+	pages? ( ~www-apps/gitlab-pages-${PV} )
+	!gitaly_git? ( >=dev-vcs/git-2.37.0[pcre] dev-libs/libpcre2[jit] )
 	net-misc/curl
 	virtual/ssh
 	=sys-apps/yarn-1.22*
