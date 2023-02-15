@@ -67,7 +67,7 @@ DEPEND="
 	acct-group/git
 	>=dev-lang/ruby-2.7.5:2.7[ssl]
 	>=dev-vcs/gitlab-shell-14.14.0[relative_url=]
-	pages? ( ~www-apps/gitlab-pages-15.7.5 )
+	pages? ( ~www-apps/gitlab-pages-15.7.6 )
 	!gitaly_git? ( >=dev-vcs/git-2.37.0[pcre] dev-libs/libpcre2[jit] )
 	net-misc/curl
 	virtual/ssh
