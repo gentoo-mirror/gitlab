@@ -16,11 +16,15 @@ NOTE: On my test installation the upgrade and database.yml change worked
       flawlessly just with the usual restart of gitlab but it's recommended
       to do it the safe way this time, since a misconfiguration in the
       database.yml file may irreversibly damage the database:
-      1. Stop gitlab
-      2. Backup the database, e. g. by
+      1. Stop gitlab:
+           systemctl stop gitlab.target
+      2. Backup the database. Note that gitaly needs to be running:
+           systemctl start gitlab-gitaly.service
+         Then do the backup e. g. by
            bundle exec rake gitlab:backup:create RAILS_ENV=production
          or just run your normal database backup timer/cron-job.
-      3. emerge -u gitlab
+           systemctl stop gitlab-gitaly.service
+      3. emerge -u www-apps/gitlab
       4. Update /etc/gitlab/database.yml
          Just uncomment the `ci:` section and set `database:`, `username:`,
          `password:`, `host:` to the _same_ values as in your `main:` section.
