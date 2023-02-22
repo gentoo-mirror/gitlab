@@ -12,3 +12,18 @@ In GitLab 15.10 and later, you should have two sections in your `database.yml`,
 In GitLab 17.0 and later, you must have the two `main:` and `ci:` sections in
 your `database.yml`.
 
+NOTE: On my test installation the upgrade and database.yml change worked
+      flawlessly just with the usual restart of gitlab but it's recommended
+      to do it the safe way this time, since a misconfiguration in the
+      database.yml file may irreversibly damage the database:
+      1. Stop gitlab
+      2. Backup the database, e. g. by
+           bundle exec rake gitlab:backup:create RAILS_ENV=production
+         or just run your normal database backup timer/cron-job.
+      3. emerge -u gitlab
+      4. Update /etc/gitlab/database.yml
+         Just uncomment the `ci:` section and set `database:`, `username:`,
+         `password:`, `host:` to the _same_ values as in your `main:` section.
+      5. Start gitlab and then do the
+         emerge --config "=www-apps/gitlab-15.9.0"
+
