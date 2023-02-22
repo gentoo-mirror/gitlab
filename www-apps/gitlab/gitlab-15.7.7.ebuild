@@ -1055,7 +1055,7 @@ pkg_config() {
 			elog "\t Add a 'location /gitlab at the top where the server block was"
 			elog "\t Change 'location /' to 'location /gitlab/'"
 			elog "\t Symlink <htdocs>/gitlab to ${GITLAB}/public"
-			elog "In order for the Backround Jobs page to work, add"
+			elog "In order for the Background Jobs page to work, add"
 			elog "\t 'location ~ ^/gitlab/admin/sidekiq/* {"
 			elog "\t proxy_pass http://gitlab-workhorse;"
 			elog "\t }"
