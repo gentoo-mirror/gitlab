@@ -859,7 +859,7 @@ pkg_postinst() {
 			elog "       daemonize no"
 			elog "       supervised systemd"
 			elog "       #pidfile /run/redis/redis.pid"
-			elog "     Make matching changes to the systemd unit file"
+			elog "     Make matching changes to the systemd unit file:"
 			elog "     Create /etc/systemd/system/redis.service.d/10fix_type.conf"
 			elog "     and insert the following lines"
 			elog "       [Service]"
