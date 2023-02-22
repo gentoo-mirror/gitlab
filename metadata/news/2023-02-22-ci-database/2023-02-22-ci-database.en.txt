@@ -1,4 +1,4 @@
-Title: GitLab Runner 
+Title: database.yml `ci:` section 
 Author: Horst Prote <prote@fmi.uni-stuttgart.de>
 Posted: 2023-02-22
 Revision: 1
@@ -7,7 +7,7 @@ News-Item-Format: 2.0
 From GitLab 15.9, `database.yml` with only a section: `main:` is deprecated.
 
 In GitLab 15.10 and later, you should have two sections in your `database.yml`,
-`main:` and `ci:`. The `ci`: connection must be to the same database.
+`main:` and `ci:`. The `ci:` connection must be to the same database.
 
 In GitLab 17.0 and later, you must have the two `main:` and `ci:` sections in
 your `database.yml`.
