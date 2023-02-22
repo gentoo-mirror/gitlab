@@ -1,6 +1,6 @@
 acct-user/git 0-r2: Git repository hosting user
 acct-user/gitlab-pages 0: Dedicated user for gitlab-pages
-dev-util/gitlab-runner-bin 15.6.0 15.6.1 15.6.2 15.6.3 15.7.0 15.7.1 15.7.2 15.7.3 15.7.4 15.8.0 15.8.1 15.8.2: GitLab Runner
+dev-util/gitlab-runner-bin 15.6.0 15.6.1 15.6.2 15.6.3 15.7.0 15.7.1 15.7.2 15.7.3 15.7.4 15.8.0 15.8.1 15.8.2 15.8.3 15.9.0 15.9.1: GitLab Runner
 dev-vcs/gitlab-shell 14.13.0 14.14.0 14.15.0 14.16.0 14.17.0: SSH access for GitLab
-www-apps/gitlab 15.6.0 15.6.1 15.6.2 15.6.3 15.6.4 15.6.6 15.6.7 15.6.8 15.7.0 15.7.1 15.7.2 15.7.3 15.7.5 15.7.6 15.7.7 15.8.0 15.8.1 15.8.2 15.8.3: The gitlab and gitaly parts of the GitLab DevOps platform
-www-apps/gitlab-pages 1.63.0 15.6.3 15.6.4 15.6.6 15.6.7 15.6.8 15.7.0 15.7.1 15.7.2 15.7.3 15.7.5 15.7.6 15.7.7 15.8.0 15.8.1 15.8.2 15.8.3: GitLab Pages daemon used to serve static websites for GitLab users
+www-apps/gitlab 15.6.0 15.6.1 15.6.2 15.6.3 15.6.4 15.6.6 15.6.7 15.6.8 15.7.0 15.7.1 15.7.2 15.7.3 15.7.5 15.7.6 15.7.7 15.8.0 15.8.1 15.8.2 15.8.3 15.9.0: The gitlab and gitaly parts of the GitLab DevOps platform
+www-apps/gitlab-pages 1.63.0 15.6.3 15.6.4 15.6.6 15.6.7 15.6.8 15.7.0 15.7.1 15.7.2 15.7.3 15.7.5 15.7.6 15.7.7 15.8.0 15.8.1 15.8.2 15.8.3 15.9.0: GitLab Pages daemon used to serve static websites for GitLab users
