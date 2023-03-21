@@ -170,6 +170,7 @@ pkg_setup() {
 		# ensure that any background migrations have been fully completed
 		# see /opt/gitlab/gitlab/doc/update/README.md
 		elog "Checking for background migrations ..."
+		eselect ruby set ruby27
 		local bm gitlab_dir rails_cmd="'puts Gitlab::BackgroundMigration.remaining'"
 		gitlab_dir="${BASE_DIR}/${PN}"
 		bm=$(su -l ${GIT_USER} -s /bin/sh -c "
@@ -187,6 +188,7 @@ pkg_setup() {
 		else
 			elog "OK: No remainig background migrations found."
 		fi
+		eselect ruby set ruby30
 	fi
 
 	if [ "$MODUS" = "rebuild" ] || \
@@ -264,16 +266,22 @@ src_prepare_gitaly() {
 	${BUNDLE} config set --local build.nokogiri --use-system-libraries
 
 	# Hack: Don't start from scratch, use the installed bundle
+	local rubyVinst=$(ruby --version)
+	rubyVinst=${rubyVinst%%p*}
+	rubyVinst=${rubyVinst##ruby }
 	local gitaly_dir="${GITLAB_GITALY}"
 	if [ -d ${gitaly_dir}/ ]; then
-		einfo "Using parts of the installed gitlab-gitaly to save time:"
-		mkdir -p vendor/bundle
-		cd vendor
-		if [ -d ${gitaly_dir}/ruby/vendor/bundle/ruby ]; then
-			portageq list_preserved_libs / >/dev/null # returns 1 when no preserved_libs found
-			if [ "$?" = "1" ]; then
-				einfo "   Copying ${gitaly_dir}/ruby/vendor/bundle/ruby/ ..."
-				cp -a ${gitaly_dir}/ruby/vendor/bundle/ruby/ bundle/
+		local rubyV=$(ls ${gitaly_dir}/ruby/vendor/bundle/ruby)
+		if [ "$rubyVinst" = "$rubyV" ]; then
+			einfo "Using parts of the installed gitlab-gitaly to save time:"
+			mkdir -p vendor/bundle
+			cd vendor
+			if [ -d ${gitaly_dir}/ruby/vendor/bundle/ruby ]; then
+				portageq list_preserved_libs / >/dev/null # returns 1 when no preserved_libs found
+				if [ "$?" = "1" ]; then
+					einfo "   Copying ${gitaly_dir}/ruby/vendor/bundle/ruby/ ..."
+					cp -a ${gitaly_dir}/ruby/vendor/bundle/ruby/ bundle/
+				fi
 			fi
 		fi
 	fi
@@ -403,11 +411,16 @@ src_compile() {
 		|| die "Compiling gitaly failed"
 
 	# Hack: Reusing gitaly's bundler cache for gitlab
+	local rubyVinst=$(ruby --version)
+	rubyVinst=${rubyVinst%%p*}
+	rubyVinst=${rubyVinst##ruby }
 	local rubyV=$(ls ruby/vendor/bundle/ruby)
-	local ruby_vpath=vendor/bundle/ruby/${rubyV}
-	if [ -d ruby/${ruby_vpath}/cache ]; then
-		mkdir -p ${WORKDIR}/gitlab-${PV}/${ruby_vpath}
-		mv ruby/${ruby_vpath}/cache ${WORKDIR}/gitlab-${PV}/${ruby_vpath}
+	if [ "$rubyVinst" = "$rubyV" ]; then 
+		local ruby_vpath=vendor/bundle/ruby/${rubyV}
+		if [ -d ruby/${ruby_vpath}/cache ]; then
+			mkdir -p ${WORKDIR}/gitlab-${PV}/${ruby_vpath}
+			mv ruby/${ruby_vpath}/cache ${WORKDIR}/gitlab-${PV}/${ruby_vpath}
+		fi
 	fi
 }
 
@@ -549,15 +562,19 @@ src_install() {
 
 	local gitlab_dir="${BASE_DIR}/${PN}"
 
-	if [ -d ${gitlab_dir}/ ]; then
-		einfo "Using parts of the installed gitlab to save time:"
-	fi
 	# Hack: Don't start from scratch, use the installed bundle
 	if [ -d ${gitlab_dir}/vendor/bundle ]; then
-		portageq list_preserved_libs / >/dev/null # returns 1 when no preserved_libs found
-		if [ "$?" = "1" ]; then
-			einfo "   Copying ${gitlab_dir}/vendor/bundle/ ..."
-			cp -a ${gitlab_dir}/vendor/bundle/ vendor/
+		local rubyVinst=$(ruby --version)
+		rubyVinst=${rubyVinst%%p*}
+		rubyVinst=${rubyVinst##ruby }
+		local rubyV=$(ls ${gitlab_dir}/ruby/vendor/bundle/ruby)
+		if [ "$rubyVinst" = "$rubyV" ]; then
+			einfo "Using parts of the installed gitlab to save time:"
+			portageq list_preserved_libs / >/dev/null # returns 1 when no preserved_libs found
+			if [ "$?" = "1" ]; then
+				einfo "   Copying ${gitlab_dir}/vendor/bundle/ ..."
+				cp -a ${gitlab_dir}/vendor/bundle/ vendor/
+			fi
 		fi
 	fi
 	# Hack: Don't start from scratch, use the installed node_modules
