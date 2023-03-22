@@ -20,7 +20,7 @@ Change the RUBY_TARGETS variable in /etc/portage/make.conf to:
 We have to keep ruby27 here as long as the old GitLab server (in my case
 gitlabhq-15.9.3) is running. Then run
 
-    emerge -1 dev-lang/ruby:3.0
+    emerge -DuN1 dev-lang/ruby:3.0
     eselect ruby set ruby30
 
 2. Update gitlab
