@@ -1,0 +1,40 @@
+Title: www-apps/gitlab-15.10.0 upgrade
+Author: Horst Prote <prote@fmi.uni-stuttgart.de>
+Posted: 2023-03-21
+Revision: 1
+News-Item-Format: 2.0
+Display-If-Installed: www-apps/gitlab
+
+NOTE! The upgrade to www-apps/gitlab-15.10.0 needs some preparation and
+precautions as it depends on ruby-3.0.x and the switch from ruby27 to
+ruby30 has to be done in the correct order.
+
+So, here is how I did the upgrade on my GitLab Host:
+
+1. Prepare for ruby30
+---------------------
+Change the RUBY_TARGETS variable in /etc/portage/make.conf to:
+
+    RUBY_TARGETS="ruby27 ruby30"
+
+We have to keep ruby27 here as long as the old GitLab server (in my case
+gitlabhq-15.9.3) is running. Then run
+
+    emerge -DuN1 dev-lang/ruby:3.0
+    eselect ruby set ruby30
+
+2. Update gitlab
+----------------
+Do
+    emerge -DuN gitlab
+    systemctl daemon-reload
+    systemctl restart gitlab.target
+    emerge --config "=www-apps/gitlab-15.10.0"
+
+3. Cleanup
+----------
+If you like you could now in /etc/portage/make.conf change to
+
+    RUBY_TARGETS="ruby30"
+
+rebuild the affected packages and then remove ruby27.
