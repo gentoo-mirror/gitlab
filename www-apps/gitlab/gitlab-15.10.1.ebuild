@@ -9,7 +9,7 @@ EAPI="7"
 #   it should be done, but GitLab has too many dependencies that it will be too
 #   difficult to maintain them via ebuilds.
 
-USE_RUBY="ruby27"
+USE_RUBY="ruby30"
 
 EGIT_REPO_URI="https://gitlab.com/gitlab-org/gitlab-foss.git"
 EGIT_COMMIT="v${PV}"
@@ -48,7 +48,7 @@ GEMS_DEPEND="
 	dev-libs/libxslt
 	dev-util/ragel
 	dev-libs/yajl
-	>=net-libs/nodejs-14.15.0
+	>=net-libs/nodejs-16.15.0
 	|| ( >=dev-db/postgresql-12.10:12 dev-db/postgresql:13 )
 	net-libs/http-parser
 	dev-python/docutils"
@@ -65,10 +65,10 @@ DEPEND="
 	${RUBY_DEPS}
 	acct-user/git[gitlab]
 	acct-group/git
-	>=dev-lang/ruby-2.7.5:2.7[ssl]
-	>=dev-vcs/gitlab-shell-14.13.0[relative_url=]
-	pages? ( ~www-apps/gitlab-pages-1.63.0 )
-	!gitaly_git? ( >=dev-vcs/git-2.37.0[pcre] dev-libs/libpcre2[jit] )
+	>=dev-lang/ruby-3.0.5:3.0[ssl]
+	>=dev-vcs/gitlab-shell-14.18.0[relative_url=]
+	pages? ( ~www-apps/gitlab-pages-${PV} )
+	!gitaly_git? ( >=dev-vcs/git-2.38.0[pcre] dev-libs/libpcre2[jit] )
 	net-misc/curl
 	virtual/ssh
 	=sys-apps/yarn-1.22*
@@ -170,6 +170,7 @@ pkg_setup() {
 		# ensure that any background migrations have been fully completed
 		# see /opt/gitlab/gitlab/doc/update/README.md
 		elog "Checking for background migrations ..."
+		eselect ruby set ruby27
 		local bm gitlab_dir rails_cmd="'puts Gitlab::BackgroundMigration.remaining'"
 		gitlab_dir="${BASE_DIR}/${PN}"
 		bm=$(su -l ${GIT_USER} -s /bin/sh -c "
@@ -187,6 +188,7 @@ pkg_setup() {
 		else
 			elog "OK: No remainig background migrations found."
 		fi
+		eselect ruby set ruby30
 	fi
 
 	if [ "$MODUS" = "rebuild" ] || \
@@ -264,16 +266,22 @@ src_prepare_gitaly() {
 	${BUNDLE} config set --local build.nokogiri --use-system-libraries
 
 	# Hack: Don't start from scratch, use the installed bundle
+	local rubyVinst=$(ruby --version)
+	rubyVinst=${rubyVinst%%p*}
+	rubyVinst=${rubyVinst##ruby }
 	local gitaly_dir="${GITLAB_GITALY}"
 	if [ -d ${gitaly_dir}/ ]; then
-		einfo "Using parts of the installed gitlab-gitaly to save time:"
-		mkdir -p vendor/bundle
-		cd vendor
-		if [ -d ${gitaly_dir}/ruby/vendor/bundle/ruby ]; then
-			portageq list_preserved_libs / >/dev/null # returns 1 when no preserved_libs found
-			if [ "$?" = "1" ]; then
-				einfo "   Copying ${gitaly_dir}/ruby/vendor/bundle/ruby/ ..."
-				cp -a ${gitaly_dir}/ruby/vendor/bundle/ruby/ bundle/
+		local rubyV=$(ls ${gitaly_dir}/ruby/vendor/bundle/ruby)
+		if [ "$rubyVinst" = "$rubyV" ]; then
+			einfo "Using parts of the installed gitlab-gitaly to save time:"
+			mkdir -p vendor/bundle
+			cd vendor
+			if [ -d ${gitaly_dir}/ruby/vendor/bundle/ruby ]; then
+				portageq list_preserved_libs / >/dev/null # returns 1 when no preserved_libs found
+				if [ "$?" = "1" ]; then
+					einfo "   Copying ${gitaly_dir}/ruby/vendor/bundle/ruby/ ..."
+					cp -a ${gitaly_dir}/ruby/vendor/bundle/ruby/ bundle/
+				fi
 			fi
 		fi
 	fi
@@ -403,11 +411,16 @@ src_compile() {
 		|| die "Compiling gitaly failed"
 
 	# Hack: Reusing gitaly's bundler cache for gitlab
+	local rubyVinst=$(ruby --version)
+	rubyVinst=${rubyVinst%%p*}
+	rubyVinst=${rubyVinst##ruby }
 	local rubyV=$(ls ruby/vendor/bundle/ruby)
-	local ruby_vpath=vendor/bundle/ruby/${rubyV}
-	if [ -d ruby/${ruby_vpath}/cache ]; then
-		mkdir -p ${WORKDIR}/gitlab-${PV}/${ruby_vpath}
-		mv ruby/${ruby_vpath}/cache ${WORKDIR}/gitlab-${PV}/${ruby_vpath}
+	if [ "$rubyVinst" = "$rubyV" ]; then 
+		local ruby_vpath=vendor/bundle/ruby/${rubyV}
+		if [ -d ruby/${ruby_vpath}/cache ]; then
+			mkdir -p ${WORKDIR}/gitlab-${PV}/${ruby_vpath}
+			mv ruby/${ruby_vpath}/cache ${WORKDIR}/gitlab-${PV}/${ruby_vpath}
+		fi
 	fi
 }
 
@@ -466,7 +479,8 @@ src_install() {
 
 	diropts -m750
 	keepdir "${LOG_DIR}"
-	keepdir "${TMP_DIR}"
+	# is created at runtime by /usr/lib/tmpfiles.d/gitlab.conf
+	#keepdir "${TMP_DIR}"
 
 	diropts -m755
 	keepdir "${GIT_REPOS}"
@@ -522,6 +536,10 @@ src_install() {
 
 	## Install all others ##
 
+	# keep upstream permissions in scripts/ folder
+	cp -dR --preserve=mode scripts "${ED}/${GITLAB}"
+	rm -rf scripts
+	# now copy all the rest
 	insinto "${GITLAB}"
 	doins -r ./
 
@@ -535,24 +553,28 @@ src_install() {
 
 	dodir /etc/logrotate.d
 	sed -e "s|@LOG_DIR@|${LOG_DIR}|g" \
-		"${FILESDIR}"/gitlab.logrotate > "${D}"/etc/logrotate.d/${PN} \
+		"${FILESDIR}"/gitlab.logrotate > "${ED}"/etc/logrotate.d/${PN} \
 		|| die "failed to filter gitlab.logrotate"
 
 	## Install gems via bundler ##
 
-	cd "${D}/${GITLAB}"
+	cd "${ED}/${GITLAB}"
 
 	local gitlab_dir="${BASE_DIR}/${PN}"
 
-	if [ -d ${gitlab_dir}/ ]; then
-		einfo "Using parts of the installed gitlab to save time:"
-	fi
 	# Hack: Don't start from scratch, use the installed bundle
 	if [ -d ${gitlab_dir}/vendor/bundle ]; then
-		portageq list_preserved_libs / >/dev/null # returns 1 when no preserved_libs found
-		if [ "$?" = "1" ]; then
-			einfo "   Copying ${gitlab_dir}/vendor/bundle/ ..."
-			cp -a ${gitlab_dir}/vendor/bundle/ vendor/
+		local rubyVinst=$(ruby --version)
+		rubyVinst=${rubyVinst%%p*}
+		rubyVinst=${rubyVinst##ruby }
+		local rubyV=$(ls ${gitlab_dir}/ruby/vendor/bundle/ruby)
+		if [ "$rubyVinst" = "$rubyV" ]; then
+			einfo "Using parts of the installed gitlab to save time:"
+			portageq list_preserved_libs / >/dev/null # returns 1 when no preserved_libs found
+			if [ "$?" = "1" ]; then
+				einfo "   Copying ${gitlab_dir}/vendor/bundle/ ..."
+				cp -a ${gitlab_dir}/vendor/bundle/ vendor/
+			fi
 		fi
 	fi
 	# Hack: Don't start from scratch, use the installed node_modules
@@ -594,14 +616,14 @@ src_install() {
 	dodir ${GITLAB_SHELL}
 	local vGS=$(best_version dev-vcs/gitlab-shell)
 	vGS=$(echo ${vGS#dev-vcs/gitlab-shell-})
-	echo ${vGS%-*} > ${D}/${GITLAB_SHELL}/VERSION
+	echo ${vGS%-*} > ${ED}/${GITLAB_SHELL}/VERSION
 	# Let lib/gitlab/shell.rb set the .gitlab_shell_secret symlink
 	# inside the sandbox. The real symlink will be set in pkg_config().
-	# Note: The gitlab-shell path "${D}/${GITLAB_SHELL}" is set
+	# Note: The gitlab-shell path "${ED}/${GITLAB_SHELL}" is set
 	#       here to prevent lib/gitlab/shell.rb creating the
 	#       gitlab_shell.secret symlink outside the sandbox.
 	sed -i \
-		-e "s|${GITLAB_SHELL}|${D}${GITLAB_SHELL}|g" \
+		-e "s|${GITLAB_SHELL}|${ED}${GITLAB_SHELL}|g" \
 		config/gitlab.yml || die "failed to fake the gitlab-shell path"
 	einfo "Updating node dependencies and (re)compiling assets ..."
 	/bin/sh -c "
@@ -611,16 +633,16 @@ src_install() {
 		|| die "failed to update node dependencies and (re)compile assets"
 	# Correct the gitlab-shell path we fooled lib/gitlab/shell.rb with.
 	sed -i \
-		-e "s|${D}${GITLAB_SHELL}|${GITLAB_SHELL}|g" \
-		${D}/${GITLAB_CONFIG}/gitlab.yml || die "failed to change back gitlab-shell path"
+		-e "s|${ED}${GITLAB_SHELL}|${GITLAB_SHELL}|g" \
+		${ED}/${GITLAB_CONFIG}/gitlab.yml || die "failed to change back gitlab-shell path"
 	if [ "$MODUS" != "new" ]; then
 		# Use the .gitlab_shell_secret file of the installed GitLab
-		cp -f ${gitlab_dir}/.gitlab_shell_secret ${D}${GITLAB}/.gitlab_shell_secret
+		cp -f ${gitlab_dir}/.gitlab_shell_secret ${ED}${GITLAB}/.gitlab_shell_secret
 	fi
 	# Correct the link
-	ln -sf ${GITLAB}/.gitlab_shell_secret ${D}${GITLAB_SHELL}/.gitlab_shell_secret
-	# Remove ${D}/${GITLAB_SHELL}/VERSION to avoid file collision with dev-vcs/gitlab-shell
-	rm -f ${D}/${GITLAB_SHELL}/VERSION
+	ln -sf ${GITLAB}/.gitlab_shell_secret ${ED}${GITLAB_SHELL}/.gitlab_shell_secret
+	# Remove ${ED}/${GITLAB_SHELL}/VERSION to avoid file collision with dev-vcs/gitlab-shell
+	rm -f ${ED}/${GITLAB_SHELL}/VERSION
 
 	## Clean ##
 
@@ -636,7 +658,7 @@ src_install() {
 	# fix QA Security Notice: world writable file(s)
 	elog "Fixing permissions of world writable files"
 	local gemsdir="${ruby_vpath}/gems"
-	local file gem wwfgems="gitlab-dangerfiles toml-rb"
+	local file gem wwfgems="gitlab-dangerfiles gitlab-labkit os toml-rb unleash"
 	# If we are using wildcards, the shell fills them without prefixing ${ED}. Thus
 	# we would target a file list in the real system instead of in the sandbox.
 	for gem in ${wwfgems}; do
@@ -739,10 +761,9 @@ src_install() {
 
 	# fix permissions
 
-	fowners -R ${GIT_USER}:${GIT_GROUP} $GITLAB $CONF_DIR $TMP_DIR $LOG_DIR $GIT_REPOS
-	fperms o+Xr "${TMP_DIR}" # Let nginx access the puma socket
-	[ -f "${D}/${CONF_DIR}/secrets.yml" ]      && fperms 600 "${CONF_DIR}/secrets.yml"
-	[ -f "${D}/${GITLAB_CONFIG}/secrets.yml" ] && fperms 600 "${GITLAB_CONFIG}/secrets.yml"
+	fowners -R ${GIT_USER}:${GIT_GROUP} $GITLAB $CONF_DIR $LOG_DIR $GIT_REPOS
+	[ -f "${ED}/${CONF_DIR}/secrets.yml" ]      && fperms 600 "${CONF_DIR}/secrets.yml"
+	[ -f "${ED}/${GITLAB_CONFIG}/secrets.yml" ] && fperms 600 "${GITLAB_CONFIG}/secrets.yml"
 
 	src_install_gitaly
 }
@@ -752,10 +773,10 @@ pkg_postinst_gitaly() {
 		local conf_dir="${CONF_DIR}"
 		use gitlab-config && conf_dir="${GITLAB_CONFIG}"
 		elog  ""
-		einfo "Note: With gitaly_git USE flag enabled the included git was installed to"
-		einfo "      ${GITLAB_GITALY}/bin/. In order to use it one has to set the"
-		einfo "      [git] \"bin_path\" variable in \"${CONF_DIR_GITALY}/config.toml\" and in"
-		einfo "      \"${conf_dir}/gitlab.yml\" to \"${GITLAB_GITALY}/bin/git\""
+		ewarn "Note: With gitaly_git USE flag enabled the included git was installed to"
+		ewarn "      ${GITLAB_GITALY}/bin/. In order to use it one has to set the"
+		ewarn "      [git] \"bin_path\" variable in \"${CONF_DIR_GITALY}/config.toml\" and in"
+		ewarn "      \"${conf_dir}/gitlab.yml\" to \"${GITLAB_GITALY}/bin/git\""
 	fi
 }
 
@@ -855,7 +876,7 @@ pkg_postinst() {
 			elog "       daemonize no"
 			elog "       supervised systemd"
 			elog "       #pidfile /run/redis/redis.pid"
-			elog "     Make matching changes to the systemd unit file"
+			elog "     Make matching changes to the systemd unit file:"
 			elog "     Create /etc/systemd/system/redis.service.d/10fix_type.conf"
 			elog "     and insert the following lines"
 			elog "       [Service]"
@@ -908,15 +929,15 @@ pkg_postinst() {
 }
 
 pkg_config_do_upgrade_migrate_data() {
-	einfo  "-- Migrating data --"
-	einfo "Found your latest gitlabhq instance at \"${BASE_DIR}/gitlabhq-${vINST}\"."
+	elog  "-- Migrating data --"
+	elog "Found your latest gitlabhq instance at \"${BASE_DIR}/gitlabhq-${vINST}\"."
 
-	einfo  "1. This will move your public/uploads/ folder from"
-	einfo  "   \"${BASE_DIR}/gitlabhq-${vINST}\" to \"${GITLAB}\"."
+	elog  "1. This will move your public/uploads/ folder from"
+	elog  "   \"${BASE_DIR}/gitlabhq-${vINST}\" to \"${GITLAB}\"."
 	einfon "   (C)ontinue or (s)kip? "
 	local migrate_uploads=$(continue_or_skip)
 	if [[ $migrate_uploads ]]; then
-		einfo "   Moving the public/uploads/ folder ..."
+		elog "   Moving the public/uploads/ folder ..."
 		su -l ${GIT_USER} -s /bin/sh -c "
 			rm -rf ${GITLAB}/public/uploads && \
 			mv ${BASE_DIR}/gitlabhq-${vINST}/public/uploads ${GITLAB}/public/uploads" \
@@ -924,15 +945,15 @@ pkg_config_do_upgrade_migrate_data() {
 
 		# Fix permissions
 		find "${GITLAB}/public/uploads/" -type d -exec chmod 0700 {} \;
-		einfo "   ... finished."
+		elog "   ... finished."
 	fi
 
-	einfo  "2. This will move your shared/ data folder from"
-	einfo  "   \"${BASE_DIR}/gitlabhq-${vINST}\" to \"${GITLAB}\"."
+	elog  "2. This will move your shared/ data folder from"
+	elog  "   \"${BASE_DIR}/gitlabhq-${vINST}\" to \"${GITLAB}\"."
 	einfon "   (C)ontinue or (s)kip? "
 	local migrate_shared=$(continue_or_skip)
 	if [[ $migrate_shared ]]; then
-		einfo "   Moving the shared/ data folder ..."
+		elog "   Moving the shared/ data folder ..."
 		su -l ${GIT_USER} -s /bin/sh -c "
 			rm -rf ${GITLAB}/shared && \
 			mv ${BASE_DIR}/gitlabhq-${vINST}/shared ${GITLAB}/shared" \
@@ -940,12 +961,12 @@ pkg_config_do_upgrade_migrate_data() {
 
 		# Fix permissions
 		find "${GITLAB}/shared/" -type d -exec chmod 0700 {} \;
-		einfo "   ... finished."
+		elog "   ... finished."
 	fi
 }
 
 pkg_config_do_upgrade_migrate_database() {
-	einfo "Migrating database ..."
+	elog "Migrating database ..."
 	su -l ${GIT_USER} -s /bin/sh -c "
 		export LANG=en_US.UTF-8; export LC_ALL=en_US.UTF-8
 		cd ${GITLAB}
@@ -954,7 +975,7 @@ pkg_config_do_upgrade_migrate_database() {
 }
 
 pkg_config_do_upgrade_clear_redis_cache() {
-	einfo "Clean up cache ..."
+	elog "Clean up cache ..."
 	su -l ${GIT_USER} -s /bin/sh -c "
 		export LANG=en_US.UTF-8; export LC_ALL=en_US.UTF-8
 		cd ${GITLAB}
@@ -975,7 +996,7 @@ pkg_config_initialize() {
 	use gitlab-config && conf_dir="${GITLAB_CONFIG}"
 
 	## Check config files existence ##
-	einfo "Checking configuration files ..."
+	elog "Checking configuration files ..."
 	if [ ! -r "${conf_dir}/database.yml" ]; then
 		eerror "Copy \"${GITLAB_CONFIG}/database.yml.postgresql\" to \"${conf_dir}/database.yml\""
 		eerror "and edit this file in order to configure your database settings for"
@@ -995,7 +1016,7 @@ pkg_config_initialize() {
 	einfo
 	einfon "Set the Administrator/root email: "
 	read -r email
-	einfo "Initializing database ..."
+	elog "Initializing database ..."
 	su -l ${GIT_USER} -s /bin/sh -c "
 		export LANG=en_US.UTF-8; export LC_ALL=en_US.UTF-8
 		cd ${GITLAB}
@@ -1014,7 +1035,7 @@ pkg_config() {
 	if [ "$MODUS" = "new" ]; then
 		pkg_config_initialize
 	elif [ "$MODUS" = "rebuild" ]; then
-		einfo "No need to run \"emerge --config\" after a rebuild."
+		elog "No need to run \"emerge --config\" after a rebuild."
 	elif [ "$MODUS" = "patch" ] || [ "$MODUS" = "minor" ] || [ "$MODUS" = "major" ]; then
 		pkg_config_do_upgrade
 		local ret=$?
@@ -1022,40 +1043,40 @@ pkg_config() {
 	fi
 
 	if [ "$MODUS" = "new" ]; then
-		einfo
-		einfo "Now start ${PN} with"
+		elog
+		elog "Now start ${PN} with"
 		if use systemd; then
-			einfo "\$ systemctl start ${PN}.target"
+			elog "\$ systemctl start ${PN}.target"
 		else
-			einfo "\$ rc-service ${PN} start"
+			elog "\$ rc-service ${PN} start"
 		fi
 	fi
 
-	einfo
-	einfo "You might want to check your application status. Run this:"
-	einfo "\$ cd ${GITLAB}"
-	einfo "\$ sudo -u ${GIT_USER} ${BUNDLE} exec rake gitlab:check RAILS_ENV=${RAILS_ENV}"
-	einfo
-	einfo "GitLab is prepared now."
+	elog
+	elog "You might want to check your application status. Run this:"
+	elog "\$ cd ${GITLAB}"
+	elog "\$ sudo -u ${GIT_USER} ${BUNDLE} exec rake gitlab:check RAILS_ENV=${RAILS_ENV}"
+	elog
+	elog "GitLab is prepared now."
 	if [ "$MODUS" = "patch" ] || [ "$MODUS" = "minor" ] || [ "$MODUS" = "major" ]; then
-		einfo "Ensure you're still up-to-date with the latest NGINX configuration changes:"
-		einfo "\$ cd /opt/gitlab/gitlab"
-		einfo "\$ git -P diff v${vINST}:lib/support/nginx/ v${PV}:lib/support/nginx/"
+		elog "Ensure you're still up-to-date with the latest NGINX configuration changes:"
+		elog "\$ cd /opt/gitlab/gitlab"
+		elog "\$ git -P diff v${vINST}:lib/support/nginx/ v${PV}:lib/support/nginx/"
 	elif [ "$MODUS" = "new" ]; then
-		einfo "To configure your nginx site have a look at the examples configurations"
-		einfo "in the ${GITLAB}/lib/support/nginx/ folder."
+		elog "To configure your nginx site have a look at the examples configurations"
+		elog "in the ${GITLAB}/lib/support/nginx/ folder."
 		if use relative_url; then
-			einfo "For a relative URL installation several modifications must be made to nginx"
-			einfo "\t Move everything in the top-level 'server' block to top-level nginx.conf"
-			einfo "\t Remove the top-level 'server' block"
-			einfo "\t Add a 'location /gitlab at the top where the server block was"
-			einfo "\t Change 'location /' to 'location /gitlab/'"
-			einfo "\t Symlink <htdocs>/gitlab to ${GITLAB}/public"
-			einfo "In order for the Backround Jobs page to work, add"
-			einfo "\t 'location ~ ^/gitlab/admin/sidekiq/* {"
-			einfo "\t proxy_pass http://gitlab-workhorse;"
-			einfo "\t }"
-			einfo "under the main gitlab location block"
+			elog "For a relative URL installation several modifications must be made to nginx"
+			elog "\t Move everything in the top-level 'server' block to top-level nginx.conf"
+			elog "\t Remove the top-level 'server' block"
+			elog "\t Add a 'location /gitlab at the top where the server block was"
+			elog "\t Change 'location /' to 'location /gitlab/'"
+			elog "\t Symlink <htdocs>/gitlab to ${GITLAB}/public"
+			elog "In order for the Background Jobs page to work, add"
+			elog "\t 'location ~ ^/gitlab/admin/sidekiq/* {"
+			elog "\t proxy_pass http://gitlab-workhorse;"
+			elog "\t }"
+			elog "under the main gitlab location block"
 		fi
 	fi
 }

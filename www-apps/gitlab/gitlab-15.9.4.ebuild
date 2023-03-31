@@ -48,7 +48,7 @@ GEMS_DEPEND="
 	dev-libs/libxslt
 	dev-util/ragel
 	dev-libs/yajl
-	>=net-libs/nodejs-14.15.0
+	>=net-libs/nodejs-16.15.0
 	|| ( >=dev-db/postgresql-12.10:12 dev-db/postgresql:13 )
 	net-libs/http-parser
 	dev-python/docutils"
@@ -66,9 +66,9 @@ DEPEND="
 	acct-user/git[gitlab]
 	acct-group/git
 	>=dev-lang/ruby-2.7.5:2.7[ssl]
-	>=dev-vcs/gitlab-shell-14.13.0[relative_url=]
-	pages? ( ~www-apps/gitlab-pages-15.6.4 )
-	!gitaly_git? ( >=dev-vcs/git-2.37.0[pcre] dev-libs/libpcre2[jit] )
+	>=dev-vcs/gitlab-shell-14.17.0[relative_url=]
+	pages? ( ~www-apps/gitlab-pages-${PV} )
+	!gitaly_git? ( >=dev-vcs/git-2.38.0[pcre] dev-libs/libpcre2[jit] )
 	net-misc/curl
 	virtual/ssh
 	=sys-apps/yarn-1.22*
@@ -641,7 +641,7 @@ src_install() {
 	# fix QA Security Notice: world writable file(s)
 	elog "Fixing permissions of world writable files"
 	local gemsdir="${ruby_vpath}/gems"
-	local file gem wwfgems="gitlab-dangerfiles toml-rb"
+	local file gem wwfgems="gitlab-dangerfiles gitlab-labkit os toml-rb unleash"
 	# If we are using wildcards, the shell fills them without prefixing ${ED}. Thus
 	# we would target a file list in the real system instead of in the sandbox.
 	for gem in ${wwfgems}; do
@@ -859,7 +859,7 @@ pkg_postinst() {
 			elog "       daemonize no"
 			elog "       supervised systemd"
 			elog "       #pidfile /run/redis/redis.pid"
-			elog "     Make matching changes to the systemd unit file"
+			elog "     Make matching changes to the systemd unit file:"
 			elog "     Create /etc/systemd/system/redis.service.d/10fix_type.conf"
 			elog "     and insert the following lines"
 			elog "       [Service]"
@@ -1055,7 +1055,7 @@ pkg_config() {
 			elog "\t Add a 'location /gitlab at the top where the server block was"
 			elog "\t Change 'location /' to 'location /gitlab/'"
 			elog "\t Symlink <htdocs>/gitlab to ${GITLAB}/public"
-			elog "In order for the Backround Jobs page to work, add"
+			elog "In order for the Background Jobs page to work, add"
 			elog "\t 'location ~ ^/gitlab/admin/sidekiq/* {"
 			elog "\t proxy_pass http://gitlab-workhorse;"
 			elog "\t }"
