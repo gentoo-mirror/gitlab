@@ -271,7 +271,7 @@ src_prepare_gitaly() {
 	rubyVinst=${rubyVinst##ruby }
 	local gitaly_dir="${GITLAB_GITALY}"
 	if [ -d ${gitaly_dir}/ ]; then
-		local rubyV=$(ls ${gitaly_dir}/ruby/vendor/bundle/ruby)
+		local rubyV=$(ls ${gitaly_dir}/ruby/vendor/bundle/ruby 2>/dev/null)
 		if [ "$rubyVinst" = "$rubyV" ]; then
 			einfo "Using parts of the installed gitlab-gitaly to save time:"
 			mkdir -p vendor/bundle
@@ -414,7 +414,7 @@ src_compile() {
 	local rubyVinst=$(ruby --version)
 	rubyVinst=${rubyVinst%%p*}
 	rubyVinst=${rubyVinst##ruby }
-	local rubyV=$(ls ruby/vendor/bundle/ruby)
+	local rubyV=$(ls ruby/vendor/bundle/ruby 2>/dev/null)
 	if [ "$rubyVinst" = "$rubyV" ]; then 
 		local ruby_vpath=vendor/bundle/ruby/${rubyV}
 		if [ -d ruby/${ruby_vpath}/cache ]; then
@@ -567,7 +567,7 @@ src_install() {
 		local rubyVinst=$(ruby --version)
 		rubyVinst=${rubyVinst%%p*}
 		rubyVinst=${rubyVinst##ruby }
-		local rubyV=$(ls ${gitlab_dir}/ruby/vendor/bundle/ruby)
+		local rubyV=$(ls ${gitlab_dir}/ruby/vendor/bundle/ruby 2>/dev/null)
 		if [ "$rubyVinst" = "$rubyV" ]; then
 			einfo "Using parts of the installed gitlab to save time:"
 			portageq list_preserved_libs / >/dev/null # returns 1 when no preserved_libs found

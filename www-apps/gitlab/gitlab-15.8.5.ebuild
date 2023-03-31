@@ -66,9 +66,9 @@ DEPEND="
 	acct-user/git[gitlab]
 	acct-group/git
 	>=dev-lang/ruby-2.7.5:2.7[ssl]
-	>=dev-vcs/gitlab-shell-14.14.0[relative_url=]
-	pages? ( ~www-apps/gitlab-pages-15.7.3 )
-	!gitaly_git? ( >=dev-vcs/git-2.37.0[pcre] dev-libs/libpcre2[jit] )
+	>=dev-vcs/gitlab-shell-14.15.0[relative_url=]
+	pages? ( ~www-apps/gitlab-pages-${PV} )
+	!gitaly_git? ( >=dev-vcs/git-2.38.0[pcre] dev-libs/libpcre2[jit] )
 	net-misc/curl
 	virtual/ssh
 	=sys-apps/yarn-1.22*
@@ -641,7 +641,7 @@ src_install() {
 	# fix QA Security Notice: world writable file(s)
 	elog "Fixing permissions of world writable files"
 	local gemsdir="${ruby_vpath}/gems"
-	local file gem wwfgems="gitlab-dangerfiles toml-rb"
+	local file gem wwfgems="gitlab-dangerfiles gitlab-labkit toml-rb unleash"
 	# If we are using wildcards, the shell fills them without prefixing ${ED}. Thus
 	# we would target a file list in the real system instead of in the sandbox.
 	for gem in ${wwfgems}; do
@@ -1055,7 +1055,7 @@ pkg_config() {
 			elog "\t Add a 'location /gitlab at the top where the server block was"
 			elog "\t Change 'location /' to 'location /gitlab/'"
 			elog "\t Symlink <htdocs>/gitlab to ${GITLAB}/public"
-			elog "In order for the Backround Jobs page to work, add"
+			elog "In order for the Background Jobs page to work, add"
 			elog "\t 'location ~ ^/gitlab/admin/sidekiq/* {"
 			elog "\t proxy_pass http://gitlab-workhorse;"
 			elog "\t }"
