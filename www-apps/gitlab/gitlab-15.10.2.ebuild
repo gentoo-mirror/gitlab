@@ -170,7 +170,6 @@ pkg_setup() {
 		# ensure that any background migrations have been fully completed
 		# see /opt/gitlab/gitlab/doc/update/README.md
 		elog "Checking for background migrations ..."
-		eselect ruby set ruby27
 		local bm gitlab_dir rails_cmd="'puts Gitlab::BackgroundMigration.remaining'"
 		gitlab_dir="${BASE_DIR}/${PN}"
 		bm=$(su -l ${GIT_USER} -s /bin/sh -c "
@@ -188,7 +187,6 @@ pkg_setup() {
 		else
 			elog "OK: No remainig background migrations found."
 		fi
-		eselect ruby set ruby30
 	fi
 
 	if [ "$MODUS" = "rebuild" ] || \
