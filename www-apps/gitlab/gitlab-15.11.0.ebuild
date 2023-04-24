@@ -251,38 +251,6 @@ src_prepare_gitaly() {
 			-e "s|^# relative_url_root = '/'|relative_url_root = '/gitlab'|" \
 			config.toml.example || die "failed to filter config.toml.example"
 	fi
-
-	# See https://gitlab.com/gitlab-org/gitaly/issues/493
-	sed -s 's|LDFLAGS|GO_LDFLAGS|g' -i Makefile || die
-	sed -s 's|^BUNDLE_FLAGS|#BUNDLE_FLAGS|' -i Makefile || die
-
-	cd ruby
-	local without="development test omnibus"
-	${BUNDLE} config set --local path 'vendor/bundle'
-	${BUNDLE} config set --local deployment 'true'
-	${BUNDLE} config set --local without "${without}"
-	${BUNDLE} config set --local build.nokogiri --use-system-libraries
-
-	# Hack: Don't start from scratch, use the installed bundle
-	local rubyVinst=$(ruby --version)
-	rubyVinst=${rubyVinst%%p*}
-	rubyVinst=${rubyVinst##ruby }
-	local gitaly_dir="${GITLAB_GITALY}"
-	if [ -d ${gitaly_dir}/ ]; then
-		local rubyV=$(ls ${gitaly_dir}/ruby/vendor/bundle/ruby 2>/dev/null)
-		if [ "$rubyVinst" = "$rubyV" ]; then
-			einfo "Using parts of the installed gitlab-gitaly to save time:"
-			mkdir -p vendor/bundle
-			cd vendor
-			if [ -d ${gitaly_dir}/ruby/vendor/bundle/ruby ]; then
-				portageq list_preserved_libs / >/dev/null # returns 1 when no preserved_libs found
-				if [ "$?" = "1" ]; then
-					einfo "   Copying ${gitaly_dir}/ruby/vendor/bundle/ruby/ ..."
-					cp -a ${gitaly_dir}/ruby/vendor/bundle/ruby/ bundle/
-				fi
-			fi
-		fi
-	fi
 }
 
 src_prepare() {
@@ -407,55 +375,15 @@ src_compile() {
 	einfo "Compiling source in $PWD ..."
 	MAKEOPTS="${MAKEOPTS} -j1" emake WITH_BUNDLED_GIT=$(usex gitaly_git) \
 		|| die "Compiling gitaly failed"
-
-	# Hack: Reusing gitaly's bundler cache for gitlab
-	local rubyVinst=$(ruby --version)
-	rubyVinst=${rubyVinst%%p*}
-	rubyVinst=${rubyVinst##ruby }
-	local rubyV=$(ls ruby/vendor/bundle/ruby 2>/dev/null)
-	if [ "$rubyVinst" = "$rubyV" ]; then 
-		local ruby_vpath=vendor/bundle/ruby/${rubyV}
-		if [ -d ruby/${ruby_vpath}/cache ]; then
-			mkdir -p ${WORKDIR}/gitlab-${PV}/${ruby_vpath}
-			mv ruby/${ruby_vpath}/cache ${WORKDIR}/gitlab-${PV}/${ruby_vpath}
-		fi
-	fi
 }
 
 src_install_gitaly() {
 	cd ${WORKDIR}/gitlab-gitaly-${PV}
-	# Cleanup unneeded temp/object/source files
-	find ruby/vendor -name '*.[choa]' -delete
-	find ruby/vendor -name '*.[ch]pp' -delete
-	find ruby/vendor -iname 'Makefile' -delete
-	# Other cleanup candidates: a.out *.bin
-
-	# Clean up old gems (this is required due to our Hack above)
-	sh -c "cd ruby; ${BUNDLE} clean"
-
-	local rubyV=$(ls ruby/vendor/bundle/ruby)
-	local ruby_vpath=vendor/bundle/ruby/${rubyV}
-
-	# Hack: Copy did_you_mean Gem from system
-	local vDYM=$(best_version dev-ruby/did_you_mean)
-	vDYM=${vDYM#*/}; vDYM=${vDYM%-r*}; vDYM=${vDYM##*-}
-	local pDYM="/usr/lib64/ruby/gems/${rubyV}/gems/did_you_mean-${vDYM}"
-	local pSPECS="/usr/lib64/ruby/gems/${rubyV}/specifications"
-	cp -a ${pDYM} ruby/${ruby_vpath}/gems
-	cp ${pSPECS}/did_you_mean-${vDYM}.gemspec ruby/${ruby_vpath}/specifications
+	# cleanup candidates: a.out *.bin
 
 	# Will install binaries to ${GITLAB_GITALY}/bin. Don't specify the "bin"!
 	into "${GITLAB_GITALY}"
 	dobin _build/bin/*
-
-	insinto "${GITLAB_GITALY}"
-	doins -r "ruby"
-
-	# Make binaries in ruby/ executable
-	exeinto "${GITLAB_GITALY}/ruby/bin"
-	doexe ruby/bin/*
-	exeinto "${GITLAB_GITALY}/ruby/vendor/bundle/ruby/${rubyV}/bin"
-	doexe ruby/vendor/bundle/ruby/${rubyV}/bin/*
 
 	if use gitaly_git ; then
 		sed -i \
