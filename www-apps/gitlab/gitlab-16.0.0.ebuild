@@ -49,7 +49,7 @@ GEMS_DEPEND="
 	dev-util/ragel
 	dev-libs/yajl
 	>=net-libs/nodejs-16.15.0
-	|| ( >=dev-db/postgresql-12.10:12 dev-db/postgresql:13 )
+	dev-db/postgresql:13
 	net-libs/http-parser
 	dev-python/docutils"
 GITALY_DEPEND="
