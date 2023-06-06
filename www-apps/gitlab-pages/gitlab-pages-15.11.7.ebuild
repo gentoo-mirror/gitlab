@@ -18,7 +18,7 @@ IUSE="systemd"
 
 RESTRICT="network-sandbox"
 DEPEND="
-	>=dev-lang/go-1.16
+	>=dev-lang/go-1.18
 	acct-user/gitlab-pages"
 RDEPEND="${DEPEND}"
 BDEPEND=""

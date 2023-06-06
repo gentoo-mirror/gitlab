@@ -9,7 +9,7 @@ EAPI="7"
 #   it should be done, but GitLab has too many dependencies that it will be too
 #   difficult to maintain them via ebuilds.
 
-USE_RUBY="ruby27"
+USE_RUBY="ruby30"
 
 EGIT_REPO_URI="https://gitlab.com/gitlab-org/gitlab-foss.git"
 EGIT_COMMIT="v${PV}"
@@ -65,8 +65,8 @@ DEPEND="
 	${RUBY_DEPS}
 	acct-user/git[gitlab]
 	acct-group/git
-	>=dev-lang/ruby-2.7.5:2.7[ssl]
-	>=dev-vcs/gitlab-shell-14.17.0[relative_url=]
+	>=dev-lang/ruby-3.0.5:3.0[ssl]
+	>=dev-vcs/gitlab-shell-14.18.0[relative_url=]
 	pages? ( ~www-apps/gitlab-pages-${PV} )
 	!gitaly_git? ( >=dev-vcs/git-2.38.0[pcre] dev-libs/libpcre2[jit] )
 	net-misc/curl
@@ -264,16 +264,22 @@ src_prepare_gitaly() {
 	${BUNDLE} config set --local build.nokogiri --use-system-libraries
 
 	# Hack: Don't start from scratch, use the installed bundle
+	local rubyVinst=$(ruby --version)
+	rubyVinst=${rubyVinst%%p*}
+	rubyVinst=${rubyVinst##ruby }
 	local gitaly_dir="${GITLAB_GITALY}"
 	if [ -d ${gitaly_dir}/ ]; then
-		einfo "Using parts of the installed gitlab-gitaly to save time:"
-		mkdir -p vendor/bundle
-		cd vendor
-		if [ -d ${gitaly_dir}/ruby/vendor/bundle/ruby ]; then
-			portageq list_preserved_libs / >/dev/null # returns 1 when no preserved_libs found
-			if [ "$?" = "1" ]; then
-				einfo "   Copying ${gitaly_dir}/ruby/vendor/bundle/ruby/ ..."
-				cp -a ${gitaly_dir}/ruby/vendor/bundle/ruby/ bundle/
+		local rubyV=$(ls ${gitaly_dir}/ruby/vendor/bundle/ruby 2>/dev/null)
+		if [ "$rubyVinst" = "$rubyV" ]; then
+			einfo "Using parts of the installed gitlab-gitaly to save time:"
+			mkdir -p vendor/bundle
+			cd vendor
+			if [ -d ${gitaly_dir}/ruby/vendor/bundle/ruby ]; then
+				portageq list_preserved_libs / >/dev/null # returns 1 when no preserved_libs found
+				if [ "$?" = "1" ]; then
+					einfo "   Copying ${gitaly_dir}/ruby/vendor/bundle/ruby/ ..."
+					cp -a ${gitaly_dir}/ruby/vendor/bundle/ruby/ bundle/
+				fi
 			fi
 		fi
 	fi
@@ -403,11 +409,16 @@ src_compile() {
 		|| die "Compiling gitaly failed"
 
 	# Hack: Reusing gitaly's bundler cache for gitlab
-	local rubyV=$(ls ruby/vendor/bundle/ruby)
-	local ruby_vpath=vendor/bundle/ruby/${rubyV}
-	if [ -d ruby/${ruby_vpath}/cache ]; then
-		mkdir -p ${WORKDIR}/gitlab-${PV}/${ruby_vpath}
-		mv ruby/${ruby_vpath}/cache ${WORKDIR}/gitlab-${PV}/${ruby_vpath}
+	local rubyVinst=$(ruby --version)
+	rubyVinst=${rubyVinst%%p*}
+	rubyVinst=${rubyVinst##ruby }
+	local rubyV=$(ls ruby/vendor/bundle/ruby 2>/dev/null)
+	if [ "$rubyVinst" = "$rubyV" ]; then 
+		local ruby_vpath=vendor/bundle/ruby/${rubyV}
+		if [ -d ruby/${ruby_vpath}/cache ]; then
+			mkdir -p ${WORKDIR}/gitlab-${PV}/${ruby_vpath}
+			mv ruby/${ruby_vpath}/cache ${WORKDIR}/gitlab-${PV}/${ruby_vpath}
+		fi
 	fi
 }
 
@@ -549,15 +560,19 @@ src_install() {
 
 	local gitlab_dir="${BASE_DIR}/${PN}"
 
-	if [ -d ${gitlab_dir}/ ]; then
-		einfo "Using parts of the installed gitlab to save time:"
-	fi
 	# Hack: Don't start from scratch, use the installed bundle
 	if [ -d ${gitlab_dir}/vendor/bundle ]; then
-		portageq list_preserved_libs / >/dev/null # returns 1 when no preserved_libs found
-		if [ "$?" = "1" ]; then
-			einfo "   Copying ${gitlab_dir}/vendor/bundle/ ..."
-			cp -a ${gitlab_dir}/vendor/bundle/ vendor/
+		local rubyVinst=$(ruby --version)
+		rubyVinst=${rubyVinst%%p*}
+		rubyVinst=${rubyVinst##ruby }
+		local rubyV=$(ls ${gitlab_dir}/ruby/vendor/bundle/ruby 2>/dev/null)
+		if [ "$rubyVinst" = "$rubyV" ]; then
+			einfo "Using parts of the installed gitlab to save time:"
+			portageq list_preserved_libs / >/dev/null # returns 1 when no preserved_libs found
+			if [ "$?" = "1" ]; then
+				einfo "   Copying ${gitlab_dir}/vendor/bundle/ ..."
+				cp -a ${gitlab_dir}/vendor/bundle/ vendor/
+			fi
 		fi
 	fi
 	# Hack: Don't start from scratch, use the installed node_modules
@@ -587,9 +602,9 @@ src_install() {
 	# Cleanup args to extract only JOBS.
 	# Because bundler does not know anything else.
 	local jobs=1
-	grep -Eo '(\-j|\-\-jobs)(=?|[[:space:]]*)[[:digit:]]+' <<< "${MAKEOPTS}" > /dev/null
+	grep -Eo '(-j|--jobs)(=?|[[:space:]]*)[[:digit:]]+' <<< "${MAKEOPTS}" > /dev/null
 	if [[ $? -eq 0 ]] ; then
-		jobs=$(grep -Eo '(\-j|\-\-jobs)(=?|[[:space:]]*)[[:digit:]]+' <<< "${MAKEOPTS}" \
+		jobs=$(grep -Eo '(-j|--jobs)(=?|[[:space:]]*)[[:digit:]]+' <<< "${MAKEOPTS}" \
 			| tail -n1 | grep -Eo '[[:digit:]]+')
 	fi
 	${BUNDLE} install --jobs=${jobs} || die "bundle install failed"

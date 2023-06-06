@@ -9,7 +9,7 @@ EAPI="7"
 #   it should be done, but GitLab has too many dependencies that it will be too
 #   difficult to maintain them via ebuilds.
 
-USE_RUBY="ruby27"
+USE_RUBY="ruby30"
 
 EGIT_REPO_URI="https://gitlab.com/gitlab-org/gitlab-foss.git"
 EGIT_COMMIT="v${PV}"
@@ -49,7 +49,7 @@ GEMS_DEPEND="
 	dev-util/ragel
 	dev-libs/yajl
 	>=net-libs/nodejs-16.15.0
-	|| ( >=dev-db/postgresql-12.10:12 dev-db/postgresql:13 )
+	dev-db/postgresql:13
 	net-libs/http-parser
 	dev-python/docutils"
 GITALY_DEPEND="
@@ -65,8 +65,8 @@ DEPEND="
 	${RUBY_DEPS}
 	acct-user/git[gitlab]
 	acct-group/git
-	>=dev-lang/ruby-2.7.5:2.7[ssl]
-	>=dev-vcs/gitlab-shell-14.17.0[relative_url=]
+	>=dev-lang/ruby-3.0.5:3.0[ssl]
+	>=dev-vcs/gitlab-shell-14.20.0[relative_url=]
 	pages? ( ~www-apps/gitlab-pages-${PV} )
 	!gitaly_git? ( >=dev-vcs/git-2.38.0[pcre] dev-libs/libpcre2[jit] )
 	net-misc/curl
@@ -146,6 +146,12 @@ pkg_setup() {
 			${eM}.${em1}.*)		MODUS="minor"
 								elog "This is a minor upgrade from $vINST to $PV.";;
 			${eM}.[0-${em2}].*) die "You should do minor upgrades step by step.";;
+			15.11.7)			if [ "${PV}" = "16.0.0" ]; then
+									MODUS="major"
+									elog "This is a major upgrade from $vINST to $PV."
+								else
+									die "You should upgrade to 16.0.0 first."
+								fi;;
 			14.10.5)			if [ "${PV}" = "15.0.0" ]; then
 									MODUS="major"
 									elog "This is a major upgrade from $vINST to $PV."
@@ -250,32 +256,6 @@ src_prepare_gitaly() {
 		sed -i \
 			-e "s|^# relative_url_root = '/'|relative_url_root = '/gitlab'|" \
 			config.toml.example || die "failed to filter config.toml.example"
-	fi
-
-	# See https://gitlab.com/gitlab-org/gitaly/issues/493
-	sed -s 's|LDFLAGS|GO_LDFLAGS|g' -i Makefile || die
-	sed -s 's|^BUNDLE_FLAGS|#BUNDLE_FLAGS|' -i Makefile || die
-
-	cd ruby
-	local without="development test omnibus"
-	${BUNDLE} config set --local path 'vendor/bundle'
-	${BUNDLE} config set --local deployment 'true'
-	${BUNDLE} config set --local without "${without}"
-	${BUNDLE} config set --local build.nokogiri --use-system-libraries
-
-	# Hack: Don't start from scratch, use the installed bundle
-	local gitaly_dir="${GITLAB_GITALY}"
-	if [ -d ${gitaly_dir}/ ]; then
-		einfo "Using parts of the installed gitlab-gitaly to save time:"
-		mkdir -p vendor/bundle
-		cd vendor
-		if [ -d ${gitaly_dir}/ruby/vendor/bundle/ruby ]; then
-			portageq list_preserved_libs / >/dev/null # returns 1 when no preserved_libs found
-			if [ "$?" = "1" ]; then
-				einfo "   Copying ${gitaly_dir}/ruby/vendor/bundle/ruby/ ..."
-				cp -a ${gitaly_dir}/ruby/vendor/bundle/ruby/ bundle/
-			fi
-		fi
 	fi
 }
 
@@ -401,50 +381,15 @@ src_compile() {
 	einfo "Compiling source in $PWD ..."
 	MAKEOPTS="${MAKEOPTS} -j1" emake WITH_BUNDLED_GIT=$(usex gitaly_git) \
 		|| die "Compiling gitaly failed"
-
-	# Hack: Reusing gitaly's bundler cache for gitlab
-	local rubyV=$(ls ruby/vendor/bundle/ruby)
-	local ruby_vpath=vendor/bundle/ruby/${rubyV}
-	if [ -d ruby/${ruby_vpath}/cache ]; then
-		mkdir -p ${WORKDIR}/gitlab-${PV}/${ruby_vpath}
-		mv ruby/${ruby_vpath}/cache ${WORKDIR}/gitlab-${PV}/${ruby_vpath}
-	fi
 }
 
 src_install_gitaly() {
 	cd ${WORKDIR}/gitlab-gitaly-${PV}
-	# Cleanup unneeded temp/object/source files
-	find ruby/vendor -name '*.[choa]' -delete
-	find ruby/vendor -name '*.[ch]pp' -delete
-	find ruby/vendor -iname 'Makefile' -delete
-	# Other cleanup candidates: a.out *.bin
-
-	# Clean up old gems (this is required due to our Hack above)
-	sh -c "cd ruby; ${BUNDLE} clean"
-
-	local rubyV=$(ls ruby/vendor/bundle/ruby)
-	local ruby_vpath=vendor/bundle/ruby/${rubyV}
-
-	# Hack: Copy did_you_mean Gem from system
-	local vDYM=$(best_version dev-ruby/did_you_mean)
-	vDYM=${vDYM#*/}; vDYM=${vDYM%-r*}; vDYM=${vDYM##*-}
-	local pDYM="/usr/lib64/ruby/gems/${rubyV}/gems/did_you_mean-${vDYM}"
-	local pSPECS="/usr/lib64/ruby/gems/${rubyV}/specifications"
-	cp -a ${pDYM} ruby/${ruby_vpath}/gems
-	cp ${pSPECS}/did_you_mean-${vDYM}.gemspec ruby/${ruby_vpath}/specifications
+	# cleanup candidates: a.out *.bin
 
 	# Will install binaries to ${GITLAB_GITALY}/bin. Don't specify the "bin"!
 	into "${GITLAB_GITALY}"
 	dobin _build/bin/*
-
-	insinto "${GITLAB_GITALY}"
-	doins -r "ruby"
-
-	# Make binaries in ruby/ executable
-	exeinto "${GITLAB_GITALY}/ruby/bin"
-	doexe ruby/bin/*
-	exeinto "${GITLAB_GITALY}/ruby/vendor/bundle/ruby/${rubyV}/bin"
-	doexe ruby/vendor/bundle/ruby/${rubyV}/bin/*
 
 	if use gitaly_git ; then
 		sed -i \
@@ -549,15 +494,19 @@ src_install() {
 
 	local gitlab_dir="${BASE_DIR}/${PN}"
 
-	if [ -d ${gitlab_dir}/ ]; then
-		einfo "Using parts of the installed gitlab to save time:"
-	fi
 	# Hack: Don't start from scratch, use the installed bundle
 	if [ -d ${gitlab_dir}/vendor/bundle ]; then
-		portageq list_preserved_libs / >/dev/null # returns 1 when no preserved_libs found
-		if [ "$?" = "1" ]; then
-			einfo "   Copying ${gitlab_dir}/vendor/bundle/ ..."
-			cp -a ${gitlab_dir}/vendor/bundle/ vendor/
+		local rubyVinst=$(ruby --version)
+		rubyVinst=${rubyVinst%%p*}
+		rubyVinst=${rubyVinst##ruby }
+		local rubyV=$(ls ${gitlab_dir}/ruby/vendor/bundle/ruby 2>/dev/null)
+		if [ "$rubyVinst" = "$rubyV" ]; then
+			einfo "Using parts of the installed gitlab to save time:"
+			portageq list_preserved_libs / >/dev/null # returns 1 when no preserved_libs found
+			if [ "$?" = "1" ]; then
+				einfo "   Copying ${gitlab_dir}/vendor/bundle/ ..."
+				cp -a ${gitlab_dir}/vendor/bundle/ vendor/
+			fi
 		fi
 	fi
 	# Hack: Don't start from scratch, use the installed node_modules
@@ -587,9 +536,9 @@ src_install() {
 	# Cleanup args to extract only JOBS.
 	# Because bundler does not know anything else.
 	local jobs=1
-	grep -Eo '(\-j|\-\-jobs)(=?|[[:space:]]*)[[:digit:]]+' <<< "${MAKEOPTS}" > /dev/null
+	grep -Eo '(-j|--jobs)(=?|[[:space:]]*)[[:digit:]]+' <<< "${MAKEOPTS}" > /dev/null
 	if [[ $? -eq 0 ]] ; then
-		jobs=$(grep -Eo '(\-j|\-\-jobs)(=?|[[:space:]]*)[[:digit:]]+' <<< "${MAKEOPTS}" \
+		jobs=$(grep -Eo '(-j|--jobs)(=?|[[:space:]]*)[[:digit:]]+' <<< "${MAKEOPTS}" \
 			| tail -n1 | grep -Eo '[[:digit:]]+')
 	fi
 	${BUNDLE} install --jobs=${jobs} || die "bundle install failed"

@@ -146,7 +146,7 @@ pkg_setup() {
 			${eM}.${em1}.*)		MODUS="minor"
 								elog "This is a minor upgrade from $vINST to $PV.";;
 			${eM}.[0-${em2}].*) die "You should do minor upgrades step by step.";;
-			15.11.6)			if [ "${PV}" = "16.0.0" ]; then
+			15.11.7)			if [ "${PV}" = "16.0.0" ]; then
 									MODUS="major"
 									elog "This is a major upgrade from $vINST to $PV."
 								else
