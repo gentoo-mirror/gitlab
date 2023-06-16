@@ -8,7 +8,7 @@ inherit acct-user
 DESCRIPTION="Dedicated user for gitlab-pages"
 
 ACCT_USER_ID=126
-ACCT_USER_GROUPS=( gitlab )
+ACCT_USER_GROUPS=( git )
 
 ACCT_USER_HOME=/var/lib/gitlab-pages
 ACCT_USER_HOME_OWNER=gitlab-pages:gitlab
