@@ -296,6 +296,7 @@ src_prepare() {
 	fi
 	cp config/resque.yml.example config/resque.yml
 	cp config/cable.yml.example config/cable.yml
+	cp config/puma.yml.example config/puma.yml
 
 	# Already use the ruby-magic version that'll come with 13.11
 	sed -i \
@@ -638,7 +639,8 @@ src_install() {
 			"${FILESDIR}/${PN}.target.${vSYS}" > "${T}/${PN}.target" \
 			|| die "failed to configure: ${PN}.target"
 		systemd_dounit "${T}/${PN}.target"
-		systemd_dounit "${FILESDIR}/${PN}.slice.${vSYS}"
+		cp "${FILESDIR}/${PN}.slice.${vSYS}" "${T}/${PN}.slice"
+		systemd_dounit "${T}/${PN}.slice"
 	else
 		## OpenRC init scripts ##
 		elog "Installing OpenRC init.d files"
