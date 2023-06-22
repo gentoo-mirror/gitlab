@@ -320,18 +320,6 @@ src_prepare() {
 			-e "s|# relative_url_root|relative_url_root|g" \
 			config/gitlab.yml.example || die "failed to filter gitlab.yml.example"
 	fi
-	cp config/resque.yml.example config/resque.yml
-	cp config/cable.yml.example config/cable.yml
-
-	# Already use the ruby-magic version that'll come with 13.11
-	sed -i \
-		-e "s/gem 'ruby-magic-static', '~> 0.3.4'/gem 'ruby-magic', '~> 0.3.2'/" \
-		Gemfile
-	${BUNDLE} lock
-
-	# remove needless files
-	rm .foreman .gitignore
-
 	# Update paths for puma
 	sed -i \
 		-e "s|/home/git/gitlab|${GITLAB}|g" \
@@ -341,6 +329,13 @@ src_prepare() {
 		echo "ENV['RAILS_RELATIVE_URL_ROOT'] = \"/gitlab\"" >> config/puma.rb.example \
 			|| die "failed to modify puma.rb.example"
 	fi
+
+	cp config/resque.yml.example config/resque.yml
+	cp config/cable.yml.example config/cable.yml
+	cp config/puma.rb.example config/puma.rb
+
+	# remove needless files
+	rm .foreman .gitignore
 
 	# Remove Geo database setting as in gitlab-foss Geo is not available and
 	# GitLab will do a "Only main: and ci: database names are supported." check. 
@@ -704,7 +699,8 @@ src_install() {
 			"${FILESDIR}/${PN}.target.${vSYS}" > "${T}/${PN}.target" \
 			|| die "failed to configure: ${PN}.target"
 		systemd_dounit "${T}/${PN}.target"
-		systemd_dounit "${FILESDIR}/${PN}.slice.${vSYS}"
+		cp "${FILESDIR}/${PN}.slice.${vSYS}" "${T}/${PN}.slice"
+		systemd_dounit "${T}/${PN}.slice"
 	else
 		## OpenRC init scripts ##
 		elog "Installing OpenRC init.d files"
