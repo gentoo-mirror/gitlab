@@ -1,0 +1,11 @@
+Title: masking openssl-3
+Author: Horst Prote <prote@fmi.uni-stuttgart.de>
+Posted: 2023-07-05
+Revision: 1
+News-Item-Format: 2.0
+Display-If-Installed: www-apps/gitlab
+
+Note that openssl-3 has to be masked until upstream finishes the work
+on upgrading to ruby-3.1 because ruby-3.0 still requires openssl-1. Do
+
+    echo ">=dev-libs/openssl-3" >> /etc/portage/package.mask/gitlab
