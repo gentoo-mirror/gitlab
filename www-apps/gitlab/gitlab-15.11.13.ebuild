@@ -48,8 +48,8 @@ GEMS_DEPEND="
 	dev-libs/libxslt
 	dev-util/ragel
 	dev-libs/yajl
-	>=net-libs/nodejs-18.16.0
-	dev-db/postgresql:13
+	>=net-libs/nodejs-16.15.0
+	|| ( >=dev-db/postgresql-12.10:12 dev-db/postgresql:13 )
 	net-libs/http-parser
 	dev-python/docutils"
 GITALY_DEPEND="
@@ -66,7 +66,7 @@ DEPEND="
 	acct-user/git[gitlab]
 	acct-group/git
 	>=dev-lang/ruby-3.0.5:3.0[ssl]
-	>=dev-vcs/gitlab-shell-14.23.0[relative_url=]
+	>=dev-vcs/gitlab-shell-14.18.0[relative_url=]
 	pages? ( ~www-apps/gitlab-pages-${PV} )
 	!gitaly_git? ( >=dev-vcs/git-2.38.0[pcre] dev-libs/libpcre2[jit] )
 	net-misc/curl
@@ -146,12 +146,6 @@ pkg_setup() {
 			${eM}.${em1}.*)		MODUS="minor"
 								elog "This is a minor upgrade from $vINST to $PV.";;
 			${eM}.[0-${em2}].*) die "You should do minor upgrades step by step.";;
-			15.11.13)			if [ "${PV}" = "16.0.0" ]; then
-									MODUS="major"
-									elog "This is a major upgrade from $vINST to $PV."
-								else
-									die "You should upgrade to 16.0.0 first."
-								fi;;
 			14.10.5)			if [ "${PV}" = "15.0.0" ]; then
 									MODUS="major"
 									elog "This is a major upgrade from $vINST to $PV."
@@ -324,13 +318,6 @@ src_prepare() {
 	#       src_install() - i.e. inside  sandbox.
 	# But yarn still wants to create/read /usr/local/share/.yarnrc
 	addwrite /usr/local/share/
-
-	# With version 16.1.0 ci_secure_files task was added to build_definitions in
-	# /opt/gitlab/gitlab/lib/backup/manager.rb and this caused backup to fail because
-	# /opt/gitlab/gitlab/shared/ci_secure_files is missing if no project ever uploaded
-	# a ci secure file.
-	mkdir shared/ci_secure_files
-	chown -R ${GIT_USER}:${GIT_GROUP} shared/ci_secure_files
 
 	if [ "$MODUS" = "new" ]; then
 		# initialize our source for ${CONF_DIR}
