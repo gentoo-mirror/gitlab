@@ -22,8 +22,8 @@ BDEPEND="
 DEPEND="
 	acct-user/git[gitlab]
 	acct-group/git
-	|| ( >=dev-vcs/git-2.38.0[pcre] www-apps/gitlab[gitaly_git] )
-	>=dev-lang/go-1.18.9
+	|| ( >=dev-vcs/git-2.41.0[pcre] www-apps/gitlab[gitaly_git] )
+	>=dev-lang/go-1.19.0
 	virtual/krb5
 	virtual/ssh
 	dev-db/redis"
