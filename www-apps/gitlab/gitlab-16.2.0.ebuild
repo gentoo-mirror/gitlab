@@ -37,7 +37,6 @@ WITHOUTflags="kerberos"
 #   nokogiri			dev-libs/libxml2, dev-libs/libxslt
 #   charlock_holmes		dev-libs/icu
 #   yajl-ruby			dev-libs/yajl
-#   execjs				net-libs/nodejs, or any other JS runtime
 #   pg					dev-db/postgresql-base
 #   gitlab-markup		dev-python/docutils
 #
@@ -48,7 +47,6 @@ GEMS_DEPEND="
 	dev-libs/libxslt
 	dev-util/ragel
 	dev-libs/yajl
-	>=net-libs/nodejs-18.16.1
 	dev-db/postgresql:13
 	net-libs/http-parser
 	dev-python/docutils"
@@ -65,10 +63,11 @@ DEPEND="
 	${RUBY_DEPS}
 	acct-user/git[gitlab]
 	acct-group/git
+	>=net-libs/nodejs-18.16.1
 	>=dev-lang/ruby-3.0.5:3.0[ssl]
 	>=dev-vcs/gitlab-shell-14.23.0[relative_url=]
 	pages? ( ~www-apps/gitlab-pages-${PV} )
-	!gitaly_git? ( >=dev-vcs/git-2.38.0[pcre] dev-libs/libpcre2[jit] )
+	!gitaly_git? ( >=dev-vcs/git-2.41.0[pcre] dev-libs/libpcre2[jit] )
 	net-misc/curl
 	virtual/ssh
 	=sys-apps/yarn-1.22*
