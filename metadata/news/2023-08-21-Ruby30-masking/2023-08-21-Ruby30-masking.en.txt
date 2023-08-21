@@ -1,0 +1,23 @@
+Title: Ruby 3.0 masking
+Author: Horst Prote <prote@fmi.uni-stuttgart.de>
+Posted: 2023-08-21
+Revision: 1
+News-Item-Format: 2.0
+Display-If-Installed: www-apps/gitlab
+
+Today's Gentoo updates brought along the masking of Ruby 3.0:
+- dev-lang/ruby-3.0.6-r3::gentoo (masked by: package.mask)
+/usr/portage/profiles/package.mask:
+# Hans de Graaff <graaff@gentoo.org> (2023-08-19)
+# Ruby 3.0 is not compatible with OpenSSL 3 and consequently will be
+# masked earlier than its upstream EOL date. Please use a newer Ruby
+# version instead. Masked for removal on 2023-09-19.
+
+Since GitLab still works on the migration to Ruby 3.1 (see
+https://gitlab.com/groups/gitlab-org/-/epics/10034) we have to unmask
+the ruby_targets_ruby30 USE flag by adding
+
+    >=dev-ruby/bundler-2:2 -ruby_targets_ruby30
+
+to /etc/portage/profile/package.use.mask (note the '-' here; its a
+kind of double negation).
