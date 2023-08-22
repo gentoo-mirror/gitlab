@@ -37,7 +37,6 @@ WITHOUTflags="kerberos"
 #   nokogiri			dev-libs/libxml2, dev-libs/libxslt
 #   charlock_holmes		dev-libs/icu
 #   yajl-ruby			dev-libs/yajl
-#   execjs				net-libs/nodejs, or any other JS runtime
 #   pg					dev-db/postgresql-base
 #   gitlab-markup		dev-python/docutils
 #
@@ -48,12 +47,11 @@ GEMS_DEPEND="
 	dev-libs/libxslt
 	dev-util/ragel
 	dev-libs/yajl
-	>=net-libs/nodejs-16.15.0
 	dev-db/postgresql:13
 	net-libs/http-parser
 	dev-python/docutils"
 GITALY_DEPEND="
-	>=dev-lang/go-1.18
+	>=dev-lang/go-1.19
 	dev-util/cmake"
 WORKHORSE_DEPEND="
 	dev-lang/go
@@ -65,10 +63,11 @@ DEPEND="
 	${RUBY_DEPS}
 	acct-user/git[gitlab]
 	acct-group/git
+	>=net-libs/nodejs-18.17.0
 	>=dev-lang/ruby-3.0.5:3.0[ssl]
-	>=dev-vcs/gitlab-shell-14.20.0[relative_url=]
+	>=dev-vcs/gitlab-shell-14.26.0[relative_url=]
 	pages? ( ~www-apps/gitlab-pages-${PV} )
-	!gitaly_git? ( >=dev-vcs/git-2.38.0[pcre] dev-libs/libpcre2[jit] )
+	!gitaly_git? ( >=dev-vcs/git-2.41.0[pcre] dev-libs/libpcre2[jit] )
 	net-misc/curl
 	virtual/ssh
 	=sys-apps/yarn-1.22*
@@ -324,6 +323,13 @@ src_prepare() {
 	#       src_install() - i.e. inside  sandbox.
 	# But yarn still wants to create/read /usr/local/share/.yarnrc
 	addwrite /usr/local/share/
+
+	# With version 16.1.0 ci_secure_files task was added to build_definitions in
+	# /opt/gitlab/gitlab/lib/backup/manager.rb and this caused backup to fail because
+	# /opt/gitlab/gitlab/shared/ci_secure_files is missing if no project ever uploaded
+	# a ci secure file.
+	mkdir shared/ci_secure_files
+	chown -R ${GIT_USER}:${GIT_GROUP} shared/ci_secure_files
 
 	if [ "$MODUS" = "new" ]; then
 		# initialize our source for ${CONF_DIR}
