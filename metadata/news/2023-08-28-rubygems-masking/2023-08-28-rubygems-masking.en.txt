@@ -1,0 +1,15 @@
+Title: rubygems masking
+Author: Horst Prote <prote@fmi.uni-stuttgart.de>
+Posted: 2023-08-28
+Revision: 1
+News-Item-Format: 2.0
+Display-If-Installed: www-apps/gitlab
+
+Recent Gentoo update brought along a new rubygems-3.4.19.ebuild that
+lost the Ruby 3.0 support. So until upstream finishes the migration
+to Ruby 3.1 (see https://gitlab.com/groups/gitlab-org/-/epics/10034)
+we have to stay with rubygems-3.4.15 and mask the newer ones by adding
+
+    >dev-ruby/rubygems-3.4.15
+
+to /etc/portage/package.mask or /etc/portage/package.mask/<file>.
