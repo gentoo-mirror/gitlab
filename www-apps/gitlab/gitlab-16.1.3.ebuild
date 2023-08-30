@@ -14,7 +14,7 @@ USE_RUBY="ruby30"
 EGIT_REPO_URI="https://gitlab.com/gitlab-org/gitlab-foss.git"
 EGIT_COMMIT="v${PV}"
 
-inherit eutils git-r3 ruby-single systemd tmpfiles
+inherit git-r3 ruby-single systemd tmpfiles
 
 DESCRIPTION="The gitlab and gitaly parts of the GitLab DevOps platform"
 HOMEPAGE="https://gitlab.com/gitlab-org/gitlab-foss"
