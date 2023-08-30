@@ -3,7 +3,7 @@
 
 EAPI=7
 
-inherit eutils git-r3
+inherit git-r3
 
 DESCRIPTION="GitLab Pages daemon used to serve static websites for GitLab users"
 HOMEPAGE="https://gitlab.com/gitlab-org/gitlab-pages"
