@@ -1,7 +1,7 @@
 Title: Ruby 3.0 masking and rubygems dependency
 Author: Horst Prote <prote@fmi.uni-stuttgart.de>
 Posted: 2023-08-21
-Revision: 2
+Revision: 3
 News-Item-Format: 2.0
 Display-If-Installed: www-apps/gitlab
 
@@ -15,7 +15,7 @@ Recent Gentoo update brought along the masking of Ruby 3.0:
 
 Since GitLab still works on the migration to Ruby 3.1 (see
 https://gitlab.com/groups/gitlab-org/-/epics/10034) we have to unmask
-the latest Ruby 3.0 packageaby adding
+the latest Ruby 3.0 package by adding
 
     =dev-lang/ruby-3.0.6-r3
 

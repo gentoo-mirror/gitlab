@@ -1,0 +1,18 @@
+Title: unmasking openssl-1
+Author: Horst Prote <prote@fmi.uni-stuttgart.de>
+Posted: 2023-09-11
+Revision: 1
+News-Item-Format: 2.0
+Display-If-Installed: www-apps/gitlab
+
+Today Gentoo masked openssl-1 and asked to upgrade to >= OpenSSL 3
+immediately. But until GitLab finshes the migration to Ruby 3.1 (see
+https://gitlab.com/groups/gitlab-org/-/epics/10034) we have to stick
+with openssl-1 (see also the former news items 2023-07-05-openssl-3
+and 2023-08-21-Ruby30-masking).
+
+So we have to unmask openssl-1 again by adding
+
+    =dev-libs/openssl-1.1.1u
+
+to /etc/portage/package.unmask/gitlab
