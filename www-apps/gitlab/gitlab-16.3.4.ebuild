@@ -560,7 +560,6 @@ src_install() {
 		config/gitlab.yml || die "failed to fake the gitlab-shell path"
 	einfo "Updating node dependencies and (re)compiling assets ..."
 	/bin/sh -c "
-		export NODE_OPTIONS='--max_old_space_size=4096'
 		${BUNDLE} exec rake yarn:install gitlab:assets:clean gitlab:assets:compile \
 		RAILS_ENV=${RAILS_ENV} NODE_ENV=${NODE_ENV}" \
 		|| die "failed to update node dependencies and (re)compile assets"
