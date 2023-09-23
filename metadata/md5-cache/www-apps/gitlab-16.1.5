@@ -1,6 +1,6 @@
 BDEPEND==dev-ruby/rubygems-3.4* >=dev-ruby/bundler-2:2 >=dev-vcs/git-1.8.2.1[curl] virtual/pkgconfig
 DEFINED_PHASES=compile config install postinst prepare setup unpack
-DEPEND=app-crypt/gpgme dev-libs/icu dev-libs/libxml2 dev-libs/libxslt dev-util/ragel dev-libs/yajl >=net-libs/nodejs-18.16.0 dev-db/postgresql:13 net-libs/http-parser dev-python/docutils >=dev-lang/go-1.18 dev-util/cmake dev-lang/go media-libs/exiftool || ( ( dev-lang/ruby:3.0 virtual/rubygems[ruby_targets_ruby30(-)] ) ) acct-user/git[gitlab] acct-group/git >=dev-lang/ruby-3.0.5:3.0[ssl] >=dev-vcs/gitlab-shell-14.23.0[relative_url=] pages? ( ~www-apps/gitlab-pages-16.1.5 ) !gitaly_git? ( >=dev-vcs/git-2.38.0[pcre] dev-libs/libpcre2[jit] ) net-misc/curl virtual/ssh =sys-apps/yarn-1.22* dev-libs/re2
+DEPEND=app-crypt/gpgme dev-libs/icu dev-libs/libxml2 dev-libs/libxslt dev-util/ragel dev-libs/yajl >=net-libs/nodejs-18.16.0 dev-db/postgresql:13 net-libs/http-parser dev-python/docutils >=dev-lang/go-1.18 dev-util/cmake dev-lang/go media-libs/exiftool || ( ) acct-user/git[gitlab] acct-group/git >=dev-lang/ruby-3.0.5:3.0[ssl] >=dev-vcs/gitlab-shell-14.23.0[relative_url=] pages? ( ~www-apps/gitlab-pages-16.1.5 ) !gitaly_git? ( >=dev-vcs/git-2.38.0[pcre] dev-libs/libpcre2[jit] ) net-misc/curl virtual/ssh =sys-apps/yarn-1.22* dev-libs/re2
 DESCRIPTION=The gitlab and gitaly parts of the GitLab DevOps platform
 EAPI=7
 HOMEPAGE=https://gitlab.com/gitlab-org/gitlab-foss
@@ -9,8 +9,8 @@ IUSE=favicon +gitaly_git -gitlab-config kerberos -mail_room -pages -prometheus -
 KEYWORDS=~amd64 ~x86
 LICENSE=MIT
 PROPERTIES=live
-RDEPEND=app-crypt/gpgme dev-libs/icu dev-libs/libxml2 dev-libs/libxslt dev-util/ragel dev-libs/yajl >=net-libs/nodejs-18.16.0 dev-db/postgresql:13 net-libs/http-parser dev-python/docutils >=dev-lang/go-1.18 dev-util/cmake dev-lang/go media-libs/exiftool || ( ( dev-lang/ruby:3.0 virtual/rubygems[ruby_targets_ruby30(-)] ) ) acct-user/git[gitlab] acct-group/git >=dev-lang/ruby-3.0.5:3.0[ssl] >=dev-vcs/gitlab-shell-14.23.0[relative_url=] pages? ( ~www-apps/gitlab-pages-16.1.5 ) !gitaly_git? ( >=dev-vcs/git-2.38.0[pcre] dev-libs/libpcre2[jit] ) net-misc/curl virtual/ssh =sys-apps/yarn-1.22* dev-libs/re2 !www-servers/gitlab-workhorse >=dev-db/redis-6.0 virtual/mta kerberos? ( app-crypt/mit-krb5 ) favicon? ( media-gfx/graphicsmagick ) virtual/tmpfiles
+RDEPEND=app-crypt/gpgme dev-libs/icu dev-libs/libxml2 dev-libs/libxslt dev-util/ragel dev-libs/yajl >=net-libs/nodejs-18.16.0 dev-db/postgresql:13 net-libs/http-parser dev-python/docutils >=dev-lang/go-1.18 dev-util/cmake dev-lang/go media-libs/exiftool || ( ) acct-user/git[gitlab] acct-group/git >=dev-lang/ruby-3.0.5:3.0[ssl] >=dev-vcs/gitlab-shell-14.23.0[relative_url=] pages? ( ~www-apps/gitlab-pages-16.1.5 ) !gitaly_git? ( >=dev-vcs/git-2.38.0[pcre] dev-libs/libpcre2[jit] ) net-misc/curl virtual/ssh =sys-apps/yarn-1.22* dev-libs/re2 !www-servers/gitlab-workhorse >=dev-db/redis-6.0 virtual/mta kerberos? ( app-crypt/mit-krb5 ) favicon? ( media-gfx/graphicsmagick ) virtual/tmpfiles
 RESTRICT=network-sandbox splitdebug strip
 SLOT=0
-_eclasses_=git-r3	2358a7b20091609e24bd3a83b3ac5991	ruby-utils	69e7140043885477733c347fee4a981a	ruby-single	e045ee439d34b230e588900a87a11904	toolchain-funcs	862d337d98edb576796827be2c6b11ca	multilib	c19072c3cd7ac5cb21de013f7e9832e0	systemd	5f4bb0758df2e483babf68cd517078ca	tmpfiles	216aa76c3a6fcb5d893c23a0de86048f
+_eclasses_=git-r3	2358a7b20091609e24bd3a83b3ac5991	ruby-utils	6c200c98361f47219e106ddc67c43a1e	ruby-single	e045ee439d34b230e588900a87a11904	toolchain-funcs	862d337d98edb576796827be2c6b11ca	multilib	c19072c3cd7ac5cb21de013f7e9832e0	systemd	5f4bb0758df2e483babf68cd517078ca	tmpfiles	216aa76c3a6fcb5d893c23a0de86048f
 _md5_=aff7700ec10b25ed434ebbb9cfcfdd2b
