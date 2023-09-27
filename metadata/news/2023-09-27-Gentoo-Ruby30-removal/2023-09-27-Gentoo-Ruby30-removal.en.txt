@@ -1,0 +1,34 @@
+Title: Ongoing removal of Ruby 3.0 support from Gentoo
+Author: Horst Prote <prote@fmi.uni-stuttgart.de>
+Posted: 2023-09-27
+Revision: 1
+News-Item-Format: 2.0
+Display-If-Installed: www-apps/gitlab
+
+Recent Gentoo update removed another bit of Ruby 3.0 support:
+- virtual/rubygems lost ruby_targets_ruby30 USE flag
+- dev-ruby/bundler lost ruby_targets_ruby30 USE flag
+- ruby-ng.eclass added ruby30 to "removed implementations"
+- ruby-utils.eclass lost ruby30 in RUBY_TARGETS_PREFERENCE
+This causes
+  masked by: invalid: DEPEND: expected: dependency string, got: ')',
+  token 15, invalid: RDEPEND: expected: dependency string, got: ')', token 15)
+errors for our gitlab ebuilds.
+
+Since GitLab still works on the migration to Ruby 3.1 (see
+https://gitlab.com/groups/gitlab-org/-/epics/10034) I had to add the
+old versions of the ebuilds/eclasses to the gitlab overlay.
+
+In addition you have to
+a) unmask the ruby_targets_ruby30 USE flag for virtual/rubygems by adding
+
+    =virtual/rubygems-17 -ruby_targets_ruby30
+
+to /etc/portage/profile/package.use.mask (note the '-' here; its a
+kind of double negation).
+
+b) set the ruby_targets_ruby30 USE flag for virtual/rubygems by adding
+
+    virtual/rubygems ruby_targets_ruby30
+
+to /etc/portage/package.use/<your file>
