@@ -1,0 +1,19 @@
+Title: Switch to Ruby31: pre-warning
+Author: Horst Prote <prote@fmi.uni-stuttgart.de>
+Posted: 2023-10-06
+Revision: 1
+News-Item-Format: 2.0
+Display-If-Installed: www-apps/gitlab
+
+Because of the increasing problems caused by the removal of Ruby30 from the
+portage tree I will not wait until upstream switches to Ruby31 in Q32024
+(see https://gitlab.com/groups/gitlab-org/-/epics/10034) and already switch
+to Ruby31 with the upcomming versions 16.2.8, 16.3.5 and 16.4.1 in the next
+update of the gitlab overlay (see also the discussion in Issue
+https://gitlab.awesome-it.de/overlays/gitlab/-/issues/155).
+
+Unfortunately the migration will
+- either require a considerable downtime (during switching your system to
+  Ruby31 and afterwards building the new gitlab with it)
+- or last quite some time (multiple rebuilds of gitlab needed in order 
+  to minimize downtime) and be pretty complicated.
