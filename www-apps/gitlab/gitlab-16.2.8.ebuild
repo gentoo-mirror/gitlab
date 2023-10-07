@@ -174,23 +174,27 @@ pkg_setup() {
 	if [ "$MODUS" = "patch" ] || [ "$MODUS" = "minor" ] || [ "$MODUS" = "major" ]; then
 		# ensure that any background migrations have been fully completed
 		# see /opt/gitlab/gitlab/doc/update/README.md
-		elog "Checking for background migrations ..."
-		local bm gitlab_dir rails_cmd="'puts Gitlab::BackgroundMigration.remaining'"
-		gitlab_dir="${BASE_DIR}/${PN}"
-		bm=$(su -l ${GIT_USER} -s /bin/sh -c "
-			export RUBYOPT=--disable-did_you_mean LANG=en_US.UTF-8 LC_ALL=en_US.UTF-8
-			cd ${gitlab_dir}
-			${BUNDLE} exec rails runner -e ${RAILS_ENV} ${rails_cmd}" \
-				|| die "failed to check for background migrations")
-		if [ "${bm}" != "0" ]; then
-			elog "The new version may require a set of background migrations to be finished."
-			elog "For more information see:"
-			elog "https://gitlab.com/gitlab-org/gitlab-foss/-/blob/master/doc/update/README.md#checking-for-background-migrations-before-upgrading"
-			eerror "Number of remainig background migrations is ${bm}"
-			eerror "Try again later."
-			die "Background migrations from previous upgrade not finished yet."
-		else
-			elog "OK: No remainig background migrations found."
+		gstate=$(su -l ${GIT_USER} -s /bin/sh -c "
+			systemctl show --property=ActiveState --value gitlab.target")
+		if [ "${gstate}" == "active" ]; then
+			elog "Checking for background migrations ..."
+			local bm gitlab_dir rails_cmd="'puts Gitlab::BackgroundMigration.remaining'"
+			gitlab_dir="${BASE_DIR}/${PN}"
+			bm=$(su -l ${GIT_USER} -s /bin/sh -c "
+				export RUBYOPT=--disable-did_you_mean LANG=en_US.UTF-8 LC_ALL=en_US.UTF-8
+				cd ${gitlab_dir}
+				${BUNDLE} exec rails runner -e ${RAILS_ENV} ${rails_cmd}" \
+					|| die "failed to check for background migrations")
+			if [ "${bm}" != "0" ]; then
+				elog "The new version may require a set of background migrations to be finished."
+				elog "For more information see:"
+				elog "https://gitlab.com/gitlab-org/gitlab-foss/-/blob/master/doc/update/README.md#checking-for-background-migrations-before-upgrading"
+				eerror "Number of remainig background migrations is ${bm}"
+				eerror "Try again later."
+				die "Background migrations from previous upgrade not finished yet."
+			else
+				elog "OK: No remainig background migrations found."
+			fi
 		fi
 	fi
 
