@@ -186,8 +186,9 @@ pkg_setup() {
 			rubyVinst=${rubyVinst/./}
 			local rubyV=$(ls ${gitlab_dir}/vendor/bundle/ruby 2>/dev/null)
 			rubyV=${rubyV%.?}
-			rubyV=${rubyV%.?}
+			rubyV=${rubyV/./}
 			if [ "$rubyVinst" != "$rubyV" ]; then
+				elog "Temporary switch to ruby${rubyV}"
 				eselect ruby set ruby${rubyV}
 			fi
 			bm=$(su -l ${GIT_USER} -s /bin/sh -c "
@@ -206,6 +207,7 @@ pkg_setup() {
 				elog "OK: No remainig background migrations found."
 			fi
 			if [ "$rubyVinst" != "$rubyV" ]; then
+				elog "Switching back to ruby${rubyVinst}"
 				eselect ruby set ruby${rubyVinst}
 			fi
 		fi
