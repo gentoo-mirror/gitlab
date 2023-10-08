@@ -324,13 +324,6 @@ src_prepare() {
 	# But yarn still wants to create/read /usr/local/share/.yarnrc
 	addwrite /usr/local/share/
 
-	# With version 16.1.0 ci_secure_files task was added to build_definitions in
-	# /opt/gitlab/gitlab/lib/backup/manager.rb and this caused backup to fail because
-	# /opt/gitlab/gitlab/shared/ci_secure_files is missing if no project ever uploaded
-	# a ci secure file.
-	mkdir shared/ci_secure_files
-	chown -R ${GIT_USER}:${GIT_GROUP} shared/ci_secure_files
-
 	if [ "$MODUS" = "new" ]; then
 		# initialize our source for ${CONF_DIR}
 		mkdir -p ${T}/etc-config
