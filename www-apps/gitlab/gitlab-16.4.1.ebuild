@@ -180,6 +180,16 @@ pkg_setup() {
 			elog "Checking for background migrations ..."
 			local bm gitlab_dir rails_cmd="'puts Gitlab::BackgroundMigration.remaining'"
 			gitlab_dir="${BASE_DIR}/${PN}"
+			local rubyVinst=$(ruby --version)
+			rubyVinst=${rubyVinst%%.?p*}
+			rubyVinst=${rubyVinst##ruby }
+			rubyVinst=${rubyVinst/./}
+			local rubyV=$(ls ${gitlab_dir}/vendor/bundle/ruby 2>/dev/null)
+			rubyV=${rubyV%.?}
+			rubyV=${rubyV%.?}
+			if [ "$rubyVinst" != "$rubyV" ]; then
+				eselect ruby set ruby${rubyV}
+			fi
 			bm=$(su -l ${GIT_USER} -s /bin/sh -c "
 				export RUBYOPT=--disable-did_you_mean LANG=en_US.UTF-8 LC_ALL=en_US.UTF-8
 				cd ${gitlab_dir}
@@ -194,6 +204,9 @@ pkg_setup() {
 				die "Background migrations from previous upgrade not finished yet."
 			else
 				elog "OK: No remainig background migrations found."
+			fi
+			if [ "$rubyVinst" != "$rubyV" ]; then
+				eselect ruby set ruby${rubyVinst}
 			fi
 		fi
 	fi

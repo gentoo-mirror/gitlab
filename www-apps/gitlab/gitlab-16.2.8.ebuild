@@ -63,7 +63,7 @@ DEPEND="
 	${RUBY_DEPS}
 	acct-user/git[gitlab]
 	acct-group/git
-	>=net-libs/nodejs-18.16.1
+	>=net-libs/nodejs-18.16.0
 	>=dev-lang/ruby-3.1.4:3.1[ssl]
 	>=dev-vcs/gitlab-shell-14.23.0[relative_url=]
 	pages? ( ~www-apps/gitlab-pages-${PV} )
@@ -180,6 +180,16 @@ pkg_setup() {
 			elog "Checking for background migrations ..."
 			local bm gitlab_dir rails_cmd="'puts Gitlab::BackgroundMigration.remaining'"
 			gitlab_dir="${BASE_DIR}/${PN}"
+			local rubyVinst=$(ruby --version)
+			rubyVinst=${rubyVinst%%.?p*}
+			rubyVinst=${rubyVinst##ruby }
+			rubyVinst=${rubyVinst/./}
+			local rubyV=$(ls ${gitlab_dir}/vendor/bundle/ruby 2>/dev/null)
+			rubyV=${rubyV%.?}
+			rubyV=${rubyV%.?}
+			if [ "$rubyVinst" != "$rubyV" ]; then
+				eselect ruby set ruby${rubyV}
+			fi
 			bm=$(su -l ${GIT_USER} -s /bin/sh -c "
 				export RUBYOPT=--disable-did_you_mean LANG=en_US.UTF-8 LC_ALL=en_US.UTF-8
 				cd ${gitlab_dir}
@@ -194,6 +204,9 @@ pkg_setup() {
 				die "Background migrations from previous upgrade not finished yet."
 			else
 				elog "OK: No remainig background migrations found."
+			fi
+			if [ "$rubyVinst" != "$rubyV" ]; then
+				eselect ruby set ruby${rubyVinst}
 			fi
 		fi
 	fi
@@ -594,7 +607,7 @@ src_install() {
 	# fix QA Security Notice: world writable file(s)
 	elog "Fixing permissions of world writable files"
 	local gemsdir="${ruby_vpath}/gems"
-	local file gem wwfgems="gitlab-dangerfiles gitlab-labkit os toml-rb unleash"
+	local file gem wwfgems="gitlab-dangerfiles gitlab-labkit os rack-cors tanuki_emoji toml-rb unleash"
 	# If we are using wildcards, the shell fills them without prefixing ${ED}. Thus
 	# we would target a file list in the real system instead of in the sandbox.
 	for gem in ${wwfgems}; do
