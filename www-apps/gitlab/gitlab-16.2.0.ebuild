@@ -495,21 +495,6 @@ src_install() {
 
 	local gitlab_dir="${BASE_DIR}/${PN}"
 
-	# Hack: Don't start from scratch, use the installed bundle
-	if [ -d ${gitlab_dir}/vendor/bundle ]; then
-		local rubyVinst=$(ruby --version)
-		rubyVinst=${rubyVinst%%p*}
-		rubyVinst=${rubyVinst##ruby }
-		local rubyV=$(ls ${gitlab_dir}/ruby/vendor/bundle/ruby 2>/dev/null)
-		if [ "$rubyVinst" = "$rubyV" ]; then
-			einfo "Using parts of the installed gitlab to save time:"
-			portageq list_preserved_libs / >/dev/null # returns 1 when no preserved_libs found
-			if [ "$?" = "1" ]; then
-				einfo "   Copying ${gitlab_dir}/vendor/bundle/ ..."
-				cp -a ${gitlab_dir}/vendor/bundle/ vendor/
-			fi
-		fi
-	fi
 	# Hack: Don't start from scratch, use the installed node_modules
 	if [ -d ${gitlab_dir}/node_modules ]; then
 		einfo "   Copying ${gitlab_dir}/node_modules/ ..."
