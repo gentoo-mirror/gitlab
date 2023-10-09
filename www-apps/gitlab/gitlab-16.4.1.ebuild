@@ -9,7 +9,7 @@ EAPI="7"
 #   it should be done, but GitLab has too many dependencies that it will be too
 #   difficult to maintain them via ebuilds.
 
-USE_RUBY="ruby30"
+USE_RUBY="ruby31"
 
 EGIT_REPO_URI="https://gitlab.com/gitlab-org/gitlab-foss.git"
 EGIT_COMMIT="v${PV}"
@@ -63,9 +63,9 @@ DEPEND="
 	${RUBY_DEPS}
 	acct-user/git[gitlab]
 	acct-group/git
-	>=net-libs/nodejs-18.16.1
-	>=dev-lang/ruby-3.0.5:3.0[ssl]
-	>=dev-vcs/gitlab-shell-14.23.0[relative_url=]
+	>=net-libs/nodejs-18.17.0
+	>=dev-lang/ruby-3.1.4:3.1[ssl]
+	>=dev-vcs/gitlab-shell-14.28.0[relative_url=]
 	pages? ( ~www-apps/gitlab-pages-${PV} )
 	!gitaly_git? ( >=dev-vcs/git-2.41.0[pcre] dev-libs/libpcre2[jit] )
 	net-misc/curl
@@ -174,23 +174,42 @@ pkg_setup() {
 	if [ "$MODUS" = "patch" ] || [ "$MODUS" = "minor" ] || [ "$MODUS" = "major" ]; then
 		# ensure that any background migrations have been fully completed
 		# see /opt/gitlab/gitlab/doc/update/README.md
-		elog "Checking for background migrations ..."
-		local bm gitlab_dir rails_cmd="'puts Gitlab::BackgroundMigration.remaining'"
-		gitlab_dir="${BASE_DIR}/${PN}"
-		bm=$(su -l ${GIT_USER} -s /bin/sh -c "
-			export RUBYOPT=--disable-did_you_mean LANG=en_US.UTF-8 LC_ALL=en_US.UTF-8
-			cd ${gitlab_dir}
-			${BUNDLE} exec rails runner -e ${RAILS_ENV} ${rails_cmd}" \
-				|| die "failed to check for background migrations")
-		if [ "${bm}" != "0" ]; then
-			elog "The new version may require a set of background migrations to be finished."
-			elog "For more information see:"
-			elog "https://gitlab.com/gitlab-org/gitlab-foss/-/blob/master/doc/update/README.md#checking-for-background-migrations-before-upgrading"
-			eerror "Number of remainig background migrations is ${bm}"
-			eerror "Try again later."
-			die "Background migrations from previous upgrade not finished yet."
-		else
-			elog "OK: No remainig background migrations found."
+		gstate=$(su -l ${GIT_USER} -s /bin/sh -c "
+			systemctl show --property=ActiveState --value gitlab.target")
+		if [ "${gstate}" == "active" ]; then
+			elog "Checking for background migrations ..."
+			local bm gitlab_dir rails_cmd="'puts Gitlab::BackgroundMigration.remaining'"
+			gitlab_dir="${BASE_DIR}/${PN}"
+			local rubyVinst=$(ruby --version)
+			rubyVinst=${rubyVinst%%.?p*}
+			rubyVinst=${rubyVinst##ruby }
+			rubyVinst=${rubyVinst/./}
+			local rubyV=$(ls ${gitlab_dir}/vendor/bundle/ruby 2>/dev/null)
+			rubyV=${rubyV%.?}
+			rubyV=${rubyV/./}
+			if [ "$rubyVinst" != "$rubyV" ]; then
+				elog "Temporary switch to ruby${rubyV}"
+				eselect ruby set ruby${rubyV}
+			fi
+			bm=$(su -l ${GIT_USER} -s /bin/sh -c "
+				export RUBYOPT=--disable-did_you_mean LANG=en_US.UTF-8 LC_ALL=en_US.UTF-8
+				cd ${gitlab_dir}
+				${BUNDLE} exec rails runner -e ${RAILS_ENV} ${rails_cmd}" \
+					|| die "failed to check for background migrations")
+			if [ "${bm}" != "0" ]; then
+				elog "The new version may require a set of background migrations to be finished."
+				elog "For more information see:"
+				elog "https://gitlab.com/gitlab-org/gitlab-foss/-/blob/master/doc/update/README.md#checking-for-background-migrations-before-upgrading"
+				eerror "Number of remainig background migrations is ${bm}"
+				eerror "Try again later."
+				die "Background migrations from previous upgrade not finished yet."
+			else
+				elog "OK: No remainig background migrations found."
+			fi
+			if [ "$rubyVinst" != "$rubyV" ]; then
+				elog "Switching back to ruby${rubyVinst}"
+				eselect ruby set ruby${rubyVinst}
+			fi
 		fi
 	fi
 
@@ -568,7 +587,7 @@ src_install() {
 	# fix QA Security Notice: world writable file(s)
 	elog "Fixing permissions of world writable files"
 	local gemsdir="${ruby_vpath}/gems"
-	local file gem wwfgems="gitlab-dangerfiles gitlab-labkit os toml-rb unleash"
+	local file gem wwfgems="gitlab-dangerfiles gitlab-labkit os rack-cors tanuki_emoji toml-rb unleash"
 	# If we are using wildcards, the shell fills them without prefixing ${ED}. Thus
 	# we would target a file list in the real system instead of in the sandbox.
 	for gem in ${wwfgems}; do

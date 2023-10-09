@@ -1,0 +1,232 @@
+Migrating www-apps/gitlab from Ruby30 to Ruby31
+===============================================
+
+You have two options:
+A) Shut down the GitLab Server during migration.
+   This is simpler and faster than option B) with the drawback
+   of a considerable downtime.
+B) Do the migration with minimal downtime of the GitLab Server
+   (as usual just the time required for restarts) with the
+   drawback that you have to emerge www-apps/gitlab two times.
+   Also this option is quite complicated.
+
+The instructions below assume that you do the Ryby30 to Ruby31
+switch with the upgrade from gitlab-16.4.0 to gitlab-16.4.1
+(the ebuilds for 16.2.7 to 16.2.8 and 16.3.4 to 16.3.5 are also
+prepared for the Ryby30 to Ruby31 switch). And they use my paths
+for overlays and files under /etc/portage/. YMMV
+The paths are:
+- Gitlab overlay: /usr/local/overlay/gitlab/
+- Local x-host overlay: /usr/local/portage/host/
+- GitLab related files under /etc/portage/:
+  /etc/portage/profile/package.use.mask
+  /etc/portage/package.use/gitlab
+  /etc/portage/package.mask/gitlab
+  /etc/portage/package.unmask/gitlab
+
+When I started the migration RUBY_TARGETS in /etc/portage/make.conf
+was set to "ruby30" and the /etc/portage/ files above contained the
+following items.
+cat /etc/portage/profile/package.use.mask
+>=dev-ruby/bundler-2:2 -ruby_targets_ruby30
+=dev-ruby/rubygems-3.4* -ruby_targets_ruby30
+=virtual/rubygems-17 -ruby_targets_ruby30
+
+cat /etc/portage/package.use/gitlab
+www-apps/gitlab postgres
+acct-user/git gitlab
+virtual/rubygems ruby_targets_ruby30
+
+cat /etc/portage/package.mask/gitlab
+>=dev-libs/openssl-3
+>dev-ruby/rubygems-3.4.15
+
+cat /etc/portage/package.unmask/gitlab
+=dev-lang/ruby-3.0.6-r3
+=dev-libs/openssl-1.1.1u
+
+  
+Instructions for option A
+-------------------------
+A.0) Prerequisites
+Stop the GitLab Server:
+  systemctl stop gitlab.target
+
+Edit /etc/portage/make.conf to
+  RUBY_TARGETS="ruby31"
+
+Remove from /etc/portage/package.use/gitlab the line
+  virtual/rubygems ruby_targets_ruby30
+
+Remove from /etc/portage/package.mask/gitlab the line
+  >=dev-libs/openssl-3
+
+Remove from /etc/portage/package.unmask/gitlab the lines
+  =dev-lang/ruby-3.0.6-r3
+  =dev-libs/openssl-1.1.1u
+(the file should be empty then, so remove it completely).
+
+Remove from /etc/portage/profile/package.use.mask the lines
+  >=dev-ruby/bundler-2:2 -ruby_targets_ruby30
+  =dev-ruby/rubygems-3.4* -ruby_targets_ruby30
+  =virtual/rubygems-17 -ruby_targets_ruby30
+(the file should be empty then, so remove it completely).
+
+A.1) Upgrade to Ruby31
+Do an update world but exclude gitlab and gitlab-shell yet:
+  emerge -DuNa world --exclude "gitlab gitlab-shell"
+(You'll get a warning that the installed www-apps/gitlab-16.4.0
+package is "masked by: invalid: DEPEND: ...". You can ignore it.)
+This will install dev-lang/ruby-3.1.x in a new slot and upgrade
+openssl to version 3.0. Also the dev-ruby/* packages wil be rebuild
+for the new RUBY_TARGETS="ruby31" but without ruby30.
+You'll get a "existing preserved libs" warning for the openssl-1.1
+libs still used by the installed www-apps/gitlab-16.4.0 but there is
+no need for an "emerge @preserved-rebuild" now as you'll update to
+www-apps/gitlab-16.4.1 in the next step.
+After the upgrade of openssl you should reboot now.
+  shutdown -r now
+Note that gitlab-puma.service and gitlab-sidekiq.service won't work
+now, so stop gitlab.target completely again:
+  systemctl stop gitlab.target
+
+Now switch to Ruby31 by
+  eselect ruby set ruby31
+and emerge the new gitlab packages by
+  emerge -DuNa world
+This will install the new versions dev-vcs/gitlab-shell-14.28.0-r1
+and www-apps/gitlab-16.4.1 (for gitlab-shell it's not a real update;
+I just removed the ruby dependency from the ebuild that was needless
+long-since).
+You'll also get an "existing preserved libs" warning for ruby-3.0
+still using the openssl-1.1 libs. This can be ignored as we will
+remove ruby-3.0 soon.
+
+When this is done restart GitLab and do the "emerge --config"
+  systemctl daemon-reload
+  systemctl start gitlab.target
+  emerge --config "=www-apps/gitlab-16.4.1"
+
+A.3) Remove Ruby30
+  emerge -c
+This will uninstall dev-lang/ruby-3.0.x and maybe some other now
+unneeded dependencies.
+
+
+Instructions for option B
+-------------------------
+B.0) Prerequisites
+You'll need a local repo for some temporary ebuilds. I used this one:
+  cat /etc/portage/repos.conf/host.conf 
+  [x-host]
+  location = /usr/local/portage/host
+  masters = gentoo
+  auto-sync = no
+So create the /etc/portage/repos.conf/host.conf definition and copy
+the x-host directory:
+  cp -a /usr/local/overlay/gitlab/ruby30-31_migration/x-host \
+  /usr/local/portage/host
+Or, if you already have such a local repo, do
+  cp -a /usr/local/overlay/gitlab/ruby30-31_migration/x-host/* \
+  /usr/local/portage/host/
+
+B.1) Install Ruby31 besides Ruby30
+Edit /etc/portage/make.conf to
+  RUBY_TARGETS="ruby30 ruby31"
+
+Add to /etc/portage/profile/package.use.mask the lines
+  =virtual/ruby-ssl-12 -ruby_targets_ruby30
+  dev-ruby/* -ruby_targets_ruby30
+
+Add to /etc/portage/package.mask/gitlab the line
+  >=dev-ruby/rexml-3.2.6
+
+Temporarily replace two eclasses with their old 'ruby30' versions:
+  cd /usr/portage/eclass/
+  mv ruby-ng.eclass ruby-utils.eclass /root/
+  cp /usr/local/overlay/gitlab/ruby30-31_migration/eclass/* .
+
+Do an update world but exclude gitlab and gitlab-shell yet:
+  emerge -DuNa world --exclude "gitlab gitlab-shell"
+This will install dev-lang/ruby-3.1.x in a new slot and adds the
+ruby31 RUBY_TARGET to the dev-ruby/* packages.
+
+B.2) Build GitLab with Ruby31
+Now switch to Ruby31 by
+  eselect ruby set ruby31
+and emerge the new gitlab packages by
+  emerge -DuNa world
+(You'll get a warning that the installed www-apps/gitlab-16.4.0
+package is "masked by: invalid: DEPEND: ...". You can ignore it.)
+This will install the new versions dev-vcs/gitlab-shell-14.28.0-r1
+and www-apps/gitlab-16.4.1 (for gitlab-shell it's not a real update;
+I just removed the ruby dependency from the ebuild that is needless
+long-since).
+
+When this is done restart GitLab and do the "emerge --config"
+  systemctl daemon-reload
+  systemctl start gitlab.target
+  emerge --config "=www-apps/gitlab-16.4.1"
+
+B.3) Remove Ruby30 and upgrade to openssl-3
+Edit /etc/portage/make.conf to
+  RUBY_TARGETS="ruby31"
+
+Remove from /etc/portage/package.use/gitlab the lines
+  virtual/rubygems ruby_targets_ruby30
+
+Remove from /etc/portage/package.mask/gitlab the lines
+  >=dev-libs/openssl-3
+  >=dev-ruby/rexml-3.2.6
+
+Remove from /etc/portage/profile/package.use.mask the lines
+  >=dev-ruby/bundler-2:2 -ruby_targets_ruby30
+  =dev-ruby/rubygems-3.4* -ruby_targets_ruby30
+  =virtual/rubygems-17 -ruby_targets_ruby30
+  =virtual/ruby-ssl-12 -ruby_targets_ruby30
+  dev-ruby/* -ruby_targets_ruby30
+(the file should be empty then, so remove it completely).
+
+Rebuild the system with RUBY_TARGETS="ruby31" by
+  emerge -DuNa world
+The dev-ruby/* packages will be rebuild for the new RUBY_TARGETS
+setting and openssl will be upgraded to version 3.0.
+You'll get an "existing preserved libs" warning for www-apps/gitlab
+still using the openssl-1.1 libs.
+The upgrade of openssl requires a reboot:
+  shutdown -r now
+
+Uninstall dev-lang/ruby-3.0.x and maybe some other now
+unneeded dependencies by
+  emerge -c
+
+Now do rebuild www-apps/gitlab with openssl-3 libs:
+  emerge -1a @preserved-rebuild
+When this is done restart GitLab
+  systemctl daemon-reload
+  systemctl restart gitlab.target
+
+B4) Cleanup:
+Move back the original eclasses
+  cd /root
+  mv ruby-ng.eclass ruby-utils.eclass /usr/portage/eclass/
+
+Remove the package folders added to /usr/local/portage/host/ or the
+whole /usr/local/portage/host with it's repos.conf file respectively.
+
+Remove from /etc/portage/package.unmask/gitlab the lines
+  =dev-lang/ruby-3.0.6-r3
+  =dev-libs/openssl-1.1.1u
+(the file should be empty then, so remove it completely).
+
+Check if there are still packages installed from the x-host
+(or the name your local repo has):
+  eix --only-names --installed-from-overlay x-host
+For me these were listed:
+  dev-ruby/bundler 
+  dev-ruby/rubygems
+  virtual/ruby-ssl
+  virtual/rubygems
+Rebuild these packages but now from the gentoo repo:
+  emerge -1a bundler dev-ruby/rubygems ruby-ssl virtual/rubygems
+

@@ -5,9 +5,8 @@ EAPI="7"
 
 EGIT_REPO_URI="https://gitlab.com/gitlab-org/gitlab-shell.git"
 EGIT_COMMIT="v${PV}"
-USE_RUBY="ruby30"
 
-inherit git-r3 ruby-single
+inherit git-r3
 
 DESCRIPTION="SSH access for GitLab"
 HOMEPAGE="https://gitlab.com/gitlab-org/gitlab-shell"
@@ -16,14 +15,11 @@ SLOT="0"
 KEYWORDS="~amd64 ~x86 ~arm"
 IUSE="-relative_url"
 RESTRICT="network-sandbox"
-BDEPEND="
-	${RUBY_DEPS}
-	>=dev-ruby/bundler-2:2"
 DEPEND="
 	acct-user/git[gitlab]
 	acct-group/git
 	|| ( >=dev-vcs/git-2.41.0[pcre] www-apps/gitlab[gitaly_git] )
-	>=dev-lang/go-1.19.0
+	>=dev-lang/go-1.19
 	virtual/krb5
 	virtual/ssh
 	dev-db/redis"
