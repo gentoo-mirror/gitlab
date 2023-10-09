@@ -1,0 +1,11 @@
+Title: Switch to Ruby31
+Author: Horst Prote <prote@fmi.uni-stuttgart.de>
+Posted: 2023-10-09
+Revision: 1
+News-Item-Format: 2.0
+Display-If-Installed: www-apps/gitlab
+
+As announced in the previous news this update of the gitlab overlay brings
+versions 16.2.8, 16.3.5 and 16.4.1 that build with Ruby31. You'll find the
+detailed upgrade instructions in
+  <path of gitlab overlay folder>ruby30-31_migration/HOWTO 
