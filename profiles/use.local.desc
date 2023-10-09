@@ -5,10 +5,6 @@
 acct-user/git:gitea - Set home directory for git hosting via www-apps/gitea.
 acct-user/git:gitlab - Set home directory for gitlab hosting via www-apps/gitlabhq.
 acct-user/git:gitolite - Set home directory for git hosting via dev-vcs/gitolite or dev-vcs/gitolite-gentoo.
-dev-lang/ruby:rdoc - Install dev-ruby/rdoc after installing Ruby.
-dev-lang/ruby:rubytests - Install ruby tests that can only be run after ruby is installed
-dev-lang/ruby:systemtap - Enable SystemTAP/DTrace tracing
-dev-ruby/rubygems:server - Install support for the rubygems server
 www-apps/gitlab:favicon - For the Custom Favicon to work, GraphicsMagick needs to be installed
 www-apps/gitlab:gitaly_git - Use the Git version provided by Gitaly
 www-apps/gitlab:gitlab-config - Config in /opt/gitlab/gitlab/config instead of /etc/gitlab (s. news 2021-02-22-etc-gitlab)
