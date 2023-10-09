@@ -10,6 +10,42 @@ B) Do the migration with minimal downtime of the GitLab Server
    drawback that you have to emerge www-apps/gitlab two times.
    Also this option is quite complicated.
 
+The instructions below assume that you do the Ryby30 to Ruby31
+switch with the upgrade from gitlab-16.4.0 to gitlab-16.4.1
+(the ebuilds for 16.2.7 to 16.2.8 and 16.3.4 to 16.3.5 are also
+prepared for the Ryby30 to Ruby31 switch). And they use my paths
+for overlays and files under /etc/portage/. YMMV
+The paths are:
+- Gitlab overlay: /usr/local/overlay/gitlab/
+- Local x-host overlay: /usr/local/portage/host/
+- GitLab related files under /etc/portage/:
+  /etc/portage/profile/package.use.mask
+  /etc/portage/package.use/gitlab
+  /etc/portage/package.mask/gitlab
+  /etc/portage/package.unmask/gitlab
+
+When I started the migration RUBY_TARGETS in /etc/portage/make.conf
+was set to "ruby30" and the /etc/portage/ files above contained the
+following items.
+cat /etc/portage/profile/package.use.mask
+>=dev-ruby/bundler-2:2 -ruby_targets_ruby30
+=dev-ruby/rubygems-3.4* -ruby_targets_ruby30
+=virtual/rubygems-17 -ruby_targets_ruby30
+
+cat /etc/portage/package.use/gitlab
+www-apps/gitlab postgres
+acct-user/git gitlab
+virtual/rubygems ruby_targets_ruby30
+
+cat /etc/portage/package.mask/gitlab
+>=dev-libs/openssl-3
+>dev-ruby/rubygems-3.4.15
+
+cat /etc/portage/package.unmask/gitlab
+=dev-lang/ruby-3.0.6-r3
+=dev-libs/openssl-1.1.1u
+
+  
 Instructions for option A
 -------------------------
 A.0) Prerequisites
@@ -88,11 +124,11 @@ You'll need a local repo for some temporary ebuilds. I used this one:
   auto-sync = no
 So create the /etc/portage/repos.conf/host.conf definition and copy
 the x-host directory:
-  cp -a <path of gitlab overlay folder>/ruby30-31_migration/x-host \
+  cp -a /usr/local/overlay/gitlab/ruby30-31_migration/x-host \
   /usr/local/portage/host
 Or, if you already have such a local repo, do
-  cp -a <path of gitlab overlay folder>/ruby30-31_migration/x-host/* \
-  <your local repo path>/
+  cp -a /usr/local/overlay/gitlab/ruby30-31_migration/x-host/* \
+  /usr/local/portage/host/
 
 B.1) Install Ruby31 besides Ruby30
 Edit /etc/portage/make.conf to
@@ -108,7 +144,7 @@ Add to /etc/portage/package.mask/gitlab the line
 Temporarily replace two eclasses with their old 'ruby30' versions:
   cd /usr/portage/eclass/
   mv ruby-ng.eclass ruby-utils.eclass /root/
-  cp <path of gitlab overlay folder>/ruby30-31_migration/eclass/* .
+  cp /usr/local/overlay/gitlab/ruby30-31_migration/eclass/* .
 
 Do an update world but exclude gitlab and gitlab-shell yet:
   emerge -DuNa world --exclude "gitlab gitlab-shell"
@@ -175,7 +211,7 @@ Move back the original eclasses
   cd /root
   mv ruby-ng.eclass ruby-utils.eclass /usr/portage/eclass/
 
-Remove the package folders added to <your local repo path>/ or the
+Remove the package folders added to /usr/local/portage/host/ or the
 whole /usr/local/portage/host with it's repos.conf file respectively.
 
 Remove from /etc/portage/package.unmask/gitlab the lines
