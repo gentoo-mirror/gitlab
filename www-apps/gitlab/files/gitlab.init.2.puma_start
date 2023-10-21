@@ -1,1 +1,11 @@
-gitlab.init.1.puma_start
+	ebegin "Starting GitLab web server Puma"
+	start-stop-daemon --start \\
+		--env RUBYOPT=--disable-did_you_mean \\
+		--env prometheus_multiproc_dir="${gitlab_metrics}" \\
+		--chdir "${gitlab_home}" \\
+		--user="${gitlab_user}:${gitlab_group}" \\
+		--pidfile="${gitlab_pids}/puma.pid" \\
+		--background -1 "${gitlab_log}/puma.log" -2 "${gitlab_log}/puma.log" \\
+		--exec /usr/bin/bundle -- exec puma \\
+			-C ${gitlab_config}/puma.rb -e ${rails_env}
+	eend $?

@@ -61,7 +61,7 @@ DEPEND="
 	${GITALY_DEPEND}
 	${WORKHORSE_DEPEND}
 	${RUBY_DEPS}
-	acct-user/git[gitlab]
+	>=acct-user/git-0-r4[gitlab]
 	acct-group/git
 	>=net-libs/nodejs-18.17.0
 	>=dev-lang/ruby-3.1.4:3.1[ssl]
@@ -94,7 +94,7 @@ LOG_DIR="/var/log/${PN}"
 TMP_DIR="/var/tmp/${PN}"
 WORKHORSE="${BASE_DIR}/gitlab-workhorse"
 WORKHORSE_BIN="${WORKHORSE}/bin"
-vSYS=2 # version of SYStemd service files used by this ebuild
+vSYS=3 # version of SYStemd service files used by this ebuild
 vORC=2 # version of OpenRC init files used by this ebuild
 
 GIT_REPOS="${GIT_HOME}/repositories"
@@ -192,7 +192,6 @@ pkg_setup() {
 				eselect ruby set ruby${rubyV}
 			fi
 			bm=$(su -l ${GIT_USER} -s /bin/sh -c "
-				export RUBYOPT=--disable-did_you_mean LANG=en_US.UTF-8 LC_ALL=en_US.UTF-8
 				cd ${gitlab_dir}
 				${BUNDLE} exec rails runner -e ${RAILS_ENV} ${rails_cmd}" \
 					|| die "failed to check for background migrations")
@@ -507,17 +506,6 @@ src_install() {
 
 	local gitlab_dir="${BASE_DIR}/${PN}"
 
-	# Hack: Don't start from scratch, use the installed node_modules
-	if [ -d ${gitlab_dir}/node_modules ]; then
-		einfo "   Copying ${gitlab_dir}/node_modules/ ..."
-		rsync -a --exclude=".cache" ${gitlab_dir}/node_modules ./
-	fi
-	# Hack: Don't start from scratch, use the installed public/assets
-	if [ -d ${gitlab_dir}/public/assets ]; then
-		einfo "   Copying ${gitlab_dir}/public/assets/ ..."
-		cp -a ${gitlab_dir}/public/assets/ public/
-	fi
-
 	local without="development test omnibus"
 	local flag; for flag in ${WITHOUTflags}; do
 		without+="$(use $flag || echo ' '$flag)"
@@ -530,7 +518,7 @@ src_install() {
 
 	#einfo "Current ruby version is \"$(ruby --version)\""
 
-	einfo "Running bundle install ..."
+	einfo "Install Gems ..."
 	# Cleanup args to extract only JOBS.
 	# Because bundler does not know anything else.
 	local jobs=1
@@ -539,7 +527,7 @@ src_install() {
 		jobs=$(grep -Eo '(-j|--jobs)(=?|[[:space:]]*)[[:digit:]]+' <<< "${MAKEOPTS}" \
 			| tail -n1 | grep -Eo '[[:digit:]]+')
 	fi
-	${BUNDLE} install --jobs=${jobs} || die "bundle install failed"
+	${BUNDLE} install --jobs=${jobs} || die "Install Gems failed"
 
 	## Install GetText PO files, yarn, assets via bundler ##
 
@@ -555,12 +543,26 @@ src_install() {
 	sed -i \
 		-e "s|${GITLAB_SHELL}|${ED}${GITLAB_SHELL}|g" \
 		config/gitlab.yml || die "failed to fake the gitlab-shell path"
-	einfo "Updating node dependencies and (re)compiling assets ..."
+	einfo "Updating node dependencies ..."
+	/bin/sh -c "yarn install --${RAILS_ENV} --pure-lockfile" \
+		|| die "failed to update node dependencies"
+	einfo "Compiling assets ..."
+	# On machines with few CPUs and/or without swap the webpack part of
+	# gitlab:assets:compile may either stall or fail with the error
+	# "SyntaxError: Bad control character in string literal in JSON".
+	# Mitigation is to reduce the poolParallelJobs number from 200 to
+	# a lower value (1 seems to work in any case). Supply the new value
+	# through the WEBPACK_POLL_PARALLEL_JOBS environment variable.
+	if [ "$WEBPACK_POLL_PARALLEL_JOBS" ]; then
+		sed -i \
+			-e "s|poolParallelJobs: .*,|poolParallelJobs: ${WEBPACK_POLL_PARALLEL_JOBS},|" \
+			${ED}/${GITLAB_CONFIG}/webpack.config.js
+	fi
 	/bin/sh -c "
 		export RUBYLIB=\"$(find /usr/lib64/ruby/ -regextype egrep -iregex '.*rdoc-.*/lib')\"
-		${BUNDLE} exec rake yarn:install gitlab:assets:clean gitlab:assets:compile \
+		${BUNDLE} exec rake gitlab:assets:compile \
 		RAILS_ENV=${RAILS_ENV} NODE_ENV=${NODE_ENV}" \
-		|| die "failed to update node dependencies and (re)compile assets"
+		|| die "failed to compile assets"
 	# Correct the gitlab-shell path we fooled lib/gitlab/shell.rb with.
 	sed -i \
 		-e "s|${ED}${GITLAB_SHELL}|${GITLAB_SHELL}|g" \
@@ -576,9 +578,6 @@ src_install() {
 
 	## Clean ##
 
-	# Clean up old gems (this is required due to our Hack above)
-	${BUNDLE} clean
-
 	local rubyV=$(ls vendor/bundle/ruby)
 	local ruby_vpath=vendor/bundle/ruby/${rubyV}
 
@@ -588,7 +587,8 @@ src_install() {
 	# fix QA Security Notice: world writable file(s)
 	elog "Fixing permissions of world writable files"
 	local gemsdir="${ruby_vpath}/gems"
-	local file gem wwfgems="gitlab-dangerfiles gitlab-labkit os rack-cors tanuki_emoji toml-rb unleash"
+	local file gem wwfgems="gitlab-dangerfiles gitlab-labkit graphql-client \
+							os rack-cors tanuki_emoji toml-rb unleash"
 	# If we are using wildcards, the shell fills them without prefixing ${ED}. Thus
 	# we would target a file list in the real system instead of in the sandbox.
 	for gem in ${wwfgems}; do
@@ -839,7 +839,6 @@ pkg_postinst() {
 		elog
 		elog "Migrating database without post deployment migrations ..."
 		su -l ${GIT_USER} -s /bin/sh -c "
-			export LANG=en_US.UTF-8; export LC_ALL=en_US.UTF-8
 			cd ${GITLAB}
 			SKIP_POST_DEPLOYMENT_MIGRATIONS=true \
 			${BUNDLE} exec rake db:migrate RAILS_ENV=${RAILS_ENV}" \
@@ -899,7 +898,6 @@ pkg_config_do_upgrade_migrate_data() {
 pkg_config_do_upgrade_migrate_database() {
 	elog "Migrating database ..."
 	su -l ${GIT_USER} -s /bin/sh -c "
-		export LANG=en_US.UTF-8; export LC_ALL=en_US.UTF-8
 		cd ${GITLAB}
 		${BUNDLE} exec rake db:migrate RAILS_ENV=${RAILS_ENV}" \
 			|| die "failed to migrate database."
@@ -908,7 +906,6 @@ pkg_config_do_upgrade_migrate_database() {
 pkg_config_do_upgrade_clear_redis_cache() {
 	elog "Clean up cache ..."
 	su -l ${GIT_USER} -s /bin/sh -c "
-		export LANG=en_US.UTF-8; export LC_ALL=en_US.UTF-8
 		cd ${GITLAB}
 		${BUNDLE} exec rake cache:clear RAILS_ENV=${RAILS_ENV}" \
 			|| die "failed to run cache:clear"
@@ -949,7 +946,6 @@ pkg_config_initialize() {
 	read -r email
 	elog "Initializing database ..."
 	su -l ${GIT_USER} -s /bin/sh -c "
-		export LANG=en_US.UTF-8; export LC_ALL=en_US.UTF-8
 		cd ${GITLAB}
 		${BUNDLE} exec rake gitlab:setup RAILS_ENV=${RAILS_ENV} \
 			GITLAB_ROOT_PASSWORD=\"${pw}\" GITLAB_ROOT_EMAIL=\"${email}\"" \

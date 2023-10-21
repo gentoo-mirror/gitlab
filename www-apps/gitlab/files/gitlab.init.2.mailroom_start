@@ -1,1 +1,9 @@
-gitlab.init.1.mailroom_start
+	ebegin "Starting GitLab MailRoom"
+	start-stop-daemon --start \\
+		--chdir "${gitlab_home}" \\
+		--user="${gitlab_user}:${gitlab_group}" \\
+		--pidfile="${mailroom_pidfile}" \\
+		--make-pidfile \\
+		--background -1 "${mailroom_log}" -2 "${mailroom_log}" \\
+		--exec ${mailroom_command} -- ${mailroom_command_args}
+	eend $?

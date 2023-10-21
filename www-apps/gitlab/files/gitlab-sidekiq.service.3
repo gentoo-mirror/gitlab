@@ -1,0 +1,28 @@
+[Unit]
+Description=GitLab Sidekiq
+Wants=redis.service
+After=redis.service
+# Add "postgresql-12.service" in Wants and After
+# if you're running PostgreSQL on the same machine as GitLab
+PartOf=gitlab.target
+After=network.target
+
+[Service]
+Type=simple
+User=git
+WorkingDirectory=@GITLAB@
+Environment=RAILS_ENV=production
+Environment=processes_args="* * * * *"
+Environment=SIDEKIQ_MEMORY_KILLER_MAX_RSS=2000000
+Environment=prometheus_multiproc_dir=@TMP_DIR@/prometheus_multiproc_dir
+EnvironmentFile=-/tmp/rubylib.env
+ExecStartPre=sh -c 'printf "%%s\n" RUBYLIB=$(find /usr/lib64/ruby/ -regextype egrep -iregex '.*rdoc-.*/lib') > /tmp/rubylib.env'
+ExecStart=@GITLAB@/bin/sidekiq-cluster "$processes_args" -e ${RAILS_ENV}
+PIDFile=@TMP_DIR@/pids/sidekiq.pid
+Restart=on-success
+RestartSec=1
+SyslogIdentifier=gitlab-sidekiq
+Slice=gitlab.slice
+
+[Install]
+WantedBy=gitlab.target
