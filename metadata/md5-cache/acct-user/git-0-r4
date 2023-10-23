@@ -8,4 +8,4 @@ RDEPEND=acct-group/redis acct-group/git
 REQUIRED_USE=^^ ( gitea gitlab gitolite )
 SLOT=0
 _eclasses_=user-info	9951b1a0e4f026d16c33a001fd2d5cdf	acct-user	fd6725fcc11ecffded6fe9228b8e3448
-_md5_=08a996f379ea2689ca6936bd71066f78
+_md5_=47703df649b398673f82f69d375129e5
