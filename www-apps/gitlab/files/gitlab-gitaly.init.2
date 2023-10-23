@@ -1,1 +1,73 @@
-gitlab-gitaly.init.1
+#!/sbin/openrc-run
+# Copyright 2021 Gentoo Authors
+# Distributed under the terms of the GNU General Public License v2
+
+name="GitLab Gitaly"
+description="GitLab Gitaly git repository management"
+
+: ${rails_env:=@RAILS_ENV@}
+
+: ${gitlab_user:=@GIT_USER@}
+: ${gitlab_group:=@GIT_GROUP@}
+: ${gitlab_home:="@GITLAB@"}
+: ${gitlab_config:="@GITLAB@/config"}
+: ${gitlab_pids:="@GITLAB@/tmp/pids"}
+: ${gitlab_sockets:="@GITLAB@/tmp/sockets"}
+: ${gitlab_log:="@LOG_DIR@"}
+
+: ${gitaly_home:="@GITLAB_GITALY@"}
+: ${gitaly_config:="@GITALY_CONF@"}
+
+: ${gitaly_command:="${gitaly_home}/bin/gitaly"}
+: ${gitaly_command_args:="${gitaly_config}/config.toml"}
+: ${gitaly_pidfile:="${gitlab_pids}/gitaly.pid"}
+: ${gitaly_log:="${gitlab_log}/gitaly.log"}
+: ${gitaly_socket:="${gitlab_sockets}/gitaly.socket"}
+
+depend() {
+	provide gitaly
+	need redis
+	use net postgresql
+}
+
+start() {
+	ebegin "Starting GitLab Gitaly"
+	start-stop-daemon --start \
+		--env RUBYOPT=--disable-did_you_mean \
+		--env GITALY_SOCKET_PATH=${gitaly_socket} \
+		--chdir "${gitlab_home}" \
+		--user="${gitlab_user}:${gitlab_group}" \
+		--pidfile="${gitaly_pidfile}" \
+		--make-pidfile \
+		--background -1 "${gitaly_log}" -2 "${gitaly_log}" \
+		--exec ${gitaly_command} -- ${gitaly_command_args}
+	eend $?
+}
+
+stop() {
+	ebegin "Stopping GitLab Gitaly"
+	start-stop-daemon --stop \
+		--chdir "${gitlab_home}" \
+		--user="${gitlab_user}:${gitlab_group}" \
+		--pidfile="${gitaly_pidfile}"
+	eend $?
+}
+
+do_status() {
+	name="Gitlab $1"
+	msg=$(pidfile=$2 default_status 2>&1 | awk -F': ' '{print $2}')
+	pidfile=$2 default_status &>/dev/null
+	status=$?
+
+	if [[ $status -eq 0 ]] ; then
+		einfo "$name: $msg"
+	else
+		eerror "$name: $msg"
+	fi
+	
+	eend $status
+}
+
+status() {
+	do_status "Gitaly" ${gitaly_pidfile}
+}

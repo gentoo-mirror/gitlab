@@ -1,14 +1,22 @@
 [Unit]
-Description=Gitlab Workhorse handles slow HTTP requests for Gitlab.
-Requires=gitlab-@WEBSERVER@.service
-After=gitlab-@WEBSERVER@.service
+Description=Gitlab Workhorse
+ReloadPropagatedFrom=gitlab.target
+After=network.target gitlab-puma.service
+Wants=gitlab-puma.service
 PartOf=gitlab.target
 
 [Service]
-Type=exec
+Type=simple
 User=git
 WorkingDirectory=@GITLAB@
 Environment=SHELL_SECRET=/opt/gitlab/gitlab/.gitlab_shell_secret
-SyslogIdentifier=gitlab-workhorse
 ExecStart=/bin/bash -c 'PATH=@WORKHORSE_BIN@/:$PATH exec gitlab-workhorse -listenUmask 0 -listenNetwork unix -listenAddr @TMP_DIR@/sockets/gitlab-workhorse.socket -authBackend http://127.0.0.1:8080@RELATIVE_URL@ -authSocket @TMP_DIR@/sockets/gitlab.socket -secretPath @GITLAB@/.gitlab_workhorse_secret -documentRoot @GITLAB@/public'
 ExecStartPost=/bin/bash -c '(while [ ! -e ${SHELL_SECRET} ]; do echo "Waiting for .gitlab_shell_secret to appear..."; sleep 4; done)'
+ExecReload=/usr/bin/kill -USR2 $MAINPID
+Restart=on-failure
+RestartSec=1
+SyslogIdentifier=gitlab-workhorse
+Slice=gitlab.slice
+
+[Install]
+WantedBy=gitlab.target
