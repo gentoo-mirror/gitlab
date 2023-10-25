@@ -686,6 +686,7 @@ src_install() {
 				"${rcfile}" > "${T}/${rc}" || die "failed to configure: ${rc}"
 			newinitd "${T}/${rc}" "${service}"
 		done
+		newconfd "${FILESDIR}/gitlab.confd" gitlab
 	fi
 
 	newtmpfiles "${FILESDIR}/${PN}-tmpfiles.conf" ${PN}.conf
