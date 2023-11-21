@@ -983,7 +983,7 @@ pkg_config() {
 	elog
 	elog "You might want to check your application status. Run this:"
 	elog "\$ cd ${GITLAB}"
-	elog "\$ sudo -u ${GIT_USER} ${BUNDLE} exec rake gitlab:check RAILS_ENV=${RAILS_ENV}"
+	elog "\$ sudo -i -u ${GIT_USER} ${BUNDLE} exec rake gitlab:check RAILS_ENV=${RAILS_ENV}"
 	elog
 	elog "GitLab is prepared now."
 	if [ "$MODUS" = "patch" ] || [ "$MODUS" = "minor" ] || [ "$MODUS" = "major" ]; then
