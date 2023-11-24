@@ -115,17 +115,17 @@ pkg_setup() {
 	if [ -z "$vINST" ]; then
 		vINST=$(best_version www-apps/gitlabhq)
 		[ -n "$vINST" ] && die "The migration from a www-apps/gitlabhq installation to "\
-							   ">=www-apps/gitlab-14.0.0 isn't supported. You have to "\
-							   "upgrade to 13.12.15 first."
+							   ">=www-apps/gitlab-14.0.0 isn't supported."\
+							   "Upgrade to 13.12.15 first."
 	fi
 	vINST=${vINST%-r*}
 	vINST=${vINST##*-}
 	if [ -n "$vINST" ] && ver_test "$PV" -lt "$vINST"; then
 		# do downgrades on explicit user request only
-		ewarn "You are going to downgrade from $vINST to $PV."
+		ewarn "Going to downgrade from $vINST to $PV."
 		ewarn "Note that the maintainer of the GitLab overlay never tested this."
 		ewarn "Extra actions may be neccessary, like the ones described in"
-		ewarn "https://docs.gitlab.com/ee/update/restore_after_failure.html"
+		ewarn "https://docs.gitlab.com/ee/administration/backup_restore/restore_gitlab.html"
 		if [ "$GITLAB_DOWNGRADE" != "true" ]; then
 			die "Set GITLAB_DOWNGRADE=\"true\" to really do the downgrade."
 		fi
@@ -144,23 +144,23 @@ pkg_setup() {
 								elog "This is a patch upgrade from $vINST to $PV.";;
 			${eM}.${em1}.*)		MODUS="minor"
 								elog "This is a minor upgrade from $vINST to $PV.";;
-			${eM}.[0-${em2}].*) die "You should do minor upgrades step by step.";;
+			${eM}.[0-${em2}].*) die "It's recommended to do minor upgrades step by step.";;
 			15.11.13)			if [ "${PV}" = "16.0.0" ]; then
 									MODUS="major"
 									elog "This is a major upgrade from $vINST to $PV."
 								else
-									die "You should upgrade to 16.0.0 first."
+									die "It's recommended to upgrade to 16.0.0 first."
 								fi;;
 			14.10.5)			if [ "${PV}" = "15.0.0" ]; then
 									MODUS="major"
 									elog "This is a major upgrade from $vINST to $PV."
 								else
-									die "You should upgrade to 15.0.0 first."
+									die "It's recommended to upgrade to 15.0.0 first."
 								fi;;
-			13.12.15)			die "You should upgrade to 14.0.0 first.";;
-			12.10.14)			die "You should upgrade to 13.1.0 first.";;
-			12.*.*)				die "You should upgrade to 12.10.14 first.";;
-			${eM1}.*.*)			die "You should upgrade to latest ${eM1}.x.x version"\
+			13.12.15)			die "It's recommended to upgrade to 14.0.0 first.";;
+			12.10.14)			die "It's recommended to upgrade to 13.1.0 first.";;
+			12.*.*)				die "It's recommended to upgrade to 12.10.14 first.";;
+			${eM1}.*.*)			die "It's recommended to upgrade to latest ${eM1}.x.x version"\
 									"first and then to the ${eM}.0.0 version.";;
 			*)					if ver_test $vINST -lt 12.0.0 ; then
 									die "Upgrading from $vINST isn't supported. Do it manual."
@@ -706,7 +706,7 @@ pkg_postinst_gitaly() {
 		use gitlab-config && conf_dir="${GITLAB_CONFIG}"
 		elog  ""
 		ewarn "Note: With gitaly_git USE flag enabled the included git was installed to"
-		ewarn "      ${GITLAB_GITALY}/bin/. In order to use it one has to set the"
+		ewarn "      ${GITLAB_GITALY}/bin/. In order to use it set the"
 		ewarn "      [git] \"bin_path\" variable in \"${CONF_DIR_GITALY}/config.toml\" and in"
 		ewarn "      \"${conf_dir}/gitlab.yml\" to \"${GITLAB_GITALY}/bin/git\""
 	fi
@@ -720,7 +720,7 @@ pkg_postinst() {
 	tmpfiles_process "${PN}.conf"
 	if [ ! -e "${GIT_HOME}/.gitconfig" ]; then
 		einfo "Setting git user/email in ${GIT_HOME}/.gitconfig,"
-		einfo "feel free to modify this file according to your needs!"
+		einfo "feel free to modify this file as needed!"
 		su -l ${GIT_USER} -s /bin/sh -c "
 			git config --global user.email 'gitlab@localhost';
 			git config --global user.name 'GitLab'" \
@@ -740,7 +740,7 @@ pkg_postinst() {
 		elog "For this new installation, proceed with the following steps:"
 		elog
 		elog "  1. Create a database user for GitLab."
-		elog "     On your database server (local ore remote) become user postgres:"
+		elog "     On the database server (local ore remote) become user postgres:"
 		elog "       su -l postgres"
 		elog "     GitLab needs three PostgreSQL extensions: pg_trgm, btree_gist, plpgsql."
 		elog "     To create the extensions if they are missing do:"
@@ -749,12 +749,12 @@ pkg_postinst() {
 		elog "       psql -d template1 -c \"CREATE EXTENSION IF NOT EXISTS plpgsql;\""
 		elog "     Create the database user:"
 		elog "       psql -c \"CREATE USER gitlab CREATEDB PASSWORD 'gitlab'\""
-		elog "     Note: You should change your password to something more random ..."
-		elog "     You may need to add configs for the new 'gitlab' user to the"
-		elog "     pg_hba.conf and pg_ident.conf files of your database server."
+		elog "     Note: Change the PASSWORD to something more random ..."
+		elog "     It may be needed to add configs for the new 'gitlab' user to the"
+		elog "     pg_hba.conf and pg_ident.conf files of the database server."
 		elog
-		elog "     This ebuild assumes that you run the Postgres server on a"
-		elog "     different machine. If you run it here add the dependency"
+		elog "     This ebuild assumes that the Postgres server runs on a"
+		elog "     different machine. If it runs here add the dependency"
 		if use systemd; then
 			elog "       systemctl edit gitlab-puma.service"
 			elog "     In the editor that opens, add the following and save the file:"
@@ -775,7 +775,7 @@ pkg_postinst() {
 		elog "     database settings for \"${RAILS_ENV}\" environment."
 		elog
 		elog "  3. Edit ${conf_dir}/gitlab.yml"
-		elog "     in order to configure your GitLab settings."
+		elog "     in order to configure the GitLab settings."
 		elog
 		if use gitaly_git; then
 			elog "     With gitaly_git USE flag enabled the included git was installed to"
@@ -785,7 +785,7 @@ pkg_postinst() {
 			elog
 		fi
 		if use gitlab-config; then
-			elog "     With the \"gitlab-config\" USE flag on you have to edit the"
+			elog "     With the \"gitlab-config\" USE flag on edit the"
 			elog "     config files in the /opt/gitlab/gitlab/config/ folder!"
 			elog
 		else
@@ -797,8 +797,8 @@ pkg_postinst() {
 			elog "       rsync -aHAX /etc/gitlab/ /opt/gitlab/gitlab/config/"
 			elog
 		fi
-		elog "  4. You need to configure redis to have a UNIX socket and you may"
-		elog "     adjust the maxmemory settings. Change /etc/redis/redis.conf to"
+		elog "  4. Configure redis to use a UNIX socket and maybe adjust the maxmemory"
+		elog "     settings as appropriate. Change /etc/redis/redis.conf to"
 		elog "       unixsocket /var/run/redis/redis.sock"
 		elog "       unixsocketperm 770"
 		elog "       maxmemory 1024MB"
@@ -852,7 +852,7 @@ pkg_postinst() {
 			elog "     rc-service gitlab restart"
 		fi
 		elog
-		elog "To complete the upgrade of your GitLab instance, run:"
+		elog "To complete the upgrade of this GitLab instance, run:"
 		elog "    emerge --config \"=${CATEGORY}/${PF}\""
 		elog
 	fi
@@ -861,9 +861,9 @@ pkg_postinst() {
 
 pkg_config_do_upgrade_migrate_data() {
 	elog  "-- Migrating data --"
-	elog "Found your latest gitlabhq instance at \"${BASE_DIR}/gitlabhq-${vINST}\"."
+	elog "Found the latest gitlabhq instance at \"${BASE_DIR}/gitlabhq-${vINST}\"."
 
-	elog  "1. This will move your public/uploads/ folder from"
+	elog  "1. This will move the public/uploads/ folder from"
 	elog  "   \"${BASE_DIR}/gitlabhq-${vINST}\" to \"${GITLAB}\"."
 	einfon "   (C)ontinue or (s)kip? "
 	local migrate_uploads=$(continue_or_skip)
@@ -879,7 +879,7 @@ pkg_config_do_upgrade_migrate_data() {
 		elog "   ... finished."
 	fi
 
-	elog  "2. This will move your shared/ data folder from"
+	elog  "2. This will move the shared/ data folder from"
 	elog  "   \"${BASE_DIR}/gitlabhq-${vINST}\" to \"${GITLAB}\"."
 	einfon "   (C)ontinue or (s)kip? "
 	local migrate_shared=$(continue_or_skip)
@@ -928,13 +928,13 @@ pkg_config_initialize() {
 	elog "Checking configuration files ..."
 	if [ ! -r "${conf_dir}/database.yml" ]; then
 		eerror "Copy \"${GITLAB_CONFIG}/database.yml.postgresql\" to \"${conf_dir}/database.yml\""
-		eerror "and edit this file in order to configure your database settings for"
+		eerror "and edit this file in order to configure the database settings for"
 		eerror "\"${RAILS_ENV}\" environment."
 		die
 	fi
 	if [ ! -r "${conf_dir}/gitlab.yml" ]; then
 		eerror "Copy \"${GITLAB_CONFIG}/gitlab.yml.example\" to \"${conf_dir}/gitlab.yml\""
-		eerror "and edit this file in order to configure your GitLab settings"
+		eerror "and edit this file in order to configure the GitLab settings"
 		eerror "for \"${RAILS_ENV}\" environment."
 		die
 	fi
@@ -981,17 +981,17 @@ pkg_config() {
 	fi
 
 	elog
-	elog "You might want to check your application status. Run this:"
+	elog "To check the application status run this:"
 	elog "\$ cd ${GITLAB}"
 	elog "\$ sudo -i -u ${GIT_USER} ${BUNDLE} exec rake gitlab:check RAILS_ENV=${RAILS_ENV}"
 	elog
 	elog "GitLab is prepared now."
 	if [ "$MODUS" = "patch" ] || [ "$MODUS" = "minor" ] || [ "$MODUS" = "major" ]; then
-		elog "Ensure you're still up-to-date with the latest NGINX configuration changes:"
+		elog "Ensure beeing still up-to-date with the latest NGINX configuration changes:"
 		elog "\$ cd /opt/gitlab/gitlab"
 		elog "\$ git -P diff v${vINST}:lib/support/nginx/ v${PV}:lib/support/nginx/"
 	elif [ "$MODUS" = "new" ]; then
-		elog "To configure your nginx site have a look at the examples configurations"
+		elog "To configure the nginx site have a look at the examples configurations"
 		elog "in the ${GITLAB}/lib/support/nginx/ folder."
 		if use relative_url; then
 			elog "For a relative URL installation several modifications must be made to nginx"
