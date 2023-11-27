@@ -186,11 +186,11 @@ pkg_setup() {
 			elog "The new version may require a set of background migrations to be finished."
 			elog "For more information see:"
 			elog "https://gitlab.com/gitlab-org/gitlab-foss/-/blob/master/doc/update/README.md#checking-for-background-migrations-before-upgrading"
-			eerror "Number of remainig background migrations is ${bm}"
+			eerror "Number of remaining background migrations is ${bm}"
 			eerror "Try again later."
 			die "Background migrations from previous upgrade not finished yet."
 		else
-			elog "OK: No remainig background migrations found."
+			elog "OK: No remaining background migrations found."
 		fi
 	fi
 
