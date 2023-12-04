@@ -9,7 +9,7 @@ EAPI="7"
 #   it should be done, but GitLab has too many dependencies that it will be too
 #   difficult to maintain them via ebuilds.
 
-USE_RUBY="ruby30"
+USE_RUBY="ruby31"
 
 EGIT_REPO_URI="https://gitlab.com/gitlab-org/gitlab-foss.git"
 EGIT_COMMIT="v${PV}"
@@ -51,7 +51,7 @@ GEMS_DEPEND="
 	net-libs/http-parser
 	dev-python/docutils"
 GITALY_DEPEND="
-	>=dev-lang/go-1.19
+	>=dev-lang/go-1.20
 	dev-util/cmake"
 WORKHORSE_DEPEND="
 	dev-lang/go
@@ -61,13 +61,13 @@ DEPEND="
 	${GITALY_DEPEND}
 	${WORKHORSE_DEPEND}
 	${RUBY_DEPS}
-	acct-user/git[gitlab]
+	>=acct-user/git-0-r4[gitlab]
 	acct-group/git
 	>=net-libs/nodejs-18.17.0
-	>=dev-lang/ruby-3.0.5:3.0[ssl]
-	>=dev-vcs/gitlab-shell-14.26.0[relative_url=]
+	>=dev-lang/ruby-3.1.4:3.1[ssl]
+	>=dev-vcs/gitlab-shell-14.30.0[relative_url=]
 	pages? ( ~www-apps/gitlab-pages-${PV} )
-	!gitaly_git? ( >=dev-vcs/git-2.41.0[pcre] dev-libs/libpcre2[jit] )
+	!gitaly_git? ( >=dev-vcs/git-2.42.0[pcre] dev-libs/libpcre2[jit] )
 	net-misc/curl
 	virtual/ssh
 	=sys-apps/yarn-1.22*
@@ -94,7 +94,7 @@ LOG_DIR="/var/log/${PN}"
 TMP_DIR="/var/tmp/${PN}"
 WORKHORSE="${BASE_DIR}/gitlab-workhorse"
 WORKHORSE_BIN="${WORKHORSE}/bin"
-vSYS=2 # version of SYStemd service files used by this ebuild
+vSYS=3 # version of SYStemd service files used by this ebuild
 vORC=2 # version of OpenRC init files used by this ebuild
 
 GIT_REPOS="${GIT_HOME}/repositories"
@@ -115,17 +115,17 @@ pkg_setup() {
 	if [ -z "$vINST" ]; then
 		vINST=$(best_version www-apps/gitlabhq)
 		[ -n "$vINST" ] && die "The migration from a www-apps/gitlabhq installation to "\
-							   ">=www-apps/gitlab-14.0.0 isn't supported. You have to "\
-							   "upgrade to 13.12.15 first."
+							   ">=www-apps/gitlab-14.0.0 isn't supported."\
+							   "Upgrade to 13.12.15 first."
 	fi
 	vINST=${vINST%-r*}
 	vINST=${vINST##*-}
 	if [ -n "$vINST" ] && ver_test "$PV" -lt "$vINST"; then
 		# do downgrades on explicit user request only
-		ewarn "You are going to downgrade from $vINST to $PV."
+		ewarn "Going to downgrade from $vINST to $PV."
 		ewarn "Note that the maintainer of the GitLab overlay never tested this."
 		ewarn "Extra actions may be neccessary, like the ones described in"
-		ewarn "https://docs.gitlab.com/ee/update/restore_after_failure.html"
+		ewarn "https://docs.gitlab.com/ee/administration/backup_restore/restore_gitlab.html"
 		if [ "$GITLAB_DOWNGRADE" != "true" ]; then
 			die "Set GITLAB_DOWNGRADE=\"true\" to really do the downgrade."
 		fi
@@ -144,23 +144,23 @@ pkg_setup() {
 								elog "This is a patch upgrade from $vINST to $PV.";;
 			${eM}.${em1}.*)		MODUS="minor"
 								elog "This is a minor upgrade from $vINST to $PV.";;
-			${eM}.[0-${em2}].*) die "You should do minor upgrades step by step.";;
+			${eM}.[0-${em2}].*) die "It's recommended to do minor upgrades step by step.";;
 			15.11.13)			if [ "${PV}" = "16.0.0" ]; then
 									MODUS="major"
 									elog "This is a major upgrade from $vINST to $PV."
 								else
-									die "You should upgrade to 16.0.0 first."
+									die "It's recommended to upgrade to 16.0.0 first."
 								fi;;
 			14.10.5)			if [ "${PV}" = "15.0.0" ]; then
 									MODUS="major"
 									elog "This is a major upgrade from $vINST to $PV."
 								else
-									die "You should upgrade to 15.0.0 first."
+									die "It's recommended to upgrade to 15.0.0 first."
 								fi;;
-			13.12.15)			die "You should upgrade to 14.0.0 first.";;
-			12.10.14)			die "You should upgrade to 13.1.0 first.";;
-			12.*.*)				die "You should upgrade to 12.10.14 first.";;
-			${eM1}.*.*)			die "You should upgrade to latest ${eM1}.x.x version"\
+			13.12.15)			die "It's recommended to upgrade to 14.0.0 first.";;
+			12.10.14)			die "It's recommended to upgrade to 13.1.0 first.";;
+			12.*.*)				die "It's recommended to upgrade to 12.10.14 first.";;
+			${eM1}.*.*)			die "It's recommended to upgrade to latest ${eM1}.x.x version"\
 									"first and then to the ${eM}.0.0 version.";;
 			*)					if ver_test $vINST -lt 12.0.0 ; then
 									die "Upgrading from $vINST isn't supported. Do it manual."
@@ -174,23 +174,41 @@ pkg_setup() {
 	if [ "$MODUS" = "patch" ] || [ "$MODUS" = "minor" ] || [ "$MODUS" = "major" ]; then
 		# ensure that any background migrations have been fully completed
 		# see /opt/gitlab/gitlab/doc/update/README.md
-		elog "Checking for background migrations ..."
-		local bm gitlab_dir rails_cmd="'puts Gitlab::BackgroundMigration.remaining'"
-		gitlab_dir="${BASE_DIR}/${PN}"
-		bm=$(su -l ${GIT_USER} -s /bin/sh -c "
-			export RUBYOPT=--disable-did_you_mean LANG=en_US.UTF-8 LC_ALL=en_US.UTF-8
-			cd ${gitlab_dir}
-			${BUNDLE} exec rails runner -e ${RAILS_ENV} ${rails_cmd}" \
-				|| die "failed to check for background migrations")
-		if [ "${bm}" != "0" ]; then
-			elog "The new version may require a set of background migrations to be finished."
-			elog "For more information see:"
-			elog "https://gitlab.com/gitlab-org/gitlab-foss/-/blob/master/doc/update/README.md#checking-for-background-migrations-before-upgrading"
-			eerror "Number of remaining background migrations is ${bm}"
-			eerror "Try again later."
-			die "Background migrations from previous upgrade not finished yet."
-		else
-			elog "OK: No remaining background migrations found."
+		gstate=$(su -l ${GIT_USER} -s /bin/sh -c "
+			systemctl show --property=ActiveState --value gitlab.target")
+		if [ "${gstate}" == "active" ]; then
+			elog "Checking for background migrations ..."
+			local bm gitlab_dir rails_cmd="'puts Gitlab::BackgroundMigration.remaining'"
+			gitlab_dir="${BASE_DIR}/${PN}"
+			local rubyVinst=$(ruby --version)
+			rubyVinst=${rubyVinst%%.?p*}
+			rubyVinst=${rubyVinst##ruby }
+			rubyVinst=${rubyVinst/./}
+			local rubyV=$(ls ${gitlab_dir}/vendor/bundle/ruby 2>/dev/null)
+			rubyV=${rubyV%.?}
+			rubyV=${rubyV/./}
+			if [ "$rubyVinst" != "$rubyV" ]; then
+				elog "Temporary switch to ruby${rubyV}"
+				eselect ruby set ruby${rubyV}
+			fi
+			bm=$(su -l ${GIT_USER} -s /bin/sh -c "
+				cd ${gitlab_dir}
+				${BUNDLE} exec rails runner -e ${RAILS_ENV} ${rails_cmd}" \
+					|| die "failed to check for background migrations")
+			if [ "${bm}" != "0" ]; then
+				elog "The new version may require a set of background migrations to be finished."
+				elog "For more information see:"
+				elog "https://gitlab.com/gitlab-org/gitlab-foss/-/blob/master/doc/update/README.md#checking-for-background-migrations-before-upgrading"
+				eerror "Number of remaining background migrations is ${bm}"
+				eerror "Try again later."
+				die "Background migrations from previous upgrade not finished yet."
+			else
+				elog "OK: No remaining background migrations found."
+			fi
+			if [ "$rubyVinst" != "$rubyV" ]; then
+				elog "Switching back to ruby${rubyVinst}"
+				eselect ruby set ruby${rubyVinst}
+			fi
 		fi
 	fi
 
@@ -488,17 +506,6 @@ src_install() {
 
 	local gitlab_dir="${BASE_DIR}/${PN}"
 
-	# Hack: Don't start from scratch, use the installed node_modules
-	if [ -d ${gitlab_dir}/node_modules ]; then
-		einfo "   Copying ${gitlab_dir}/node_modules/ ..."
-		rsync -a --exclude=".cache" ${gitlab_dir}/node_modules ./
-	fi
-	# Hack: Don't start from scratch, use the installed public/assets
-	if [ -d ${gitlab_dir}/public/assets ]; then
-		einfo "   Copying ${gitlab_dir}/public/assets/ ..."
-		cp -a ${gitlab_dir}/public/assets/ public/
-	fi
-
 	local without="development test omnibus"
 	local flag; for flag in ${WITHOUTflags}; do
 		without+="$(use $flag || echo ' '$flag)"
@@ -511,7 +518,7 @@ src_install() {
 
 	#einfo "Current ruby version is \"$(ruby --version)\""
 
-	einfo "Running bundle install ..."
+	einfo "Install Gems ..."
 	# Cleanup args to extract only JOBS.
 	# Because bundler does not know anything else.
 	local jobs=1
@@ -520,7 +527,7 @@ src_install() {
 		jobs=$(grep -Eo '(-j|--jobs)(=?|[[:space:]]*)[[:digit:]]+' <<< "${MAKEOPTS}" \
 			| tail -n1 | grep -Eo '[[:digit:]]+')
 	fi
-	${BUNDLE} install --jobs=${jobs} || die "bundle install failed"
+	${BUNDLE} install --jobs=${jobs} || die "Install Gems failed"
 
 	## Install GetText PO files, yarn, assets via bundler ##
 
@@ -536,12 +543,26 @@ src_install() {
 	sed -i \
 		-e "s|${GITLAB_SHELL}|${ED}${GITLAB_SHELL}|g" \
 		config/gitlab.yml || die "failed to fake the gitlab-shell path"
-	einfo "Updating node dependencies and (re)compiling assets ..."
+	einfo "Updating node dependencies ..."
+	/bin/sh -c "yarn install --${RAILS_ENV} --pure-lockfile" \
+		|| die "failed to update node dependencies"
+	einfo "Compiling assets ..."
+	# On machines with few CPUs and/or without swap the webpack part of
+	# gitlab:assets:compile may either stall or fail with the error
+	# "SyntaxError: Bad control character in string literal in JSON".
+	# Mitigation is to reduce the poolParallelJobs number from 200 to
+	# a lower value (1 seems to work in any case). Supply the new value
+	# through the WEBPACK_POLL_PARALLEL_JOBS environment variable.
+	if [ "$WEBPACK_POLL_PARALLEL_JOBS" ]; then
+		sed -i \
+			-e "s|poolParallelJobs: .*,|poolParallelJobs: ${WEBPACK_POLL_PARALLEL_JOBS},|" \
+			${ED}/${GITLAB_CONFIG}/webpack.config.js
+	fi
 	/bin/sh -c "
-		export NODE_OPTIONS='--max_old_space_size=4096'
-		${BUNDLE} exec rake yarn:install gitlab:assets:clean gitlab:assets:compile \
+		export RUBYLIB=\"$(find /usr/lib64/ruby/ -regextype egrep -iregex '.*rdoc-.*/lib')\"
+		${BUNDLE} exec rake gitlab:assets:compile \
 		RAILS_ENV=${RAILS_ENV} NODE_ENV=${NODE_ENV}" \
-		|| die "failed to update node dependencies and (re)compile assets"
+		|| die "failed to compile assets"
 	# Correct the gitlab-shell path we fooled lib/gitlab/shell.rb with.
 	sed -i \
 		-e "s|${ED}${GITLAB_SHELL}|${GITLAB_SHELL}|g" \
@@ -557,9 +578,6 @@ src_install() {
 
 	## Clean ##
 
-	# Clean up old gems (this is required due to our Hack above)
-	${BUNDLE} clean
-
 	local rubyV=$(ls vendor/bundle/ruby)
 	local ruby_vpath=vendor/bundle/ruby/${rubyV}
 
@@ -569,7 +587,8 @@ src_install() {
 	# fix QA Security Notice: world writable file(s)
 	elog "Fixing permissions of world writable files"
 	local gemsdir="${ruby_vpath}/gems"
-	local file gem wwfgems="gitlab-dangerfiles gitlab-labkit os toml-rb unleash"
+	local file gem wwfgems="devfile gitlab-dangerfiles gitlab-labkit graphql-client \
+							os rack-cors semver_dialects tanuki_emoji toml-rb unleash"
 	# If we are using wildcards, the shell fills them without prefixing ${ED}. Thus
 	# we would target a file list in the real system instead of in the sandbox.
 	for gem in ${wwfgems}; do
@@ -667,6 +686,7 @@ src_install() {
 				"${rcfile}" > "${T}/${rc}" || die "failed to configure: ${rc}"
 			newinitd "${T}/${rc}" "${service}"
 		done
+		newconfd "${FILESDIR}/gitlab.confd" gitlab
 	fi
 
 	newtmpfiles "${FILESDIR}/${PN}-tmpfiles.conf" ${PN}.conf
@@ -686,7 +706,7 @@ pkg_postinst_gitaly() {
 		use gitlab-config && conf_dir="${GITLAB_CONFIG}"
 		elog  ""
 		ewarn "Note: With gitaly_git USE flag enabled the included git was installed to"
-		ewarn "      ${GITLAB_GITALY}/bin/. In order to use it one has to set the"
+		ewarn "      ${GITLAB_GITALY}/bin/. In order to use it set the"
 		ewarn "      [git] \"bin_path\" variable in \"${CONF_DIR_GITALY}/config.toml\" and in"
 		ewarn "      \"${conf_dir}/gitlab.yml\" to \"${GITLAB_GITALY}/bin/git\""
 	fi
@@ -700,7 +720,7 @@ pkg_postinst() {
 	tmpfiles_process "${PN}.conf"
 	if [ ! -e "${GIT_HOME}/.gitconfig" ]; then
 		einfo "Setting git user/email in ${GIT_HOME}/.gitconfig,"
-		einfo "feel free to modify this file according to your needs!"
+		einfo "feel free to modify this file as needed!"
 		su -l ${GIT_USER} -s /bin/sh -c "
 			git config --global user.email 'gitlab@localhost';
 			git config --global user.name 'GitLab'" \
@@ -720,7 +740,7 @@ pkg_postinst() {
 		elog "For this new installation, proceed with the following steps:"
 		elog
 		elog "  1. Create a database user for GitLab."
-		elog "     On your database server (local ore remote) become user postgres:"
+		elog "     On the database server (local ore remote) become user postgres:"
 		elog "       su -l postgres"
 		elog "     GitLab needs three PostgreSQL extensions: pg_trgm, btree_gist, plpgsql."
 		elog "     To create the extensions if they are missing do:"
@@ -729,12 +749,12 @@ pkg_postinst() {
 		elog "       psql -d template1 -c \"CREATE EXTENSION IF NOT EXISTS plpgsql;\""
 		elog "     Create the database user:"
 		elog "       psql -c \"CREATE USER gitlab CREATEDB PASSWORD 'gitlab'\""
-		elog "     Note: You should change your password to something more random ..."
-		elog "     You may need to add configs for the new 'gitlab' user to the"
-		elog "     pg_hba.conf and pg_ident.conf files of your database server."
+		elog "     Note: Change the PASSWORD to something more random ..."
+		elog "     It may be needed to add configs for the new 'gitlab' user to the"
+		elog "     pg_hba.conf and pg_ident.conf files of the database server."
 		elog
-		elog "     This ebuild assumes that you run the Postgres server on a"
-		elog "     different machine. If you run it here add the dependency"
+		elog "     This ebuild assumes that the Postgres server runs on a"
+		elog "     different machine. If it runs here add the dependency"
 		if use systemd; then
 			elog "       systemctl edit gitlab-puma.service"
 			elog "     In the editor that opens, add the following and save the file:"
@@ -755,7 +775,7 @@ pkg_postinst() {
 		elog "     database settings for \"${RAILS_ENV}\" environment."
 		elog
 		elog "  3. Edit ${conf_dir}/gitlab.yml"
-		elog "     in order to configure your GitLab settings."
+		elog "     in order to configure the GitLab settings."
 		elog
 		if use gitaly_git; then
 			elog "     With gitaly_git USE flag enabled the included git was installed to"
@@ -765,7 +785,7 @@ pkg_postinst() {
 			elog
 		fi
 		if use gitlab-config; then
-			elog "     With the \"gitlab-config\" USE flag on you have to edit the"
+			elog "     With the \"gitlab-config\" USE flag on edit the"
 			elog "     config files in the /opt/gitlab/gitlab/config/ folder!"
 			elog
 		else
@@ -777,8 +797,8 @@ pkg_postinst() {
 			elog "       rsync -aHAX /etc/gitlab/ /opt/gitlab/gitlab/config/"
 			elog
 		fi
-		elog "  4. You need to configure redis to have a UNIX socket and you may"
-		elog "     adjust the maxmemory settings. Change /etc/redis/redis.conf to"
+		elog "  4. Configure redis to use a UNIX socket and maybe adjust the maxmemory"
+		elog "     settings as appropriate. Change /etc/redis/redis.conf to"
 		elog "       unixsocket /var/run/redis/redis.sock"
 		elog "       unixsocketperm 770"
 		elog "       maxmemory 1024MB"
@@ -820,7 +840,6 @@ pkg_postinst() {
 		elog
 		elog "Migrating database without post deployment migrations ..."
 		su -l ${GIT_USER} -s /bin/sh -c "
-			export LANG=en_US.UTF-8; export LC_ALL=en_US.UTF-8
 			cd ${GITLAB}
 			SKIP_POST_DEPLOYMENT_MIGRATIONS=true \
 			${BUNDLE} exec rake db:migrate RAILS_ENV=${RAILS_ENV}" \
@@ -833,7 +852,7 @@ pkg_postinst() {
 			elog "     rc-service gitlab restart"
 		fi
 		elog
-		elog "To complete the upgrade of your GitLab instance, run:"
+		elog "To complete the upgrade of this GitLab instance, run:"
 		elog "    emerge --config \"=${CATEGORY}/${PF}\""
 		elog
 	fi
@@ -842,9 +861,9 @@ pkg_postinst() {
 
 pkg_config_do_upgrade_migrate_data() {
 	elog  "-- Migrating data --"
-	elog "Found your latest gitlabhq instance at \"${BASE_DIR}/gitlabhq-${vINST}\"."
+	elog "Found the latest gitlabhq instance at \"${BASE_DIR}/gitlabhq-${vINST}\"."
 
-	elog  "1. This will move your public/uploads/ folder from"
+	elog  "1. This will move the public/uploads/ folder from"
 	elog  "   \"${BASE_DIR}/gitlabhq-${vINST}\" to \"${GITLAB}\"."
 	einfon "   (C)ontinue or (s)kip? "
 	local migrate_uploads=$(continue_or_skip)
@@ -860,7 +879,7 @@ pkg_config_do_upgrade_migrate_data() {
 		elog "   ... finished."
 	fi
 
-	elog  "2. This will move your shared/ data folder from"
+	elog  "2. This will move the shared/ data folder from"
 	elog  "   \"${BASE_DIR}/gitlabhq-${vINST}\" to \"${GITLAB}\"."
 	einfon "   (C)ontinue or (s)kip? "
 	local migrate_shared=$(continue_or_skip)
@@ -880,7 +899,6 @@ pkg_config_do_upgrade_migrate_data() {
 pkg_config_do_upgrade_migrate_database() {
 	elog "Migrating database ..."
 	su -l ${GIT_USER} -s /bin/sh -c "
-		export LANG=en_US.UTF-8; export LC_ALL=en_US.UTF-8
 		cd ${GITLAB}
 		${BUNDLE} exec rake db:migrate RAILS_ENV=${RAILS_ENV}" \
 			|| die "failed to migrate database."
@@ -889,7 +907,6 @@ pkg_config_do_upgrade_migrate_database() {
 pkg_config_do_upgrade_clear_redis_cache() {
 	elog "Clean up cache ..."
 	su -l ${GIT_USER} -s /bin/sh -c "
-		export LANG=en_US.UTF-8; export LC_ALL=en_US.UTF-8
 		cd ${GITLAB}
 		${BUNDLE} exec rake cache:clear RAILS_ENV=${RAILS_ENV}" \
 			|| die "failed to run cache:clear"
@@ -911,13 +928,13 @@ pkg_config_initialize() {
 	elog "Checking configuration files ..."
 	if [ ! -r "${conf_dir}/database.yml" ]; then
 		eerror "Copy \"${GITLAB_CONFIG}/database.yml.postgresql\" to \"${conf_dir}/database.yml\""
-		eerror "and edit this file in order to configure your database settings for"
+		eerror "and edit this file in order to configure the database settings for"
 		eerror "\"${RAILS_ENV}\" environment."
 		die
 	fi
 	if [ ! -r "${conf_dir}/gitlab.yml" ]; then
 		eerror "Copy \"${GITLAB_CONFIG}/gitlab.yml.example\" to \"${conf_dir}/gitlab.yml\""
-		eerror "and edit this file in order to configure your GitLab settings"
+		eerror "and edit this file in order to configure the GitLab settings"
 		eerror "for \"${RAILS_ENV}\" environment."
 		die
 	fi
@@ -930,7 +947,6 @@ pkg_config_initialize() {
 	read -r email
 	elog "Initializing database ..."
 	su -l ${GIT_USER} -s /bin/sh -c "
-		export LANG=en_US.UTF-8; export LC_ALL=en_US.UTF-8
 		cd ${GITLAB}
 		${BUNDLE} exec rake gitlab:setup RAILS_ENV=${RAILS_ENV} \
 			GITLAB_ROOT_PASSWORD=\"${pw}\" GITLAB_ROOT_EMAIL=\"${email}\"" \
@@ -965,17 +981,17 @@ pkg_config() {
 	fi
 
 	elog
-	elog "You might want to check your application status. Run this:"
+	elog "To check the application status run this:"
 	elog "\$ cd ${GITLAB}"
-	elog "\$ sudo -u ${GIT_USER} ${BUNDLE} exec rake gitlab:check RAILS_ENV=${RAILS_ENV}"
+	elog "\$ sudo -i -u ${GIT_USER} ${BUNDLE} exec rake gitlab:check RAILS_ENV=${RAILS_ENV}"
 	elog
 	elog "GitLab is prepared now."
 	if [ "$MODUS" = "patch" ] || [ "$MODUS" = "minor" ] || [ "$MODUS" = "major" ]; then
-		elog "Ensure you're still up-to-date with the latest NGINX configuration changes:"
+		elog "Ensure beeing still up-to-date with the latest NGINX configuration changes:"
 		elog "\$ cd /opt/gitlab/gitlab"
 		elog "\$ git -P diff v${vINST}:lib/support/nginx/ v${PV}:lib/support/nginx/"
 	elif [ "$MODUS" = "new" ]; then
-		elog "To configure your nginx site have a look at the examples configurations"
+		elog "To configure the nginx site have a look at the examples configurations"
 		elog "in the ${GITLAB}/lib/support/nginx/ folder."
 		if use relative_url; then
 			elog "For a relative URL installation several modifications must be made to nginx"
