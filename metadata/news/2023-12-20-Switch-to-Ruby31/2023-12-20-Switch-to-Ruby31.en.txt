@@ -1,0 +1,13 @@
+Title: Switch to Ruby31
+Author: Horst Prote <prote@fmi.uni-stuttgart.de>
+Posted: 2023-12-20
+Revision: 1
+News-Item-Format: 2.0
+Display-If-Installed: www-apps/gitlab
+
+With version 16.7.0 upstream finished the migration to Ruby31 (as this
+overlay already did with versions 16.2.8, 16.3.5 and 16.4.1).
+
+Upstream now recommends to restrict access to the git repository data
+directory to 0700, so you should do
+  sudo chmod 0700 /var/lib/gitlab/repositories
