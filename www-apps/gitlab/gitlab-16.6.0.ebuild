@@ -52,7 +52,7 @@ GEMS_DEPEND="
 	dev-python/docutils"
 GITALY_DEPEND="
 	>=dev-lang/go-1.20
-	dev-util/cmake"
+	dev-build/cmake"
 WORKHORSE_DEPEND="
 	dev-lang/go
 	media-libs/exiftool"
