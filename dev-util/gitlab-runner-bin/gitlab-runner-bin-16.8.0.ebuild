@@ -10,8 +10,8 @@ HOMEPAGE="https://gitlab.com/gitlab-org/gitlab-runner"
 
 # The following list of binaries is provided at the following URL
 # https://gitlab-runner-downloads.s3.amazonaws.com/v13.6.0/index.html
-SRC_HOST="gitlab-runner-downloads.s3.amazonaws.com"
-SRC_BASE="https://${SRC_HOST}/v${PV}/binaries/gitlab-runner-linux"
+SRC_HOST="s3.amazonaws.com"
+SRC_BASE="https://${SRC_HOST}/gitlab-runner-downloads/v${PV}/binaries/gitlab-runner-linux"
 SRC_URI="
 amd64? (
 	${SRC_BASE}-amd64 -> gitlab-runner-amd64-${PV}

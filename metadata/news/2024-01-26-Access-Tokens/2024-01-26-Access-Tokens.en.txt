@@ -1,0 +1,21 @@
+Title: GitLab Access Tokens now have lifetime limits
+Author: Horst Prote <prote@fmi.uni-stuttgart.de>
+Posted: 2024-01-26
+Revision: 1
+News-Item-Format: 2.0
+Display-If-Installed: www-apps/gitlab
+
+Already in GitLab 16.0, upstream made the decision to remove support
+for non-expiring access tokens.
+
+What is the impact?
+
+If you have automation that relies on a personal, group, or project
+access token, and you don't modify its expiration date, it will stop
+working whenever it hits the expiration date. If you previously did
+not set an expiration date for your tokens, they are now set for no
+earlier than May 14, 2024. Unless you extend the token lifetime and/or
+rotate the token, your automation will stop working on that day.
+
+For more background information and how to deal with this see
+https://about.gitlab.com/blog/2023/10/25/access-token-lifetime-limits/
