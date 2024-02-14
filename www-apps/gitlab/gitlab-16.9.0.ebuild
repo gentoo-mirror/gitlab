@@ -588,8 +588,8 @@ src_install() {
 	elog "Fixing permissions of world writable files"
 	local gemsdir="${ruby_vpath}/gems"
 	local file gem wwfgems="devfile gitlab-dangerfiles gitlab-labkit gitlab-sdk \
-							graphql-client os rack-cors semver_dialects tanuki_emoji \
-							toml-rb unleash"
+							graphql-client licensee os rack-cors semver_dialects \
+							tanuki_emoji toml-rb unleash"
 	# If we are using wildcards, the shell fills them without prefixing ${ED}. Thus
 	# we would target a file list in the real system instead of in the sandbox.
 	for gem in ${wwfgems}; do
