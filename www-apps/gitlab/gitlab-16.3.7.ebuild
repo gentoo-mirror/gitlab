@@ -174,8 +174,12 @@ pkg_setup() {
 	if [ "$MODUS" = "patch" ] || [ "$MODUS" = "minor" ] || [ "$MODUS" = "major" ]; then
 		# ensure that any background migrations have been fully completed
 		# see /opt/gitlab/gitlab/doc/update/README.md
-		gstate=$(su -l ${GIT_USER} -s /bin/sh -c "
-			systemctl show --property=ActiveState --value gitlab.target")
+		if use systemd; then
+			gstate=$(su -l ${GIT_USER} -s /bin/sh -c "
+				systemctl show --property=ActiveState --value gitlab.target")
+		else
+			gstate="active"
+		fi
 		if [ "${gstate}" == "active" ]; then
 			elog "Checking for background migrations ..."
 			local bm gitlab_dir rails_cmd="'puts Gitlab::BackgroundMigration.remaining'"
