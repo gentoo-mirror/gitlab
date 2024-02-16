@@ -174,46 +174,38 @@ pkg_setup() {
 	if [ "$MODUS" = "patch" ] || [ "$MODUS" = "minor" ] || [ "$MODUS" = "major" ]; then
 		# ensure that any background migrations have been fully completed
 		# see /opt/gitlab/gitlab/doc/update/README.md
-		if use systemd; then
-			gstate=$(su -l ${GIT_USER} -s /bin/sh -c "
-				systemctl show --property=ActiveState --value gitlab.target")
-		else
-			gstate="active"
+		elog "Checking for background migrations ..."
+		local bm gitlab_dir rails_cmd="'puts Gitlab::BackgroundMigration.remaining'"
+		gitlab_dir="${BASE_DIR}/${PN}"
+		local rubyVinst=$(ruby --version)
+		rubyVinst=${rubyVinst%%.?p*}
+		rubyVinst=${rubyVinst##ruby }
+		rubyVinst=${rubyVinst/./}
+		local rubyV=$(ls ${gitlab_dir}/vendor/bundle/ruby 2>/dev/null)
+		rubyV=${rubyV%.?}
+		rubyV=${rubyV/./}
+		if [ "$rubyVinst" != "$rubyV" ]; then
+			elog "Temporary switch to ruby${rubyV}"
+			eselect ruby set ruby${rubyV}
 		fi
-		if [ "${gstate}" == "active" ]; then
-			elog "Checking for background migrations ..."
-			local bm gitlab_dir rails_cmd="'puts Gitlab::BackgroundMigration.remaining'"
-			gitlab_dir="${BASE_DIR}/${PN}"
-			local rubyVinst=$(ruby --version)
-			rubyVinst=${rubyVinst%%.?p*}
-			rubyVinst=${rubyVinst##ruby }
-			rubyVinst=${rubyVinst/./}
-			local rubyV=$(ls ${gitlab_dir}/vendor/bundle/ruby 2>/dev/null)
-			rubyV=${rubyV%.?}
-			rubyV=${rubyV/./}
-			if [ "$rubyVinst" != "$rubyV" ]; then
-				elog "Temporary switch to ruby${rubyV}"
-				eselect ruby set ruby${rubyV}
-			fi
-			bm=$(su -l ${GIT_USER} -s /bin/sh -c "
-				export RUBYOPT=--disable-did_you_mean LANG=en_US.UTF-8 LC_ALL=en_US.UTF-8
-				cd ${gitlab_dir}
-				${BUNDLE} exec rails runner -e ${RAILS_ENV} ${rails_cmd}" \
-					|| die "failed to check for background migrations")
-			if [ "${bm}" != "0" ]; then
-				elog "The new version may require a set of background migrations to be finished."
-				elog "For more information see:"
-				elog "https://gitlab.com/gitlab-org/gitlab-foss/-/blob/master/doc/update/README.md#checking-for-background-migrations-before-upgrading"
-				eerror "Number of remaining background migrations is ${bm}"
-				eerror "Try again later."
-				die "Background migrations from previous upgrade not finished yet."
-			else
-				elog "OK: No remaining background migrations found."
-			fi
-			if [ "$rubyVinst" != "$rubyV" ]; then
-				elog "Switching back to ruby${rubyVinst}"
-				eselect ruby set ruby${rubyVinst}
-			fi
+		bm=$(su -l ${GIT_USER} -s /bin/sh -c "
+			export RUBYOPT=--disable-did_you_mean LANG=en_US.UTF-8 LC_ALL=en_US.UTF-8
+			cd ${gitlab_dir}
+			${BUNDLE} exec rails runner -e ${RAILS_ENV} ${rails_cmd}" \
+				|| die "failed to check for background migrations")
+		if [ "${bm}" != "0" ]; then
+			elog "The new version may require a set of background migrations to be finished."
+			elog "For more information see:"
+			elog "https://gitlab.com/gitlab-org/gitlab-foss/-/blob/master/doc/update/README.md#checking-for-background-migrations-before-upgrading"
+			eerror "Number of remaining background migrations is ${bm}"
+			eerror "Try again later."
+			die "Background migrations from previous upgrade not finished yet."
+		else
+			elog "OK: No remaining background migrations found."
+		fi
+		if [ "$rubyVinst" != "$rubyV" ]; then
+			elog "Switching back to ruby${rubyVinst}"
+			eselect ruby set ruby${rubyVinst}
 		fi
 	fi
 
