@@ -12,5 +12,5 @@ PROPERTIES=live
 RDEPEND=acct-user/git[gitlab] acct-group/git || ( >=dev-vcs/git-2.41.0[pcre] www-apps/gitlab[gitaly_git] ) >=dev-lang/go-1.20 virtual/krb5 virtual/ssh dev-db/redis
 RESTRICT=network-sandbox
 SLOT=0
-_eclasses_=git-r3	86fa1f157b70b9d2ff340c4633b1cf4b	ruby-utils	820207a5d3f0e2e31c28080f131f2037	ruby-single	e045ee439d34b230e588900a87a11904
+_eclasses_=git-r3	fbb2889c81f3a05910c1524db69425c1	ruby-utils	820207a5d3f0e2e31c28080f131f2037	ruby-single	e045ee439d34b230e588900a87a11904
 _md5_=18df325a4b517110b1d5afc76835ee3e
