@@ -1,0 +1,38 @@
+Title: Zero Downtime Upgrades may raise problems
+Author: Horst Prote <prote@fmi.uni-stuttgart.de>
+Posted: 2024-01-26
+Revision: 1
+News-Item-Format: 2.0
+Display-If-Installed: www-apps/gitlab
+
+The www-apps/gitlab ebuild still uses the (nearly) zero downtime upgrade
+method as it was described in the upstream documentation until version
+14.9.5
+(https://gitlab.com/gitlab-org/gitlab-foss/-/blob/v14.9.5/doc/update/zero_downtime.md#single-node-deployment).
+
+In commit
+https://gitlab.com/gitlab-org/gitlab/-/commit/22c17b6c766e1c93898b448983649fa7f9159b79
+these instructions were removed with the comment:
+  With only Puma carried in GitLab 14.0 onwards
+  there is no possibility of minimizing any downtime
+  in single-node upgrades.
+
+  When the migration is run while leaving
+  the previous version's puma running, the
+  database changes are picked up in Rails
+  dynamically and UI errors begin to be
+  thrown to users.
+
+  Given the disruption of features is essentially
+  the same to users as a downtime when it
+  affects critical features such as merge requests
+  the section is false in indicating that
+  downtime is minimized.
+
+  Additionally this section is often discovered
+  by users and blindly followed even for
+  multiple version jumps that leads to
+  broken upgrades.
+
+So if the mentioned UI errors aren't acceptable you should stop
+GitLab before Upgrading.
