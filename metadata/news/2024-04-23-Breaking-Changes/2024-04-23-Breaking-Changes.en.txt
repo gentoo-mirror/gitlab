@@ -1,0 +1,10 @@
+Title: Breaking Changes in coming Release 17.0
+Author: Horst Prote <prote@fmi.uni-stuttgart.de>
+Posted: 2024-04-23
+Revision: 1
+News-Item-Format: 2.0
+Display-If-Installed: www-apps/gitlab
+
+Upstream has announced the 17.0 major release for May 16, 2024 and has published
+a blogpost about the breaking changes of that release:
+https://about.gitlab.com/blog/2024/04/10/a-guide-to-the-high-impact-breaking-changes-in-gitlab-17-0/
