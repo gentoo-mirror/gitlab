@@ -228,6 +228,16 @@ pkg_setup() {
 			env-update
 		fi
 	fi
+
+	if [ "$(eselect postgresql show)" != "${PGSlot}" ]; then
+		case "$(equery u postgresql | grep server)" in
+			-server) ewarn "Switching to new PostgreSQL Slot ${PGSlot}"
+					 eselect postgresql set ${PGSlot}
+					 ewarn "Please switch to PosgreSQL ${PGSlot} on your DB server, too!";;
+			+server) die "You have to upgrade PosgreSQL to Slot ${PGSlot} before " \
+						 "the GitLab emerge!";;
+		esac
+	fi
 }
 
 src_unpack_gitaly() {

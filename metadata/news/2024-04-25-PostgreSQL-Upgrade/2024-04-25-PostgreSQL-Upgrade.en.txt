@@ -1,0 +1,20 @@
+Title: PosgreSQL Upgrade
+Author: Horst Prote <prote@fmi.uni-stuttgart.de>
+Posted: 2024-04-25
+Revision: 1
+News-Item-Format: 2.0
+Display-If-Installed: www-apps/gitlab
+
+One of the breaking changes with upcoming release 17.0 is: Postgres 13 deprecated
+Since version 16.2.0 Postgres 14 is already supported but with version 17.0
+failing to upgrade to Postgres 14 will break the deployment.
+
+In today's versions 16.9.6, 16.10.4, 16.11.1 the PostgreSQL dependency was
+changed to "dev-db/postgresql:14" so the emerge will pull in the new slot 14 of
+dev-db/postgresql. After installing the new GitLab version you should upgrade
+your PostgreSQL server:
+1. Stop GitLab
+2. Upgrade your PostgreSQL server to version 14
+   (see https://wiki.gentoo.org/wiki/PostgreSQL/QuickStart#Migrating_PostgreSQL)
+   Don't forget "eselect postgresql set 14"!
+3. Start GitLab
