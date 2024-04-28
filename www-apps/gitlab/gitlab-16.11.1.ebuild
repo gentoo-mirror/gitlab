@@ -30,6 +30,7 @@ IUSE="favicon +gitaly_git -gitlab-config kerberos -mail_room -pages -prometheus 
 # development test omnibus
 # USE flags that affect the "--local without" option below
 WITHOUTflags="kerberos"
+PGSlot=14
 
 ## Gems dependencies:
 #   gpgme				app-crypt/gpgme
@@ -47,7 +48,7 @@ GEMS_DEPEND="
 	dev-libs/libxslt
 	dev-util/ragel
 	dev-libs/yajl
-	dev-db/postgresql:14
+	dev-db/postgresql:${PGSlot}
 	net-libs/http-parser
 	dev-python/docutils"
 GITALY_DEPEND="

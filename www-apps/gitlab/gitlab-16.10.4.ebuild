@@ -30,6 +30,7 @@ IUSE="favicon +gitaly_git -gitlab-config kerberos -mail_room -pages -prometheus 
 # development test omnibus
 # USE flags that affect the "--local without" option below
 WITHOUTflags="kerberos"
+PGSlot=14
 
 ## Gems dependencies:
 #   gpgme				app-crypt/gpgme
@@ -47,7 +48,7 @@ GEMS_DEPEND="
 	dev-libs/libxslt
 	dev-util/ragel
 	dev-libs/yajl
-	dev-db/postgresql:14
+	dev-db/postgresql:${PGSlot}
 	net-libs/http-parser
 	dev-python/docutils"
 GITALY_DEPEND="
@@ -227,6 +228,16 @@ pkg_setup() {
 			rm -f /etc/env.d/42${PN}
 			env-update
 		fi
+	fi
+
+	if [ "$(eselect postgresql show)" != "${PGSlot}" ]; then
+		case "$(equery u postgresql | grep server)" in
+			-server) ewarn "Switching to new PostgreSQL Slot ${PGSlot}"
+					 eselect postgresql set ${PGSlot}
+					 ewarn "Please switch to PosgreSQL ${PGSlot} on your DB server, too!";;
+			+server) die "You have to upgrade PosgreSQL to Slot ${PGSlot} before " \
+						 "the GitLab emerge!";;
+		esac
 	fi
 }
 
