@@ -1,0 +1,16 @@
+BDEPEND=virtual/pkgconfig
+DEFINED_PHASES=install postinst prepare unpack
+DEPEND=!dev-util/gitlab-runner acct-user/gitlab-runner systemd? ( sys-apps/systemd )
+DESCRIPTION=GitLab Runner
+EAPI=7
+HOMEPAGE=https://gitlab.com/gitlab-org/gitlab-runner
+INHERIT=readme.gentoo-r1 systemd tmpfiles
+IUSE=systemd
+KEYWORDS=~amd64 ~x86 ~arm ~arm64
+LICENSE=MIT
+RDEPEND=!dev-util/gitlab-runner acct-user/gitlab-runner virtual/tmpfiles
+RESTRICT=mirror strip
+SLOT=0
+SRC_URI=amd64? ( https://s3.amazonaws.com/gitlab-runner-downloads/v17.0.0/binaries/gitlab-runner-linux-amd64 -> gitlab-runner-amd64-17.0.0 ) x86? ( https://s3.amazonaws.com/gitlab-runner-downloads/v17.0.0/binaries/gitlab-runner-linux-386 -> gitlab-runner-x86-17.0.0 ) arm? ( https://s3.amazonaws.com/gitlab-runner-downloads/v17.0.0/binaries/gitlab-runner-linux-arm -> gitlab-runner-arm-17.0.0 ) arm64? ( https://s3.amazonaws.com/gitlab-runner-downloads/v17.0.0/binaries/gitlab-runner-linux-arm64 -> gitlab-runner-arm64-17.0.0 )
+_eclasses_=readme.gentoo-r1	204091a2cde6179cd9d3db26d09412d3	toolchain-funcs	e56c7649b804f051623c8bc1a1c44084	multilib	c19072c3cd7ac5cb21de013f7e9832e0	systemd	c8b03e8df84486aa991d4396686e8942	tmpfiles	216aa76c3a6fcb5d893c23a0de86048f
+_md5_=cfc133daee4cbb8102df68569bd26185
