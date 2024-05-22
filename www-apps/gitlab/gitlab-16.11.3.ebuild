@@ -80,7 +80,7 @@ RDEPEND="${DEPEND}
 	kerberos? ( app-crypt/mit-krb5 )
 	favicon? ( media-gfx/graphicsmagick )"
 BDEPEND="
-	=dev-ruby/rubygems-3.5*
+	=dev-ruby/rubygems-3.4*
 	>=dev-ruby/bundler-2:2"
 
 GIT_USER="git"
