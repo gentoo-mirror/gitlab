@@ -182,7 +182,7 @@ pkg_setup() {
 		# ensure that any background migrations have been fully completed
 		# see /opt/gitlab/gitlab/doc/update/README.md
 		elog "Checking for background migrations ..."
-		local bm gitlab_dir rails_cmd="'puts Gitlab::BackgroundMigration.remaining'"
+		local bm gitlab_dir rails_cmd="'puts Gitlab::BackgroundMigration.remaining'" rdoc_libs
 		gitlab_dir="${BASE_DIR}/${PN}"
 		local rubyVinst=$(ruby --version)
 		rubyVinst=${rubyVinst%%.?p*}
@@ -195,7 +195,9 @@ pkg_setup() {
 			elog "Temporary switch to ruby${rubyV}"
 			eselect ruby set ruby${rubyV}
 		fi
+		rdoc_libs="$(find /usr/lib64/ruby/ -regextype egrep -iregex '.*rdoc-.*/lib')"
 		bm=$(su -l ${GIT_USER} -s /bin/sh -c "
+			export RUBYLIB=\"$(echo "$rdoc_libs" | head -c -1 | tr '\n' ':')\"
 			cd ${gitlab_dir}
 			${BUNDLE} exec rails runner -e ${RAILS_ENV} ${rails_cmd}" \
 				|| die "failed to check for background migrations")
@@ -571,8 +573,10 @@ src_install() {
 			-e "s|poolParallelJobs: .*,|poolParallelJobs: ${WEBPACK_POLL_PARALLEL_JOBS},|" \
 			${ED}/${GITLAB_CONFIG}/webpack.config.js
 	fi
+	local rdoc_libs
+	rdoc_libs="$(find /usr/lib64/ruby/ -regextype egrep -iregex '.*rdoc-.*/lib')"
 	/bin/sh -c "
-		export RUBYLIB=\"$(find /usr/lib64/ruby/ -regextype egrep -iregex '.*rdoc-.*/lib')\"
+		export RUBYLIB=\"$(echo "$rdoc_libs" | head -c -1 | tr '\n' ':')\"
 		${BUNDLE} exec rake gitlab:assets:compile \
 		RAILS_ENV=${RAILS_ENV} NODE_ENV=${NODE_ENV}" \
 		|| die "failed to compile assets"
