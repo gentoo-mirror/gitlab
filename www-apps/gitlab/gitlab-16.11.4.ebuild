@@ -146,12 +146,6 @@ pkg_setup() {
 			${eM}.${em1}.*)		MODUS="minor"
 								elog "This is a minor upgrade from $vINST to $PV.";;
 			${eM}.[0-${em2}].*) die "It's recommended to do minor upgrades step by step.";;
-			16.11.4)			if [ "${PV}" = "17.0.0" ]; then
-									MODUS="major"
-									elog "This is a major upgrade from $vINST to $PV."
-								else
-									die "It's recommended to upgrade to 17.0.0 first."
-								fi;;
 			15.11.13)			if [ "${PV}" = "16.0.0" ]; then
 									MODUS="major"
 									elog "This is a major upgrade from $vINST to $PV."
@@ -182,7 +176,7 @@ pkg_setup() {
 		# ensure that any background migrations have been fully completed
 		# see /opt/gitlab/gitlab/doc/update/README.md
 		elog "Checking for background migrations ..."
-		local bm gitlab_dir rails_cmd="'puts Gitlab::BackgroundMigration.remaining'" rdoc_libs
+		local bm gitlab_dir rails_cmd="'puts Gitlab::BackgroundMigration.remaining'"
 		gitlab_dir="${BASE_DIR}/${PN}"
 		local rubyVinst=$(ruby --version)
 		rubyVinst=${rubyVinst%%.?p*}
@@ -195,9 +189,7 @@ pkg_setup() {
 			elog "Temporary switch to ruby${rubyV}"
 			eselect ruby set ruby${rubyV}
 		fi
-		rdoc_libs="$(find /usr/lib64/ruby/ -regextype egrep -iregex '.*rdoc-.*/lib')"
 		bm=$(su -l ${GIT_USER} -s /bin/sh -c "
-			export RUBYLIB=\"$(echo "$rdoc_libs" | head -c -1 | tr '\n' ':')\"
 			cd ${gitlab_dir}
 			${BUNDLE} exec rails runner -e ${RAILS_ENV} ${rails_cmd}" \
 				|| die "failed to check for background migrations")
@@ -573,10 +565,8 @@ src_install() {
 			-e "s|poolParallelJobs: .*,|poolParallelJobs: ${WEBPACK_POLL_PARALLEL_JOBS},|" \
 			${ED}/${GITLAB_CONFIG}/webpack.config.js
 	fi
-	local rdoc_libs
-	rdoc_libs="$(find /usr/lib64/ruby/ -regextype egrep -iregex '.*rdoc-.*/lib')"
 	/bin/sh -c "
-		export RUBYLIB=\"$(echo "$rdoc_libs" | head -c -1 | tr '\n' ':')\"
+		export RUBYLIB=\"$(find /usr/lib64/ruby/ -regextype egrep -iregex '.*rdoc-.*/lib')\"
 		${BUNDLE} exec rake gitlab:assets:compile \
 		RAILS_ENV=${RAILS_ENV} NODE_ENV=${NODE_ENV}" \
 		|| die "failed to compile assets"
