@@ -66,7 +66,7 @@ DEPEND="
 	acct-group/git
 	>=net-libs/nodejs-20.12.1
 	>=dev-lang/ruby-3.1.4:3.1[ssl]
-	>=dev-vcs/gitlab-shell-14.35.0[relative_url=]
+	>=dev-vcs/gitlab-shell-14.36.0[relative_url=]
 	pages? ( ~www-apps/gitlab-pages-${PV} )
 	!gitaly_git? ( >=dev-vcs/git-2.42.0[pcre] dev-libs/libpcre2[jit] )
 	net-misc/curl
@@ -80,7 +80,7 @@ RDEPEND="${DEPEND}
 	kerberos? ( app-crypt/mit-krb5 )
 	favicon? ( media-gfx/graphicsmagick )"
 BDEPEND="
-	=dev-ruby/rubygems-3.4*
+	=dev-ruby/rubygems-3.5*
 	>=dev-ruby/bundler-2:2"
 
 GIT_USER="git"

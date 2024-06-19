@@ -64,7 +64,7 @@ DEPEND="
 	${RUBY_DEPS}
 	>=acct-user/git-0-r4[gitlab]
 	acct-group/git
-	>=net-libs/nodejs-18.17.0
+	>=net-libs/nodejs-20.12.1
 	>=dev-lang/ruby-3.1.4:3.1[ssl]
 	>=dev-vcs/gitlab-shell-14.35.0[relative_url=]
 	pages? ( ~www-apps/gitlab-pages-${PV} )
@@ -75,7 +75,7 @@ DEPEND="
 	dev-libs/re2"
 RDEPEND="${DEPEND}
 	!www-servers/gitlab-workhorse
-	>=dev-db/redis-6.2
+	>=dev-db/redis-6.2.14
 	virtual/mta
 	kerberos? ( app-crypt/mit-krb5 )
 	favicon? ( media-gfx/graphicsmagick )"
