@@ -357,6 +357,14 @@ src_prepare() {
 	# But yarn still wants to create/read /usr/local/share/.yarnrc
 	addwrite /usr/local/share/
 
+	# With version 17.1.0 external-diffs was removed but even without enabling
+	# external_diffs in /etc/gitlab/gitlab.yml the existance of the default
+	# storage_path: shared/external-diffs is checked by
+	# /opt/gitlab/gitlab/lib/backup/targets/files.rb which is used by the
+	# gitlab:backup:create task.
+	mkdir shared/external-diffs
+	chown -R ${GIT_USER}:${GIT_GROUP} shared/external-diffs
+
 	if [ "$MODUS" = "new" ]; then
 		# initialize our source for ${CONF_DIR}
 		mkdir -p ${T}/etc-config
