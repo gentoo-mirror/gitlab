@@ -1,4 +1,4 @@
-acct-user/git 0-r5: Git repository hosting user
+acct-user/git 0-r6: Git repository hosting user
 acct-user/gitlab-pages 0-r1: Dedicated user for gitlab-pages
 dev-util/gitlab-runner-bin 16.10.0 16.11.1 17.0.0: GitLab Runner
 dev-vcs/gitlab-shell 14.34.0 14.35.0 14.36.0: SSH access for GitLab
