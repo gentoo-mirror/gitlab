@@ -9,7 +9,7 @@ EAPI=8
 #   it should be done, but GitLab has too many dependencies that it will be too
 #   difficult to maintain them via ebuilds.
 
-USE_RUBY="ruby31"
+USE_RUBY="ruby31 ruby32"
 
 EGIT_REPO_URI="https://gitlab.com/gitlab-org/gitlab-foss.git"
 EGIT_COMMIT="v${PV}"
@@ -184,10 +184,11 @@ pkg_setup() {
 		elog "Checking for background migrations ..."
 		local bm gitlab_dir rails_cmd="'puts Gitlab::BackgroundMigration.remaining'" rdoc_libs
 		gitlab_dir="${BASE_DIR}/${PN}"
-		local rubyVinst=$(ruby --version)
-		rubyVinst=${rubyVinst%%.?p*}
-		rubyVinst=${rubyVinst##ruby }
-		rubyVinst=${rubyVinst/./}
+		local rubyVinst=$(ruby --version) # version string is "ruby N.N.N[pNNN] (...)"
+		rubyVinst=${rubyVinst##ruby }     # remove leading "ruby "
+		rubyVinst=${rubyVinst%%.? *}      # remove from ".N " on if there is no patch number
+		rubyVinst=${rubyVinst%%.?p*}      # remove from ".NpNNN" on if there is a patch number
+		rubyVinst=${rubyVinst/./}         # convert "N.N" to "NN"
 		local rubyV=$(ls ${gitlab_dir}/vendor/bundle/ruby 2>/dev/null)
 		rubyV=${rubyV%.?}
 		rubyV=${rubyV/./}
@@ -855,9 +856,12 @@ pkg_postinst() {
 			elog "     rc-service gitlab restart"
 		fi
 	elif [ "$MODUS" = "patch" ] || [ "$MODUS" = "minor" ] || [ "$MODUS" = "major" ]; then
+		local rdoc_libs
+		rdoc_libs="$(find /usr/lib64/ruby/ -regextype egrep -iregex '.*rdoc-.*/lib')"
 		elog
 		elog "Migrating database without post deployment migrations ..."
 		su -l ${GIT_USER} -s /bin/sh -c "
+			export RUBYLIB=\"$(echo "$rdoc_libs" | head -c -1 | tr '\n' ':')\"
 			cd ${GITLAB}
 			SKIP_POST_DEPLOYMENT_MIGRATIONS=true \
 			${BUNDLE} exec rake db:migrate RAILS_ENV=${RAILS_ENV}" \
