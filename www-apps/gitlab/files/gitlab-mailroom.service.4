@@ -1,0 +1,20 @@
+[Unit]
+Description=Gitlab MailRoom
+PartOf=gitlab.target
+After=network.target
+StartLimitIntervalSec=100s
+
+[Service]
+Type=simple
+User=git
+WorkingDirectory=@GITLAB@
+Environment=RAILS_ENV=production
+PIDFile=@TMP_DIR@/pids/mailroom.pid
+ExecStart=@GITLAB@/bin/bundle exec mail_room --log-exit-as json -q -c @GITLAB_CONFIG@/mail_room.yml"
+Restart=on-failure
+RestartSec=1
+SyslogIdentifier=gitlab-mailroom
+Slice=gitlab.slice
+
+[Install]
+WantedBy=gitlab.target
