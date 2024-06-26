@@ -566,6 +566,7 @@ src_install() {
 			${ED}/${GITLAB_CONFIG}/webpack.config.js
 	fi
 	/bin/sh -c "
+		export RUBYLIB=\"$(find /usr/lib64/ruby/ -regextype egrep -iregex '.*rdoc-.*/lib')\"
 		${BUNDLE} exec rake gitlab:assets:compile \
 		RAILS_ENV=${RAILS_ENV} NODE_ENV=${NODE_ENV}" \
 		|| die "failed to compile assets"

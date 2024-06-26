@@ -572,7 +572,10 @@ src_install() {
 			-e "s|poolParallelJobs: .*,|poolParallelJobs: ${WEBPACK_POLL_PARALLEL_JOBS},|" \
 			${ED}/${GITLAB_CONFIG}/webpack.config.js
 	fi
+	local rdoc_libs
+	rdoc_libs="$(find /usr/lib64/ruby/ -regextype egrep -iregex '.*rdoc-.*/lib')"
 	/bin/sh -c "
+		export RUBYLIB=\"$(echo "$rdoc_libs" | head -c -1 | tr '\n' ':')\"
 		${BUNDLE} exec rake gitlab:assets:compile \
 		RAILS_ENV=${RAILS_ENV} NODE_ENV=${NODE_ENV}" \
 		|| die "failed to compile assets"
