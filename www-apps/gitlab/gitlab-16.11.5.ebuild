@@ -519,7 +519,6 @@ src_install() {
 	done
 	${BUNDLE} config set --local deployment 'true'
 	${BUNDLE} config set --local without "${without}"
-	${BUNDLE} config set --local with "gdk-toogle" # issue #165
 	${BUNDLE} config set --local build.gpgme --use-system-libraries
 	${BUNDLE} config set --local build.nokogiri --use-system-libraries
 	${BUNDLE} config set --local build.ruby-magic --use-system-libraries
