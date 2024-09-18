@@ -66,9 +66,9 @@ DEPEND="
 	acct-group/git
 	>=net-libs/nodejs-20.13.0
 	>=dev-lang/ruby-3.1.4:3.1[ssl]
-	>=dev-vcs/gitlab-shell-14.37.0[relative_url=]
+	>=dev-vcs/gitlab-shell-14.39.0[relative_url=]
 	pages? ( ~www-apps/gitlab-pages-${PV} )
-	!gitaly_git? ( >=dev-vcs/git-2.44.0[pcre] dev-libs/libpcre2[jit] )
+	!gitaly_git? ( >=dev-vcs/git-2.46.0[pcre] dev-libs/libpcre2[jit] )
 	net-misc/curl
 	virtual/ssh
 	=sys-apps/yarn-1.22*

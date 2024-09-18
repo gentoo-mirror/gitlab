@@ -64,7 +64,7 @@ DEPEND="
 	${RUBY_DEPS}
 	>=acct-user/git-0-r4[gitlab]
 	acct-group/git
-	>=net-libs/nodejs-20.12.1
+	>=net-libs/nodejs-20.13.0
 	>=dev-lang/ruby-3.1.4:3.1[ssl]
 	>=dev-vcs/gitlab-shell-14.36.0[relative_url=]
 	pages? ( ~www-apps/gitlab-pages-${PV} )
