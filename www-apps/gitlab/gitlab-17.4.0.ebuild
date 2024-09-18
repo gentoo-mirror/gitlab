@@ -291,6 +291,7 @@ src_prepare_gitaly() {
 }
 
 src_prepare() {
+	eapply -p0 "${FILESDIR}/${PN}-fix-gitlab-shell-check-name.patch"
 	eapply -p0 "${FILESDIR}/${PN}-fix-checks-gentoo-r1.patch"
 	eapply -p0 "${FILESDIR}/${PN}-fix-sendmail-param.patch"
 	eapply -p0 "${FILESDIR}/${PN}-pod-markup.patch"
@@ -340,7 +341,7 @@ src_prepare() {
 	cp config/puma.rb.example config/puma.rb
 
 	# remove needless files
-	rm .foreman .gitignore
+	rm .gitignore
 
 	# Remove Geo database setting as in gitlab-foss Geo is not available and
 	# GitLab will do a "Only main: and ci: database names are supported." check. 
@@ -362,7 +363,6 @@ src_prepare() {
 	# /opt/gitlab/gitlab/lib/backup/targets/files.rb which is used by the
 	# gitlab:backup:create task.
 	mkdir shared/external-diffs
-	chown -R ${GIT_USER}:${GIT_GROUP} shared/external-diffs
 
 	if [ "$MODUS" = "new" ]; then
 		# initialize our source for ${CONF_DIR}
