@@ -291,7 +291,6 @@ src_prepare_gitaly() {
 }
 
 src_prepare() {
-	eapply -p0 "${FILESDIR}/${PN}-fix-gitlab-shell-check-name.patch"
 	eapply -p0 "${FILESDIR}/${PN}-fix-checks-gentoo-r1.patch"
 	eapply -p0 "${FILESDIR}/${PN}-fix-sendmail-param.patch"
 	eapply -p0 "${FILESDIR}/${PN}-pod-markup.patch"
