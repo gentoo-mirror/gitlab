@@ -5,7 +5,7 @@ EAPI=8
 
 EGIT_REPO_URI="https://gitlab.com/gitlab-org/gitlab-shell.git"
 EGIT_COMMIT="v${PV}"
-USE_RUBY="ruby31"
+USE_RUBY="ruby31 ruby32"
 
 inherit git-r3 ruby-single
 
@@ -22,8 +22,8 @@ BDEPEND="
 DEPEND="
 	acct-user/git[gitlab]
 	acct-group/git
-	|| ( >=dev-vcs/git-2.41.0[pcre] www-apps/gitlab[gitaly_git] )
-	>=dev-lang/go-1.20
+	|| ( >=dev-vcs/git-2.46.0[pcre] www-apps/gitlab[gitaly_git] )
+	>=dev-lang/go-1.22
 	virtual/krb5
 	virtual/ssh
 	dev-db/redis"

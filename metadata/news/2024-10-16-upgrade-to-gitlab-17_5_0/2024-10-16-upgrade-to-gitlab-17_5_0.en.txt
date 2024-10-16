@@ -1,0 +1,39 @@
+Title: www-apps/gitlab-17.5.0 upgrade
+Author: Horst Prote <prote@fmi.uni-stuttgart.de>
+Posted: 2024-10-16
+Revision: 1
+News-Item-Format: 2.0
+Display-If-Installed: www-apps/gitlab
+
+With version 17.5.0 upstream switches from ruby31 to ruby32.
+For a smooth transition do the following steps.
+
+1. Prepare for ruby32
+---------------------
+Change the RUBY_TARGETS variable in /etc/portage/make.conf to:
+
+    RUBY_TARGETS="ruby31 ruby32"
+
+We have to keep ruby31 here as long as the old GitLab server is running.
+Then run
+
+    emerge -DuN1 dev-lang/ruby:3.2
+    eselect ruby set ruby32
+
+2. Update gitlab and gitlab-shell
+---------------------------------
+Do
+    emerge -DuN1 gitlab gitlab-shell
+    systemctl daemon-reload
+    systemctl restart gitlab.target
+    emerge --config "=www-apps/gitlab-17.5.0"
+
+3. Cleanup
+----------
+If you like you could now in /etc/portage/make.conf change to
+
+    RUBY_TARGETS="ruby32"
+
+(as ruby32 is the default in current portage profiles you could
+even remove the RUBY_TARGETS setting from /etc/portage/make.conf)
+rebuild the affected packages and then remove ruby31.
