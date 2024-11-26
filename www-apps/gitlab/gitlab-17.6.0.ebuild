@@ -9,7 +9,7 @@ EAPI=8
 #   it should be done, but GitLab has too many dependencies that it will be too
 #   difficult to maintain them via ebuilds.
 
-USE_RUBY="ruby31 ruby32"
+USE_RUBY="ruby32"
 
 EGIT_REPO_URI="https://gitlab.com/gitlab-org/gitlab-foss.git"
 EGIT_COMMIT="v${PV}"
@@ -52,7 +52,7 @@ GEMS_DEPEND="
 	net-libs/http-parser
 	dev-python/docutils"
 GITALY_DEPEND="
-	>=dev-lang/go-1.20
+	>=dev-lang/go-1.22
 	dev-build/cmake"
 WORKHORSE_DEPEND="
 	dev-lang/go
@@ -65,10 +65,10 @@ DEPEND="
 	>=acct-user/git-0-r4[gitlab]
 	acct-group/git
 	>=net-libs/nodejs-20.13.0
-	>=dev-lang/ruby-3.1.4:3.1[ssl]
-	>=dev-vcs/gitlab-shell-14.38.0[relative_url=]
+	>=dev-lang/ruby-3.2.0:3.2[ssl]
+	>=dev-vcs/gitlab-shell-14.39.0[relative_url=]
 	pages? ( ~www-apps/gitlab-pages-${PV} )
-	!gitaly_git? ( >=dev-vcs/git-2.45.0[pcre] dev-libs/libpcre2[jit] )
+	!gitaly_git? ( >=dev-vcs/git-2.46.0[pcre] dev-libs/libpcre2[jit] )
 	net-misc/curl
 	virtual/ssh
 	=sys-apps/yarn-1.22*
@@ -340,7 +340,7 @@ src_prepare() {
 	cp config/puma.rb.example config/puma.rb
 
 	# remove needless files
-	rm .foreman .gitignore
+	rm .gitignore
 
 	# Remove Geo database setting as in gitlab-foss Geo is not available and
 	# GitLab will do a "Only main: and ci: database names are supported." check. 
@@ -362,7 +362,6 @@ src_prepare() {
 	# /opt/gitlab/gitlab/lib/backup/targets/files.rb which is used by the
 	# gitlab:backup:create task.
 	mkdir shared/external-diffs
-	chown -R ${GIT_USER}:${GIT_GROUP} shared/external-diffs
 
 	if [ "$MODUS" = "new" ]; then
 		# initialize our source for ${CONF_DIR}
