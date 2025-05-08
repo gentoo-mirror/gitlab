@@ -1,0 +1,18 @@
+Title: PosgreSQL Upgrade
+Author: Horst Prote <prote@fmi.uni-stuttgart.de>
+Posted: 2025-05-08
+Revision: 1
+News-Item-Format: 2.0
+Display-If-Installed: www-apps/gitlab
+
+One of the breaking changes with upcoming release 18.0 is: Postgres 14/15 deprecated
+Since version 17.0 Postgres 16 is already supported but with version 18.0
+failing to upgrade to Postgres 16 will break the deployment.
+
+In the upcomming version 18.0 the PostgreSQL dependency wil be changed to
+"dev-db/postgresql:16" so the emerge will pull in the new slot 16 of
+dev-db/postgresql. If only the postgresql client is installed on the local host
+(USE flag -server) the ebuild will do "eselect postgresql set 16" before
+building GitLab (Note that you have to update postgresql on you database server
+beforehand!). If the postgresql server is running on the local host the
+ebuild will terminate and ask you to upgrade postgresql first.
