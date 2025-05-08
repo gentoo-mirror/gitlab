@@ -1,0 +1,10 @@
+Title: Breaking Changes in coming Release 18.0
+Author: Horst Prote <prote@fmi.uni-stuttgart.de>
+Posted: 2024-05-08
+Revision: 1
+News-Item-Format: 2.0
+Display-If-Installed: www-apps/gitlab
+
+Upstream has announced the 18.0 major release for May 15, 2025 and has published
+a blogpost about the breaking changes of that release:
+https://about.gitlab.com/blog/2025/04/18/a-guide-to-the-breaking-changes-in-gitlab-18-0/
