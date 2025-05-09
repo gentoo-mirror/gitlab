@@ -9,7 +9,7 @@ One of the breaking changes with upcoming release 18.0 is: Postgres 14/15 deprec
 Since version 17.0 Postgres 16 is already supported but with version 18.0
 failing to upgrade to Postgres 16 will break the deployment.
 
-In the upcomming version 18.0 the PostgreSQL dependency wil be changed to
+In the upcomming version 18.0 the PostgreSQL dependency will be changed to
 "dev-db/postgresql:16" so the emerge will pull in the new slot 16 of
 dev-db/postgresql. If only the postgresql client is installed on the local host
 (USE flag -server) the ebuild will do "eselect postgresql set 16" before
