@@ -574,7 +574,7 @@ src_install() {
 	# inside the sandbox. Later in pkg_config() the secrets.yml backup file
 	# will be stored in the backup path defined in gitlab.yml.
 	local backup_path bp_def bp_sandbox
-	bp_def="$(grep -Pzo '(?s)backup:.*gitaly_backup_path' config/gitlab.yml \
+	bp_def="$(grep -Pzo '(?s)backup:.*?gitaly_backup_path' config/gitlab.yml \
 			| grep -ao 'path:.*#')"
 	backup_path="$(echo ${bp_def} | sed 's/^path: \| #$//g' | sed 's/^"\/\?\|"$//g')"
 	dodir ${backup_path}
@@ -619,7 +619,7 @@ src_install() {
 
 	# Correct the backup path we fooled config/initializers/2_secret_token.rb with.
 	local backup_path bp_def bp_sandbox
-	bp_sandbox="$(grep -Pzo '(?s)backup:.*gitaly_backup_path' config/gitlab.yml \
+	bp_sandbox="$(grep -Pzo '(?s)backup:.*?gitaly_backup_path' config/gitlab.yml \
 				| grep -ao 'path:.*#')"
 	backup_path="$(echo ${bp_sandbox} | sed 's/^path: \| #$//g' | sed 's/^"\|"$//g' \
 				| sed -e "s|${ED}||g")"
