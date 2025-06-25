@@ -30,7 +30,7 @@ IUSE="favicon +gitaly_git -gitlab-config kerberos -mail_room -pages -prometheus 
 # development test omnibus
 # USE flags that affect the "--local without" option below
 WITHOUTflags="kerberos"
-PGSlot=14
+PGSlot=16
 
 ## Gems dependencies:
 #   gpgme				app-crypt/gpgme
@@ -66,7 +66,7 @@ DEPEND="
 	acct-group/git
 	>=net-libs/nodejs-20.13.0
 	>=dev-lang/ruby-3.2.0:3.2[ssl]
-	>=dev-vcs/gitlab-shell-14.41.0[relative_url=]
+	>=dev-vcs/gitlab-shell-14.42.0[relative_url=]
 	pages? ( ~www-apps/gitlab-pages-${PV} )
 	!gitaly_git? ( >=dev-vcs/git-2.47.0[pcre] dev-libs/libpcre2[jit] )
 	net-misc/curl
@@ -146,6 +146,12 @@ pkg_setup() {
 			${eM}.${em1}.*)		MODUS="minor"
 								elog "This is a minor upgrade from $vINST to $PV.";;
 			${eM}.[0-${em2}].*) die "It's recommended to do minor upgrades step by step.";;
+			17.11.3)			if [ "${PV}" = "18.0.0" ]; then
+									MODUS="major"
+									elog "This is a major upgrade from $vINST to $PV."
+								else
+									die "It's recommended to upgrade to 18.0.0 first."
+								fi;;
 			16.11.4)			if [ "${PV}" = "17.0.0" ]; then
 									MODUS="major"
 									elog "This is a major upgrade from $vINST to $PV."
@@ -564,6 +570,18 @@ src_install() {
 	sed -i \
 		-e "s|${GITLAB_SHELL}|${ED}${GITLAB_SHELL}|g" \
 		config/gitlab.yml || die "failed to fake the gitlab-shell path"
+	# Let config/initializers/2_secret_token.rb store the secrets.yml backup
+	# inside the sandbox. Later in pkg_config() the secrets.yml backup file
+	# will be stored in the backup path defined in gitlab.yml.
+	local backup_path bp_def bp_sandbox
+	bp_def="$(grep -Pzo '(?s)backup:.*?gitaly_backup_path' config/gitlab.yml \
+			| grep -ao 'path:.*#')"
+	backup_path="$(echo ${bp_def} | sed 's/^path: \| #$//g' | sed 's/^"\/\?\|"$//g')"
+	dodir ${backup_path}
+	bp_sandbox="$(echo $bp_def | sed -e "s|${backup_path}|${ED}/${backup_path}|g")"
+	sed -i \
+		-e "s|${bp_def}|${bp_sandbox}|g" \
+		config/gitlab.yml || die "failed to fake the backup path"
 	einfo "Updating node dependencies ..."
 	/bin/sh -c "yarn install --${RAILS_ENV} --pure-lockfile" \
 		|| die "failed to update node dependencies"
@@ -598,6 +616,17 @@ src_install() {
 	ln -sf ${GITLAB}/.gitlab_shell_secret ${ED}${GITLAB_SHELL}/.gitlab_shell_secret
 	# Remove ${ED}/${GITLAB_SHELL}/VERSION to avoid file collision with dev-vcs/gitlab-shell
 	rm -f ${ED}/${GITLAB_SHELL}/VERSION
+
+	# Correct the backup path we fooled config/initializers/2_secret_token.rb with.
+	local backup_path bp_def bp_sandbox
+	bp_sandbox="$(grep -Pzo '(?s)backup:.*?gitaly_backup_path' config/gitlab.yml \
+				| grep -ao 'path:.*#')"
+	backup_path="$(echo ${bp_sandbox} | sed 's/^path: \| #$//g' | sed 's/^"\|"$//g' \
+				| sed -e "s|${ED}||g")"
+	bp_def="$(echo $bp_sandbox | sed -e "s|${ED}${backup_path}|${backup_path}|g")"
+	sed -i \
+		-e "s|${bp_sandbox}|${bp_def}|g" \
+		${ED}/${GITLAB_CONFIG}/gitlab.yml || die "failed to change back the backup path"
 
 	## Clean ##
 
