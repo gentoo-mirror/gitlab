@@ -421,11 +421,6 @@ src_install_gitaly() {
 	into "${GITLAB_GITALY}"
 	dobin _build/bin/*
 
-	sed -i \
-		-e '/${Q}env.*${GIT_BUILD_OPTIONS} install/{n;s|\${Q}touch \$@||}' \
-		Makefile || die "failed to fix gitaly Makefile"
-	emake git DESTDIR="${D}" GIT_PREFIX="${GITLAB_GITALY}"
-
 	insinto "${CONF_DIR_GITALY}"
 	newins "config.toml.example" "config.toml"
 }
