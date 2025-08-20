@@ -23,7 +23,7 @@ LICENSE="MIT"
 RESTRICT="network-sandbox splitdebug strip"
 SLOT="0"
 KEYWORDS="~amd64 ~x86"
-IUSE="favicon +gitaly_git -gitlab-config kerberos -mail_room -pages -prometheus -relative_url systemd"
+IUSE="favicon -gitlab-config kerberos -mail_room -pages -prometheus -relative_url systemd"
 # Current (2021-11-24) groups in gitlab Gemfile:
 # puma development test danger coverage omnibus ed25519 kerberos
 # Current (2021-11-24) groups in gitlab-gitaly Gemfile:
@@ -68,7 +68,6 @@ DEPEND="
 	>=dev-lang/ruby-3.2.0:3.2[ssl]
 	>=dev-vcs/gitlab-shell-14.44.0[relative_url=]
 	pages? ( ~www-apps/gitlab-pages-${PV} )
-	!gitaly_git? ( >=dev-vcs/git-2.47.0[pcre] dev-libs/libpcre2[jit] )
 	net-misc/curl
 	virtual/ssh
 	=sys-apps/yarn-1.22*
@@ -284,11 +283,6 @@ src_prepare_gitaly() {
 		-e "s|^# level = .*|level = \"warn\"|" \
 		-e "s|^# internal_socket_dir = |internal_socket_dir = |" \
 		config.toml.example || die "failed to filter config.toml.example"
-	if use gitaly_git ; then
-		sed -i \
-			-e "s|bin_path = .*|bin_path = \"/opt/gitlab/gitlab-gitaly/bin/git\"|" \
-			config.toml.example || die "failed to filter config.toml.example"
-	fi
 	if use relative_url ; then
 		sed -i \
 			-e "s|^# relative_url_root = '/'|relative_url_root = '/gitlab'|" \
@@ -318,9 +312,7 @@ src_prepare() {
 			-e '/ *prometheus:/{n;s| *# *enabled: true|    enabled: false|}' \
 		config/gitlab.yml.example || die "failed to filter gitlab.yml.example"
 	fi
-	if use gitaly_git && \
-		[ "$MODUS" != "new" ] && \
-		has_version "www-apps/gitlab[gitaly_git]"
+	if [ "$MODUS" != "new" ]
 	then
 		sed -i \
 			-e "s|bin_path: /usr/bin/git|bin_path: /opt/gitlab/gitlab-gitaly/bin/git|" \
@@ -418,8 +410,7 @@ src_compile() {
 	cd ${WORKDIR}/gitlab-gitaly-${PV}
 	export RUBYOPT=--disable-did_you_mean
 	einfo "Compiling source in $PWD ..."
-	MAKEOPTS="${MAKEOPTS} -j1" emake WITH_BUNDLED_GIT=$(usex gitaly_git) \
-		|| die "Compiling gitaly failed"
+	MAKEOPTS="${MAKEOPTS} -j1" emake || die "Compiling gitaly failed"
 }
 
 src_install_gitaly() {
@@ -430,13 +421,10 @@ src_install_gitaly() {
 	into "${GITLAB_GITALY}"
 	dobin _build/bin/*
 
-	if use gitaly_git ; then
-		sed -i \
-			-e "s|\${GIT_PREFIX}/bin/git|\${GIT_DEFAULT_PREFIX}/bin/git|" \
-			-e '/${Q}env.*${GIT_BUILD_OPTIONS} install/{n;s|\${Q}touch \$@||}' \
-			Makefile || die "failed to fix gitaly Makefile"
-		emake git DESTDIR="${D}" GIT_PREFIX="${GITLAB_GITALY}"
-	fi
+	sed -i \
+		-e '/${Q}env.*${GIT_BUILD_OPTIONS} install/{n;s|\${Q}touch \$@||}' \
+		Makefile || die "failed to fix gitaly Makefile"
+	emake git DESTDIR="${D}" GIT_PREFIX="${GITLAB_GITALY}"
 
 	insinto "${CONF_DIR_GITALY}"
 	newins "config.toml.example" "config.toml"
@@ -760,18 +748,6 @@ src_install() {
 	src_install_gitaly
 }
 
-pkg_postinst_gitaly() {
-	if use gitaly_git; then
-		local conf_dir="${CONF_DIR}"
-		use gitlab-config && conf_dir="${GITLAB_CONFIG}"
-		elog  ""
-		ewarn "Note: With gitaly_git USE flag enabled the included git was installed to"
-		ewarn "      ${GITLAB_GITALY}/bin/. In order to use it set the"
-		ewarn "      [git] \"bin_path\" variable in \"${CONF_DIR_GITALY}/config.toml\" and in"
-		ewarn "      \"${conf_dir}/gitlab.yml\" to \"${GITLAB_GITALY}/bin/git\""
-	fi
-}
-
 pkg_postinst() {
 	if [ -f /etc/env.d/99${PN}_temp ]; then
 		rm -f /etc/env.d/99${PN}_temp
@@ -837,13 +813,6 @@ pkg_postinst() {
 		elog "  3. Edit ${conf_dir}/gitlab.yml"
 		elog "     in order to configure the GitLab settings."
 		elog
-		if use gitaly_git; then
-			elog "     With gitaly_git USE flag enabled the included git was installed to"
-			elog "     ${GITLAB_GITALY}/bin/. In order to use it one has to set the"
-			elog "     [git] \"bin_path\" variable in \"${CONF_DIR_GITALY}/config.toml\" and in"
-			elog "     \"${conf_dir}/gitlab.yml\" to \"${GITLAB_GITALY}/bin/git\""
-			elog
-		fi
 		if use gitlab-config; then
 			elog "     With the \"gitlab-config\" USE flag on edit the"
 			elog "     config files in the /opt/gitlab/gitlab/config/ folder!"
@@ -916,7 +885,6 @@ pkg_postinst() {
 		elog "    emerge --config \"=${CATEGORY}/${PF}\""
 		elog
 	fi
-	pkg_postinst_gitaly
 }
 
 pkg_config_do_upgrade_migrate_data() {
