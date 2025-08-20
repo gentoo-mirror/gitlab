@@ -653,8 +653,9 @@ src_install() {
 		done
 	done
 
-	# fix QA Security Notice: Remove rollup-linux-x64-musl; keep rollup-linux-x64-gnu only
+	# fix QA Security Notices: Remove musl variants; keep gnu only
 	rm -rf "${ED}/${GITLAB}/node_modules/@rollup/rollup-linux-x64-musl/"
+	rm -rf "${ED}/${GITLAB}/node_modules/sass-embedded-linux-musl-x64/"
 
 	# remove tmp and log dir of the build process
 	rm -Rf tmp log
