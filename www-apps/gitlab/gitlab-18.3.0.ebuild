@@ -421,6 +421,12 @@ src_install_gitaly() {
 	into "${GITLAB_GITALY}"
 	dobin _build/bin/*
 
+	sed -i \
+		-e "s|\${GIT_PREFIX}/bin/git|\${GIT_DEFAULT_PREFIX}/bin/git|" \
+		-e '/${Q}env.*${GIT_BUILD_OPTIONS} install/{n;s|\${Q}touch \$@||}' \
+		Makefile || die "failed to fix gitaly Makefile"
+	emake git DESTDIR="${D}" GIT_PREFIX="${GITLAB_GITALY}"
+
 	insinto "${CONF_DIR_GITALY}"
 	newins "config.toml.example" "config.toml"
 }
@@ -625,9 +631,7 @@ src_install() {
 	# fix QA Security Notice: world writable file(s)
 	elog "Fixing permissions of world writable files"
 	local gemsdir="${ruby_vpath}/gems"
-	local file gem wwfgems="devfile gitlab-dangerfiles gitlab-labkit gitlab-sdk \
-							graphql-client licensee os rack-cors semver_dialects \
-							tanuki_emoji toml-rb unleash"
+	local file gem wwfgems="google-cloud-location"
 	# If we are using wildcards, the shell fills them without prefixing ${ED}. Thus
 	# we would target a file list in the real system instead of in the sandbox.
 	for gem in ${wwfgems}; do
