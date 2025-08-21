@@ -1,9 +1,9 @@
 Title: Force to use the bundled Git
 Author: Horst Prote <prote@fmi.uni-stuttgart.de>
-Posted: 2025-08-20
+Posted: 2025-08-21
 Revision: 1
 News-Item-Format: 2.0
-Display-If-Installed: www-apps/gitlab[-gitaly_git]
+Display-If-Installed: www-apps/gitlab
 
 With versiom 18.3.0 upstream decides to "Deprecate the ability
 to use an arbitrary Git installation in favor of bundled Git"
@@ -11,3 +11,13 @@ to use an arbitrary Git installation in favor of bundled Git"
 
 I therefore decided to remove the gitaly_git use flag (was
 active on default) and only support the bundled Git from now on.
+
+Note, though, that this first of all applies to the Gitaly part
+of GitLab (that, as I understand it, will now always use the
+bundled Git) and you could still change the 'bin_path' setting
+in /etc/gitlab/gitlab.yml to use /usr/bin/git of the Gentoo Git
+package for the other parts of GitLab instead.
+But upstream recommends:
+  You should use the Git version provided by Gitaly that:
+  - Is always at the version required by GitLab.
+  - May contain custom patches required for proper operation.

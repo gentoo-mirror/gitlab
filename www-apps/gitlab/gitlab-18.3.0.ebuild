@@ -411,6 +411,10 @@ src_compile() {
 	export RUBYOPT=--disable-did_you_mean
 	einfo "Compiling source in $PWD ..."
 	MAKEOPTS="${MAKEOPTS} -j1" emake || die "Compiling gitaly failed"
+	einfo "Compiling gitaly's git distribution in $PWD ..."
+	MAKEOPTS="${MAKEOPTS} -j1" emake build-git \
+		DESTDIR="${D}" GIT_PREFIX="${GITLAB_GITALY}" \
+		|| die "Compiling gitaly's git distribution failed"
 }
 
 src_install_gitaly() {
@@ -418,14 +422,13 @@ src_install_gitaly() {
 	# cleanup candidates: a.out *.bin
 
 	# Will install binaries to ${GITLAB_GITALY}/bin. Don't specify the "bin"!
+	einfo "Installing gitaly binaries ..."
 	into "${GITLAB_GITALY}"
 	dobin _build/bin/*
 
-	sed -i \
-		-e "s|\${GIT_PREFIX}/bin/git|\${GIT_DEFAULT_PREFIX}/bin/git|" \
-		-e '/${Q}env.*${GIT_BUILD_OPTIONS} install/{n;s|\${Q}touch \$@||}' \
-		Makefile || die "failed to fix gitaly Makefile"
-	emake git DESTDIR="${D}" GIT_PREFIX="${GITLAB_GITALY}"
+	einfo "Installing gitaly's git distribution ..."
+	emake install-git DESTDIR="${D}" GIT_PREFIX="${GITLAB_GITALY}" \
+		|| die "Installing gitaly's git distribution failed"
 
 	insinto "${CONF_DIR_GITALY}"
 	newins "config.toml.example" "config.toml"
