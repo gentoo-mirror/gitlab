@@ -5,12 +5,12 @@ Revision: 1
 News-Item-Format: 2.0
 Display-If-Installed: www-apps/gitlab
 
-With versiom 18.3.0 upstream decides to "Deprecate the ability
+With version 18.3.0 upstream decided to "Deprecate the ability
 to use an arbitrary Git installation in favor of bundled Git"
 (see https://gitlab.com/gitlab-org/gitaly/-/issues/6725).
 
-I therefore decided to remove the gitaly_git use flag (was
-active on default) and only support the bundled Git from now on.
+So I removed the gitaly_git use flag (was active by default)
+and only support the bundled Git from now on.
 
 Note, though, that this first of all applies to the Gitaly part
 of GitLab (that, as I understand it, will now always use the
