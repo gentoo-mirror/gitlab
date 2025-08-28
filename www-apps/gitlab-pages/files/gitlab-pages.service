@@ -1,16 +1,20 @@
 [Unit]
-Description=Gitlab-Pages
+Description=Gitlab Pages
+ReloadPropagatedFrom=gitlab.target
 PartOf=gitlab.target
+After=network.target gitlab-puma.service
+Wants=gitlab-puma.service
 
 [Service]
-Type=exec
+Type=simple
 User=git
-EnvironmentFile=/etc/conf.d/gitlab-pages
 WorkingDirectory=@GITLAB@
-ExecStart=@BASE_DIR@/gitlab-pages/gitlab-pages \
-    -root-cert=${PAGES_ROOT_CERT} \
-    -root-key=${PAGES_ROOT_KEY} \
-    -pages-root ${PAGES_ROOT} \
-    -pages-domain ${PAGES_DOMAIN} \
-    -daemon-uid ${PAGES_UID} \
-    -daemon-gid ${PAGES_GID}
+EnvironmentFile=/etc/conf.d/gitlab-pages
+ExecStart=@BASE_DIR@/gitlab-pages/gitlab-pages
+Restart=on-failure
+RestartSec=1
+SyslogIdentifier=gitlab-pages
+Slice=gitlab.slice
+
+[Install]
+WantedBy=gitlab.target

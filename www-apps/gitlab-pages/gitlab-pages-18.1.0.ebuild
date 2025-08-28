@@ -23,9 +23,6 @@ DEPEND="
 RDEPEND="${DEPEND}"
 BDEPEND=""
 
-vSYS=2 # version of SYStemd service files used by this ebuild
-vORC=2 # version of OpenRC init files used by this ebuild
-
 src_install() {
 	exeinto /opt/gitlab/${PN}
 	doexe gitlab-pages
@@ -34,10 +31,10 @@ src_install() {
 	if use systemd; then
 		insinto /etc/systemd/system/${PN}.d
 		doins "${FILESDIR}/${PN}.conf"
-		systemd_dounit "${FILESDIR}/${PN}.service.${vSYS}"
+		systemd_dounit "${FILESDIR}/${PN}.service"
 	else
 		doconfd "${FILESDIR}"/${PN}.confd
-		doinitd "${FILESDIR}"/${PN}.initd.${vSYS}
+		doinitd "${FILESDIR}"/${PN}.initd
 	fi
 }
 

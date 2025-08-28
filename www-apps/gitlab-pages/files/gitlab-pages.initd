@@ -3,19 +3,13 @@
 # Distributed under the terms of the GNU General Public License v2
 
 command="/opt/gitlab/gitlab-pages/gitlab-pages"
-description="Gitlab-Pages"
+description="Gitlab Pages"
 pidfile="/run/${RC_SVCNAME}.pid"
-command_args="-listen-https "${PAGES_PORT}" \
-	-root-cert=${PAGES_ROOT_CERT} \
-	-root-key=${PAGES_ROOT_KEY} \
-	-pages-root ${PAGES_ROOT} \
-	-pages-domain ${PAGES_DOMAIN} \
-	-daemon-uid ${PAGES_UID} \
-	-daemon-gid ${PAGES_GID}"
+command_args="-config /etc/conf.d/gitlab-pages"
 start_stop_daemon_args="--background \
 	--stdout /var/log/${RC_SVCNAME}.log \
 	--stderr /var/log/${RC_SVCNAME}.log"
 
 depend() {
-    use net
+    use net gitlab-puma
 }

@@ -2,13 +2,14 @@
 Description=GitLab Sidekiq
 Wants=redis.service
 After=redis.service
-# Add "postgresql-12.service" in Wants and After
+# Add "postgresql-NN.service" in Wants and After
 # if you're running PostgreSQL on the same machine as GitLab
+ReloadPropagatedFrom=gitlab.target
 PartOf=gitlab.target
 After=network.target
 
 [Service]
-Type=simple
+Type=notify
 User=git
 WorkingDirectory=@GITLAB@
 Environment=RAILS_ENV=production
@@ -18,8 +19,11 @@ Environment=prometheus_multiproc_dir=@TMP_DIR@/prometheus_multiproc_dir
 EnvironmentFile=-/tmp/rubylib.env
 ExecStartPre=sh -c 'printf "%%s\n" "RUBYLIB=$(echo "$(find /usr/lib64/ruby/ -regextype egrep -iregex '.*rdoc-.*/lib')" | head -c -1 | tr "\n" ":")" > /tmp/rubylib.env'
 ExecStart=@GITLAB@/bin/sidekiq-cluster "$processes_args" -e ${RAILS_ENV}
+NotifyAccess=all
 PIDFile=@TMP_DIR@/pids/sidekiq.pid
-Restart=on-success
+# sidekiq can be slow to start
+TimeoutStartSec=2min
+Restart=on-failure
 RestartSec=1
 SyslogIdentifier=gitlab-sidekiq
 Slice=gitlab.slice
