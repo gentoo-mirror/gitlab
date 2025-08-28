@@ -4,11 +4,12 @@ Description=GitLab Puma
 ConditionFileNotEmpty=@GITLAB_CONFIG@/puma.rb
 Wants=redis.service
 After=redis.service
-# Add "postgresql-12.service" in Wants and After
+# Add "postgresql-NN.service" in Wants and After
 # if you're running PostgreSQL on the same machine as GitLab
+ReloadPropagatedFrom=gitlab.target
 PartOf=gitlab.target
 After=network.target
-StartLimitIntervalSec=100s
+StartLimitIntervalSec=11min
 
 [Service]
 Type=notify
@@ -18,7 +19,7 @@ Environment=RAILS_ENV=production
 Environment="RUBYOPT=--disable-did_you_mean"
 Environment=prometheus_multiproc_dir=@TMP_DIR@/prometheus_multiproc_dir
 EnvironmentFile=-/tmp/rubylib.env
-ExecStartPre=sh -c 'printf "%%s\n" RUBYLIB=$(find /usr/lib64/ruby/ -regextype egrep -iregex '.*rdoc-.*/lib') > /tmp/rubylib.env'
+ExecStartPre=sh -c 'printf "%%s\n" "RUBYLIB=$(echo "$(find /usr/lib64/ruby/ -regextype egrep -iregex '.*rdoc-.*/lib')" | head -c -1 | tr "\n" ":")" > /tmp/rubylib.env'
 ExecStart=@GITLAB@/bin/bundle exec puma -C @GITLAB_CONFIG@/puma.rb -e ${RAILS_ENV} --pidfile @TMP_DIR@/pids/puma.pid
 ExecReload=/usr/bin/kill -USR2 $MAINPID
 PIDFile=@TMP_DIR@/pids/puma.pid

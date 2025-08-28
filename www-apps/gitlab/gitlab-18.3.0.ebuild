@@ -94,8 +94,6 @@ LOG_DIR="/var/log/${PN}"
 TMP_DIR="/var/tmp/${PN}"
 WORKHORSE="${BASE_DIR}/gitlab-workhorse"
 WORKHORSE_BIN="${WORKHORSE}/bin"
-vSYS=4 # version of SYStemd service files used by this ebuild
-vORC=2 # version of OpenRC init files used by this ebuild
 
 GIT_REPOS="${GIT_HOME}/repositories"
 GITLAB_SHELL="${BASE_DIR}/gitlab-shell"
@@ -662,7 +660,7 @@ src_install() {
 		use mail_room && services+=" mailroom"
 		use gitlab-config || services+=" update-config"
 		for service in ${services}; do
-			unitfile="${FILESDIR}/${PN}-${service}.service.${vSYS}"
+			unitfile="${FILESDIR}/${PN}-${service}.service"
 			unit="${PN}-${service}.service"
 			sed -e "s|@BASE_DIR@|${BASE_DIR}|g" \
 				-e "s|@GITLAB@|${GITLAB}|g" \
@@ -683,10 +681,10 @@ src_install() {
 		sed -e "s|@OPTIONAL_REQUIRES@|${optional_requires}|" \
 			-e "s|@OPTIONAL_AFTER@|${optional_after}|" \
 			-e "s|@OPTIONAL_WANTS@|${optional_wants}|" \
-			"${FILESDIR}/${PN}.target.${vSYS}" > "${T}/${PN}.target" \
+			"${FILESDIR}/${PN}.target" > "${T}/${PN}.target" \
 			|| die "failed to configure: ${PN}.target"
 		systemd_dounit "${T}/${PN}.target"
-		cp "${FILESDIR}/${PN}.slice.${vSYS}" "${T}/${PN}.slice"
+		cp "${FILESDIR}/${PN}.slice" "${T}/${PN}.slice"
 		systemd_dounit "${T}/${PN}.slice"
 	else
 		## OpenRC init scripts ##
@@ -694,7 +692,7 @@ src_install() {
 		local service services="${PN} gitlab-gitaly" rc rcfile update_config puma_start
 		local mailroom_vars='' mailroom_start='' mailroom_stop='' mailroom_status=''
 
-		rcfile="${FILESDIR}/${PN}.init.${vORC}"
+		rcfile="${FILESDIR}/${PN}.init"
 		# The sed command will replace the newline(s) with the string "\n".
 		# Note: We use this below to replace a matching line of the rcfile by
 		# the contents of another file whose newlines would break the outer sed.
@@ -719,11 +717,11 @@ src_install() {
 			-e "s|@MAILROOM_STOP@|${mailroom_stop}|" \
 			-e "s|@MAILROOM_STATUS@|${mailroom_status}|" \
 			-e "s|@RELATIVE_URL@|${relative_url}|" \
-			${rcfile} > ${T}/${PN}.init.${vORC} || die "failed to prepare ${rcfile}"
-		cp "${FILESDIR}/gitlab-gitaly.init.${vORC}" ${T}/
+			${rcfile} > ${T}/${PN}.init || die "failed to prepare ${rcfile}"
+		cp "${FILESDIR}/gitlab-gitaly.init" ${T}/
 
 		for service in ${services}; do
-			rcfile="${T}/${service}.init.${vORC}"
+			rcfile="${T}/${service}.init"
 			rc="${service}.init"
 			sed -e "s|@RAILS_ENV@|${RAILS_ENV}|g" \
 				-e "s|@GIT_USER@|${GIT_USER}|g" \
