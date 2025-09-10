@@ -722,7 +722,6 @@ src_install() {
 
 		for service in ${services}; do
 			rcfile="${T}/${service}.init"
-			rc="${service}.init"
 			sed -e "s|@RAILS_ENV@|${RAILS_ENV}|g" \
 				-e "s|@GIT_USER@|${GIT_USER}|g" \
 				-e "s|@GIT_GROUP@|${GIT_GROUP}|g" \
@@ -731,8 +730,8 @@ src_install() {
 				-e "s|@WORKHORSE_BIN@|${WORKHORSE_BIN}|g" \
 				-e "s|@GITLAB_GITALY@|${GITLAB_GITALY}|g" \
 				-e "s|@GITALY_CONF@|${GITALY_CONF}|g" \
-				"${rcfile}" > "${T}/${rc}" || die "failed to configure: ${rc}"
-			newinitd "${T}/${rc}" "${service}"
+				"${rcfile}" > "${T}/${service}" || die "failed to configure: ${service}"
+			newinitd "${T}/${service}" "${service}"
 		done
 		newconfd "${FILESDIR}/gitlab.confd" gitlab
 	fi
