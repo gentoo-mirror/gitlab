@@ -24,7 +24,7 @@ NotifyAccess=all
 PIDFile=@TMP_DIR@/pids/sidekiq.pid
 # sidekiq can be slow to start
 TimeoutStartSec=2min
-Restart=on-failure
+Restart=always
 RestartSec=1
 SyslogIdentifier=gitlab-sidekiq
 Slice=gitlab.slice
