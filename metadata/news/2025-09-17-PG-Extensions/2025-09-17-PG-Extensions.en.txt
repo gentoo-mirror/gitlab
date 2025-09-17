@@ -1,0 +1,16 @@
+Title: PostgreSQL Extensions
+Author: Horst Prote <prote@fmi.uni-stuttgart.de>
+Posted: 2025-09-17
+Revision: 1
+News-Item-Format: 2.0
+Display-If-Installed: www-apps/gitlab
+
+Starting with version 18.4.0 GitLab needs another PG extension: amchek.
+To list the current PG extensions run as the PG admin user:
+  psql -d <your GitLab DB> -c "\dx"
+
+To create the extensions if they are missing do:
+  psql -d template1 -c "CREATE EXTENSION IF NOT EXISTS amcheck;"
+  psql -d template1 -c "CREATE EXTENSION IF NOT EXISTS pg_trgm;"
+  psql -d template1 -c "CREATE EXTENSION IF NOT EXISTS btree_gist;"
+  psql -d template1 -c "CREATE EXTENSION IF NOT EXISTS plpgsql;"
