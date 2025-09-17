@@ -1,0 +1,16 @@
+BDEPEND=>=dev-vcs/git-1.8.2.1[curl]
+DEFINED_PHASES=install postinst unpack
+DEPEND=>=dev-lang/go-1.22 acct-user/gitlab-pages
+DESCRIPTION=GitLab Pages daemon used to serve static websites for GitLab users
+EAPI=8
+HOMEPAGE=https://gitlab.com/gitlab-org/gitlab-pages
+INHERIT=git-r3
+IUSE=systemd
+KEYWORDS=~amd64 ~x86
+LICENSE=MIT
+PROPERTIES=live
+RDEPEND=>=dev-lang/go-1.22 acct-user/gitlab-pages
+RESTRICT=network-sandbox
+SLOT=0
+_eclasses_=git-r3	875eb471682d3e1f18da124be97dcc81
+_md5_=4888613c3dd840a2c03442f8845f074e
