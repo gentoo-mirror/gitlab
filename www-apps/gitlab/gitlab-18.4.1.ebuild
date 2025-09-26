@@ -140,7 +140,7 @@ urlencode() {
 
 
 nr_bg_migrations() {
-	local DBYML="/etc/gitlab/database.yml"
+	local DBYML="${GITLAB_CONFIG}/database.yml"
 	local DBCMD="SELECT job_class_name, table_name, column_name, job_arguments
 				FROM batched_background_migrations WHERE status NOT IN(3, 6);"
 	eval $(parse_yml "$DBYML" "CONF_")
