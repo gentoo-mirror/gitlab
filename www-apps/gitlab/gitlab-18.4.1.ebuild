@@ -107,6 +107,58 @@ BUNDLE="ruby /usr/bin/bundle"
 
 MODUS='' # [new|rebuild|patch|minor|major]
 
+parse_yml() {
+	# Usage: eval $(parse_yml <yml-file> "prefix_")
+	# Will parse <yml-file> into variables prefix_<level1>_..._<levelN>_variable
+	local prefix=$2
+	local s='[[:space:]]*' w='[a-zA-Z0-9_]*' fs=$(echo @|tr @ '\034')
+	sed -ne "s|^\($s\):|\1|" \
+		-e "s|^\($s\)\($w\)$s:$s[\"']\(.*\)[\"']$s\$|\1$fs\2$fs\3|p" \
+		-e "s|^\($s\)\($w\)$s:$s\(.*\)$s\$|\1$fs\2$fs\3|p"  $1 |
+	awk -F$fs '{
+	    indent = length($1)/2;
+	    vname[indent] = $2;
+	    for (i in vname) {if (i > indent) {delete vname[i]}}
+    	if (length($3) > 0) {
+			vn=""; for (i=0; i<indent; i++) {vn=(vn)(vname[i])("_")}
+			printf("%s%s%s=\"%s\"\n", "'$prefix'",vn, $2, $3);
+    	}
+	}'
+}
+
+urlencode() {
+	# urlencode <string>
+	local length="${#1}"
+	for (( i = 0; i < length; i++ )); do
+		local c="${1:i:1}"
+		case $c in
+			[a-zA-Z0-9.~_-]) printf "$c" ;;
+			*) printf '%%%02X' "'$c"
+		esac
+	done
+}
+
+
+nr_bg_migrations() {
+	local DBYML="/etc/gitlab/database.yml"
+	local DBCMD="SELECT job_class_name, table_name, column_name, job_arguments
+				FROM batched_background_migrations WHERE status NOT IN(3, 6);"
+	eval $(parse_yml "$DBYML" "CONF_")
+	DBNAME="$(urlencode $CONF_production_main_database)"
+	DBUSER="$(urlencode $CONF_production_main_username)"
+	DBPASS="$(urlencode $CONF_production_main_password)"
+	DBHOST="$(urlencode $CONF_production_main_host)"
+	ROWS=$(psql "postgresql://${DBUSER}:${DBPASS}@${DBHOST}/${DBNAME}" -c "$DBCMD" \
+		| grep " rows")
+	ROWS=${ROWS% rows)}
+	ROWS=${ROWS#(}
+	if [ -n "$ROWS" ] && [ "$ROWS" -eq "$ROWS" ] 2>/dev/null; then
+		echo $ROWS
+	else
+		exit 1
+	fi
+}
+
 pkg_setup() {
 	# get the installed version
 	vINST=$(best_version www-apps/gitlab)
@@ -183,39 +235,19 @@ pkg_setup() {
 
 	if [ "$MODUS" = "patch" ] || [ "$MODUS" = "minor" ] || [ "$MODUS" = "major" ]; then
 		# ensure that any background migrations have been fully completed
-		# see /opt/gitlab/gitlab/doc/update/README.md
+		# see /opt/gitlab/gitlab/doc/update/background_migrations.md
 		elog "Checking for background migrations ..."
-		local bm gitlab_dir rails_cmd="'puts Gitlab::BackgroundMigration.remaining'"
-		gitlab_dir="${BASE_DIR}/${PN}"
-		local rubyVinst=$(ruby --version) # version string is "ruby N.N.N[pNNN] (...)"
-		rubyVinst=${rubyVinst##ruby }     # remove leading "ruby "
-		rubyVinst=${rubyVinst%%.? *}      # remove from ".N " on if there is no patch number
-		rubyVinst=${rubyVinst%%.?p*}      # remove from ".NpNNN" on if there is a patch number
-		rubyVinst=${rubyVinst/./}         # convert "N.N" to "NN"
-		local rubyV=$(ls ${gitlab_dir}/vendor/bundle/ruby 2>/dev/null)
-		rubyV=${rubyV%.?}
-		rubyV=${rubyV/./}
-		if [ "$rubyVinst" != "$rubyV" ]; then
-			elog "Temporary switch to ruby${rubyV}"
-			eselect ruby set ruby${rubyV}
-		fi
-		bm=$(su -l ${GIT_USER} -s /bin/sh -c "
-			cd ${gitlab_dir}
-			${BUNDLE} exec rails runner -e ${RAILS_ENV} ${rails_cmd}" \
-				|| die "failed to check for background migrations")
+		local bm
+		bm=$(nr_bg_migrations || die "failed to check for background migrations")
 		if [ "${bm}" != "0" ]; then
 			elog "The new version may require a set of background migrations to be finished."
 			elog "For more information see:"
-			elog "https://gitlab.com/gitlab-org/gitlab-foss/-/blob/master/doc/update/README.md#checking-for-background-migrations-before-upgrading"
+			elog "https://gitlab.com/gitlab-org/gitlab-foss/-/blob/master/doc/update/background_migrations.md#check-the-status-of-batched-background-migrations"
 			eerror "Number of remaining background migrations is ${bm}"
 			eerror "Try again later."
 			die "Background migrations from previous upgrade not finished yet."
 		else
 			elog "OK: No remaining background migrations found."
-		fi
-		if [ "$rubyVinst" != "$rubyV" ]; then
-			elog "Switching back to ruby${rubyVinst}"
-			eselect ruby set ruby${rubyVinst}
 		fi
 	fi
 
